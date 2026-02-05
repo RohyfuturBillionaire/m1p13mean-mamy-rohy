@@ -1,0 +1,41 @@
+$primary: #6366F1; $primary-dark: #4F46E5; $dark: #0F172A; $danger: #EF4444; $light: #F8FAFC;
+
+.faq-page { max-width: 1000px; margin: 0 auto; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; h1 { font-size: 1.75rem; font-weight: 700; color: $dark; margin-bottom: 0.25rem; } p { color: #64748B; font-size: 0.9rem; } }
+
+.btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 500; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: none; font-family: inherit; .material-icons { font-size: 1.1rem; }
+  &-primary { background: linear-gradient(135deg, $primary, $primary-dark); color: white; &:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba($primary, 0.4); } &:disabled { opacity: 0.6; cursor: not-allowed; transform: none; } }
+  &-outline { background: white; border: 1px solid #E2E8F0; color: $dark; &:hover { border-color: $primary; color: $primary; } }
+}
+
+.faq-list { display: flex; flex-direction: column; gap: 1rem; }
+
+.faq-item { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; transition: all 0.3s;
+  &.inactive { opacity: 0.6; }
+  &.expanded { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+}
+.faq-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; cursor: pointer; &:hover { background: $light; } }
+.faq-question { display: flex; align-items: center; gap: 1rem; flex: 1; }
+.faq-order { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: rgba($primary, 0.1); color: $primary; font-weight: 600; font-size: 0.85rem; border-radius: 8px; }
+.question-text { font-weight: 500; color: $dark; flex: 1; }
+.faq-category { font-size: 0.75rem; font-weight: 500; color: $primary; background: rgba($primary, 0.1); padding: 0.25rem 0.75rem; border-radius: 50px; }
+.faq-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+.icon-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; .material-icons { font-size: 1.1rem; color: #64748B; } &:hover { background: $light; .material-icons { color: $primary; } } &.danger:hover .material-icons { color: $danger; } }
+.expand-icon { color: #94A3B8 !important; font-size: 1.5rem !important; }
+
+.faq-answer { padding: 0 1.5rem 1.5rem 4.5rem; p { color: #64748B; line-height: 1.6; margin: 0; } }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; padding: 4rem 2rem; background: white; border-radius: 16px; text-align: center; .material-icons { font-size: 4rem; color: #CBD5E1; margin-bottom: 1rem; } h3 { font-size: 1.25rem; color: $dark; margin-bottom: 0.5rem; } p { color: #64748B; margin-bottom: 1.5rem; } }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; }
+.modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 550px; background: white; border-radius: 20px; box-shadow: 0 25px 80px rgba(0,0,0,0.2); z-index: 1001; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #E2E8F0; h2 { font-size: 1.25rem; font-weight: 600; color: $dark; } .close-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: $light; border: none; border-radius: 10px; cursor: pointer; &:hover { background: #E2E8F0; } .material-icons { font-size: 1.25rem; color: #64748B; } } }
+.modal-body { padding: 1.5rem; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; }
+
+.form-group { margin-bottom: 1rem; label { display: block; font-size: 0.85rem; font-weight: 500; color: $dark; margin-bottom: 0.5rem; } input, textarea { width: 100%; padding: 0.875rem 1rem; border: 1px solid #E2E8F0; border-radius: 10px; font-size: 0.9rem; font-family: inherit; &:focus { outline: none; border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.1); } } textarea { resize: vertical; } }
+.form-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+
+.loader-sm { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

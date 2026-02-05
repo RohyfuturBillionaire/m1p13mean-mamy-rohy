@@ -1,0 +1,83 @@
+<div class="livraisons-page">
+  <div class="page-header">
+    <div><h1>Suivi des Livraisons</h1><p>Suivez l'état de vos livraisons</p></div>
+  </div>
+
+  <div class="livraisons-list">
+    @for (livraison of livraisons(); track livraison.id) {
+      <div class="livraison-card" (click)="openDetail(livraison)">
+        <div class="livraison-header">
+          <div class="tracking-info">
+            <span class="material-icons">local_shipping</span>
+            <div>
+              <span class="tracking-number">{{ livraison.numeroSuivi }}</span>
+              <span class="transporteur">{{ livraison.transporteur }}</span>
+            </div>
+          </div>
+          <span class="livraison-status" [class]="livraison.statut">{{ getStatusLabel(livraison.statut) }}</span>
+        </div>
+        <div class="livraison-body">
+          <div class="info-row"><span class="material-icons">pin_drop</span><span>{{ livraison.adresseLivraison }}</span></div>
+          <div class="info-row"><span class="material-icons">schedule</span><span>Estimée: {{ formatDate(livraison.dateEstimee) }}</span></div>
+        </div>
+        <div class="livraison-footer">
+          @if (getNextStatus(livraison.statut)) {
+            <button class="btn btn-primary btn-sm" (click)="updateStatus(livraison, getNextStatus(livraison.statut)!); $event.stopPropagation()">
+              Passer en {{ getStatusLabel(getNextStatus(livraison.statut)!) }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+    @if (livraisons().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons">local_shipping</span>
+        <h3>Aucune livraison</h3>
+        <p>Les livraisons apparaîtront ici</p>
+      </div>
+    }
+  </div>
+</div>
+
+@if (showDetail() && selectedLivraison()) {
+  <div class="modal-backdrop" (click)="closeDetail()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ selectedLivraison()!.numeroSuivi }}</h2>
+      <button class="close-btn" (click)="closeDetail()"><span class="material-icons">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section">
+        <h3>Informations</h3>
+        <div class="detail-grid">
+          <div><label>Transporteur</label><span>{{ selectedLivraison()!.transporteur }}</span></div>
+          <div><label>Adresse</label><span>{{ selectedLivraison()!.adresseLivraison }}</span></div>
+          <div><label>Date d'expédition</label><span>{{ formatDate(selectedLivraison()!.dateExpedition) }}</span></div>
+          <div><label>Date estimée</label><span>{{ formatDate(selectedLivraison()!.dateEstimee) }}</span></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h3>Historique</h3>
+        <div class="timeline">
+          @for (event of selectedLivraison()!.historique; track $index) {
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <span class="event-status">{{ event.statut }}</span>
+                <span class="event-lieu">{{ event.lieu }}</span>
+                <span class="event-date">{{ formatDate(event.date) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      @if (getNextStatus(selectedLivraison()!.statut)) {
+        <button class="btn btn-primary" (click)="updateStatus(selectedLivraison()!, getNextStatus(selectedLivraison()!.statut)!)">
+          Passer en {{ getStatusLabel(getNextStatus(selectedLivraison()!.statut)!) }}
+        </button>
+      }
+    </div>
+  </div>
+}

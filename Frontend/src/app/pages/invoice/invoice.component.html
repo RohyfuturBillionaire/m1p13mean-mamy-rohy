@@ -1,0 +1,160 @@
+<div class="invoice-page">
+  @if (facture()) {
+    <!-- Actions Bar (hidden when printing) -->
+    <div class="actions-bar no-print">
+      <div class="container">
+        <a routerLink="/" class="back-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+          Retour à l'accueil
+        </a>
+        <div class="action-buttons">
+          <button class="btn btn-secondary" (click)="printInvoice()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Imprimer
+          </button>
+          <button
+            class="btn btn-primary"
+            (click)="downloadPDF()"
+            [disabled]="isPrinting()"
+          >
+            @if (isPrinting()) {
+              <span class="loader-sm"></span>
+              Génération...
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Télécharger PDF
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Document -->
+    <div class="invoice-container">
+      <div class="invoice-document">
+        <!-- Invoice Header -->
+        <header class="invoice-header">
+          <div class="company-info">
+            <div class="logo">
+              <span class="logo-t">T</span>
+              <span class="logo-c">C</span>
+            </div>
+            <div class="company-details">
+              <h1>{{ facture()!.entreprise.nom }}</h1>
+              <p>{{ facture()!.entreprise.adresse }}</p>
+              <p>{{ facture()!.entreprise.telephone }}</p>
+              <p>{{ facture()!.entreprise.email }}</p>
+            </div>
+          </div>
+          <div class="invoice-info">
+            <h2>FACTURE</h2>
+            <p class="invoice-number">{{ facture()!.numeroFacture }}</p>
+            <p class="invoice-date">Date : {{ formatDate(facture()!.dateEmission) }}</p>
+          </div>
+        </header>
+
+        <!-- Legal Info -->
+        <div class="legal-info">
+          <p><strong>NIF :</strong> {{ facture()!.entreprise.nif }}</p>
+          <p><strong>STAT :</strong> {{ facture()!.entreprise.stat }}</p>
+        </div>
+
+        <!-- Client Info -->
+        <section class="client-section">
+          <h3>Facturé à :</h3>
+          <div class="client-info">
+            <p class="client-name">{{ facture()!.commande.client.prenom }} {{ facture()!.commande.client.nom }}</p>
+            <p>{{ facture()!.commande.client.adresse }}</p>
+            <p>{{ facture()!.commande.client.ville }} {{ facture()!.commande.client.codePostal }}</p>
+            <p>{{ facture()!.commande.client.telephone }}</p>
+            <p>{{ facture()!.commande.client.email }}</p>
+          </div>
+        </section>
+
+        <!-- Order Info -->
+        <section class="order-section">
+          <div class="order-meta">
+            <p><strong>Commande N° :</strong> {{ facture()!.commande.numeroCommande }}</p>
+            <p><strong>Date de commande :</strong> {{ formatDate(facture()!.commande.date) }}</p>
+            <p><strong>Mode de paiement :</strong> {{ facture()!.commande.methodePaiement | titlecase }}</p>
+          </div>
+        </section>
+
+        <!-- Items Table -->
+        <section class="items-section">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th class="col-description">Description</th>
+                <th class="col-boutique">Boutique</th>
+                <th class="col-qty">Qté</th>
+                <th class="col-price">Prix unitaire</th>
+                <th class="col-total">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of facture()!.commande.items; track item.produit.id + item.boutiqueId) {
+                <tr>
+                  <td class="col-description">
+                    <span class="product-name">{{ item.produit.nom }}</span>
+                    @if (item.produit.prixPromo) {
+                      <span class="promo-tag">Promo</span>
+                    }
+                  </td>
+                  <td class="col-boutique">{{ item.boutiqueNom }}</td>
+                  <td class="col-qty">{{ item.quantite }}</td>
+                  <td class="col-price">{{ formatPrix(getItemPrice(item)) }}</td>
+                  <td class="col-total">{{ formatPrix(getItemTotal(item)) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Totals -->
+        <section class="totals-section">
+          <div class="totals-table">
+            <div class="total-row">
+              <span>Sous-total HT</span>
+              <span>{{ formatPrix(facture()!.commande.sousTotal) }}</span>
+            </div>
+            <div class="total-row">
+              <span>TVA (20%)</span>
+              <span>{{ formatPrix(facture()!.commande.tva) }}</span>
+            </div>
+            <div class="total-row grand-total">
+              <span>Total TTC</span>
+              <span>{{ formatPrix(facture()!.commande.total) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="invoice-footer">
+          <div class="payment-status">
+            <span class="status-badge paid">PAYÉ</span>
+          </div>
+          <div class="footer-notes">
+            <p>Merci pour votre achat chez Tana Center !</p>
+            <p class="small">Cette facture est générée automatiquement et ne nécessite pas de signature.</p>
+          </div>
+        </footer>
+      </div>
+    </div>
+  } @else {
+    <div class="loading-state">
+      <div class="loader"></div>
+      <p>Chargement de la facture...</p>
+    </div>
+  }
+</div>

@@ -1,0 +1,324 @@
+<div class="produits-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Gestion des Produits</h1>
+      <p>Gérez votre catalogue de produits</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">
+      <span class="material-icons">add</span>
+      Nouveau Produit
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon total">
+        <span class="material-icons">inventory_2</span>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats().total }}</span>
+        <span class="stat-label">Total Produits</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon active">
+        <span class="material-icons">check_circle</span>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats().actifs }}</span>
+        <span class="stat-label">Produits Actifs</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon warning">
+        <span class="material-icons">warning</span>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats().alerteStock }}</span>
+        <span class="stat-label">Stock Faible</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon danger">
+        <span class="material-icons">remove_shopping_cart</span>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats().rupture }}</span>
+        <span class="stat-label">Rupture de Stock</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <span class="material-icons">search</span>
+      <input
+        type="text"
+        placeholder="Rechercher un produit..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+      >
+    </div>
+    <div class="filter-group">
+      <select (change)="onStatusFilter($event)" [value]="statusFilter()">
+        <option value="all">Tous les statuts</option>
+        <option value="actif">Actifs</option>
+        <option value="inactif">Inactifs</option>
+        <option value="rupture">Rupture de stock</option>
+        <option value="alerte">Stock faible</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <select (change)="onCategoryFilter($event)" [value]="categoryFilter()">
+        <option value="all">Toutes les catégories</option>
+        @for (cat of categories(); track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="products-grid">
+    @if (filteredProduits().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons">inventory_2</span>
+        <h3>Aucun produit trouvé</h3>
+        <p>Modifiez vos filtres ou ajoutez un nouveau produit</p>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="material-icons">add</span>
+          Ajouter un produit
+        </button>
+      </div>
+    } @else {
+      @for (produit of filteredProduits(); track produit.id) {
+        <div class="product-card" [class.inactive]="produit.statut === 'inactif'">
+          <div class="product-image">
+            <img [src]="produit.image" [alt]="produit.nom">
+            @if (produit.prixPromo) {
+              <span class="promo-badge">Promo</span>
+            }
+            <span class="status-badge" [class]="getStatusClass(produit)">
+              {{ getStatusLabel(produit.statut) }}
+            </span>
+          </div>
+
+          <div class="product-content">
+            <span class="product-category">{{ produit.categorie }}</span>
+            <h3 class="product-name">{{ produit.nom }}</h3>
+            <p class="product-description">{{ produit.description }}</p>
+
+            <div class="product-pricing">
+              @if (produit.prixPromo) {
+                <span class="price-promo">{{ formatPrix(produit.prixPromo) }}</span>
+                <span class="price-original">{{ formatPrix(produit.prix) }}</span>
+              } @else {
+                <span class="price">{{ formatPrix(produit.prix) }}</span>
+              }
+            </div>
+
+            <div class="product-stock" [class.low]="produit.stock <= produit.stockAlerte" [class.out]="produit.stock === 0">
+              <span class="material-icons">inventory</span>
+              <span>Stock: {{ produit.stock }} unités</span>
+              @if (produit.stock <= produit.stockAlerte && produit.stock > 0) {
+                <span class="stock-alert">(Alerte: {{ produit.stockAlerte }})</span>
+              }
+            </div>
+
+            <div class="product-meta">
+              <span class="sold">{{ produit.vendu }} vendus</span>
+            </div>
+          </div>
+
+          <div class="product-actions">
+            <button class="action-btn edit" title="Modifier" (click)="openEditModal(produit)">
+              <span class="material-icons">edit</span>
+            </button>
+            <button
+              class="action-btn toggle"
+              [title]="produit.statut === 'actif' ? 'Désactiver' : 'Activer'"
+              (click)="toggleStatus(produit)"
+            >
+              <span class="material-icons">{{ produit.statut === 'actif' ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+            <button class="action-btn delete" title="Supprimer" (click)="confirmDelete(produit)">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ editingProduit() ? 'Modifier le Produit' : 'Nouveau Produit' }}</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <form (ngSubmit)="submitForm()" class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom du produit *</label>
+          <input
+            type="text"
+            [value]="formData().nom"
+            (input)="updateFormField('nom', $any($event.target).value)"
+            placeholder="Ex: Casque Audio Premium"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Catégorie *</label>
+          <input
+            type="text"
+            [value]="formData().categorie"
+            (input)="updateFormField('categorie', $any($event.target).value)"
+            placeholder="Ex: Audio"
+            list="categories"
+            required
+          >
+          <datalist id="categories">
+            @for (cat of categories(); track cat) {
+              <option [value]="cat"></option>
+            }
+          </datalist>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full">
+          <label>Description</label>
+          <textarea
+            rows="3"
+            [value]="formData().description"
+            (input)="updateFormField('description', $any($event.target).value)"
+            placeholder="Description du produit..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-row two-cols">
+        <div class="form-group">
+          <label>Prix (Ar) *</label>
+          <input
+            type="number"
+            [value]="formData().prix"
+            (input)="updateFormField('prix', +$any($event.target).value)"
+            min="0"
+            required
+          >
+        </div>
+        <div class="form-group">
+          <label>Prix Promo (Ar)</label>
+          <input
+            type="number"
+            [value]="formData().prixPromo"
+            (input)="updateFormField('prixPromo', $any($event.target).value ? +$any($event.target).value : null)"
+            min="0"
+            placeholder="Optionnel"
+          >
+        </div>
+      </div>
+
+      <div class="form-row two-cols">
+        <div class="form-group">
+          <label>Stock actuel *</label>
+          <input
+            type="number"
+            [value]="formData().stock"
+            (input)="updateFormField('stock', +$any($event.target).value)"
+            min="0"
+            required
+          >
+        </div>
+        <div class="form-group">
+          <label>Seuil d'alerte</label>
+          <input
+            type="number"
+            [value]="formData().stockAlerte"
+            (input)="updateFormField('stockAlerte', +$any($event.target).value)"
+            min="0"
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full">
+          <label>URL de l'image</label>
+          <input
+            type="url"
+            [value]="formData().image"
+            (input)="updateFormField('image', $any($event.target).value)"
+            placeholder="https://..."
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Statut</label>
+          <select
+            [value]="formData().statut"
+            (change)="updateFormField('statut', $any($event.target).value)"
+          >
+            <option value="actif">Actif</option>
+            <option value="inactif">Inactif</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span class="loader-sm"></span>
+            Enregistrement...
+          } @else {
+            <span class="material-icons">save</span>
+            {{ editingProduit() ? 'Modifier' : 'Créer' }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal()) {
+  <div class="modal-backdrop" (click)="cancelDelete()"></div>
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Confirmer la suppression</h2>
+      <button class="close-btn" (click)="cancelDelete()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-warning">
+        <span class="material-icons">warning</span>
+        <p>Êtes-vous sûr de vouloir supprimer le produit <strong>{{ deletingProduit()?.nom }}</strong> ?</p>
+        <p class="warning-text">Cette action est irréversible.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="cancelDelete()">Annuler</button>
+      <button class="btn btn-danger" (click)="deleteProduct()">
+        <span class="material-icons">delete</span>
+        Supprimer
+      </button>
+    </div>
+  </div>
+}

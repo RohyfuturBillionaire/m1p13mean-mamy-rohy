@@ -1,0 +1,86 @@
+<div class="faq-page">
+  <div class="page-header">
+    <div><h1>FAQ Boutique</h1><p>Gérez les questions fréquentes de votre boutique</p></div>
+    <button class="btn btn-primary" (click)="openModal()">
+      <span class="material-icons">add</span> Ajouter une FAQ
+    </button>
+  </div>
+
+  <div class="faq-list">
+    @for (faq of faqs(); track faq.id) {
+      <div class="faq-item" [class.expanded]="expandedId() === faq.id" [class.inactive]="!faq.actif">
+        <div class="faq-header" (click)="toggleExpand(faq.id)">
+          <div class="faq-question">
+            <span class="faq-order">{{ faq.ordre }}</span>
+            <span class="question-text">{{ faq.question }}</span>
+            @if (faq.categorie) {
+              <span class="faq-category">{{ faq.categorie }}</span>
+            }
+          </div>
+          <div class="faq-actions">
+            <button class="icon-btn" (click)="openModal(faq); $event.stopPropagation()" title="Modifier">
+              <span class="material-icons">edit</span>
+            </button>
+            <button class="icon-btn" (click)="toggleActive(faq); $event.stopPropagation()" [title]="faq.actif ? 'Désactiver' : 'Activer'">
+              <span class="material-icons">{{ faq.actif ? 'visibility' : 'visibility_off' }}</span>
+            </button>
+            <button class="icon-btn danger" (click)="deleteFaq(faq); $event.stopPropagation()" title="Supprimer">
+              <span class="material-icons">delete</span>
+            </button>
+            <span class="material-icons expand-icon">{{ expandedId() === faq.id ? 'expand_less' : 'expand_more' }}</span>
+          </div>
+        </div>
+        @if (expandedId() === faq.id) {
+          <div class="faq-answer">
+            <p>{{ faq.reponse }}</p>
+          </div>
+        }
+      </div>
+    }
+    @if (faqs().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons">help_outline</span>
+        <h3>Aucune FAQ</h3>
+        <p>Ajoutez des questions fréquentes pour aider vos clients</p>
+        <button class="btn btn-primary" (click)="openModal()"><span class="material-icons">add</span> Ajouter</button>
+      </div>
+    }
+  </div>
+</div>
+
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ editingFaq() ? 'Modifier' : 'Nouvelle' }} FAQ</h2>
+      <button class="close-btn" (click)="closeModal()"><span class="material-icons">close</span></button>
+    </div>
+    <form (ngSubmit)="submitForm()" class="modal-body">
+      <div class="form-group">
+        <label>Question *</label>
+        <input type="text" [value]="formData().question" (input)="updateField('question', $any($event.target).value)" required placeholder="Ex: Quels sont vos horaires ?">
+      </div>
+      <div class="form-group">
+        <label>Réponse *</label>
+        <textarea rows="4" [value]="formData().reponse" (input)="updateField('reponse', $any($event.target).value)" required placeholder="La réponse détaillée..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Catégorie</label>
+          <input type="text" [value]="formData().categorie" (input)="updateField('categorie', $any($event.target).value)" placeholder="Ex: Livraison">
+        </div>
+        <div class="form-group">
+          <label>Ordre</label>
+          <input type="number" [value]="formData().ordre" (input)="updateField('ordre', +$any($event.target).value)" min="1">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+          @if (isSubmitting()) { <span class="loader-sm"></span> }
+          Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+}

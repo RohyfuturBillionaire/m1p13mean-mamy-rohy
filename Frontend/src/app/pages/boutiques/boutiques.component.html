@@ -1,0 +1,200 @@
+<!-- Hero Banner -->
+<section class="page-hero">
+  <div class="hero-background">
+    <img src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1600" alt="Boutiques">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>Nos Boutiques & Restaurants</h1>
+    <p>Explorez plus de 50 enseignes de prestige</p>
+  </div>
+</section>
+
+<!-- Filters Section -->
+<section class="filters-section" [class.scrolled]="isFilterSticky()">
+  <div class="container">
+    <div class="filters-wrapper">
+      <!-- Search -->
+      <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input
+          type="text"
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          placeholder="Rechercher une boutique, un produit..."
+          class="search-input"
+        >
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="filter-tabs">
+        <!-- Type Filter -->
+        <div class="filter-group">
+          <span class="filter-label">Type</span>
+          <div class="filter-buttons">
+            <button
+              class="filter-btn"
+              [class.active]="selectedType() === 'all'"
+              (click)="setType('all')"
+            >Tous</button>
+            <button
+              class="filter-btn"
+              [class.active]="selectedType() === 'boutique'"
+              (click)="setType('boutique')"
+            >Boutiques</button>
+            <button
+              class="filter-btn"
+              [class.active]="selectedType() === 'restaurant'"
+              (click)="setType('restaurant')"
+            >Restaurants</button>
+            <button
+              class="filter-btn"
+              [class.active]="selectedType() === 'service'"
+              (click)="setType('service')"
+            >Services</button>
+          </div>
+        </div>
+
+        <!-- Etage Filter -->
+        <div class="filter-group">
+          <span class="filter-label">Étage</span>
+          <div class="filter-buttons">
+            <button
+              class="filter-btn"
+              [class.active]="selectedEtage() === null"
+              (click)="setEtage(null)"
+            >Tous</button>
+            <button
+              class="filter-btn"
+              [class.active]="selectedEtage() === 1"
+              (click)="setEtage(1)"
+            >Étage 1</button>
+            <button
+              class="filter-btn"
+              [class.active]="selectedEtage() === 2"
+              (click)="setEtage(2)"
+            >Étage 2</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="categories-filter">
+        <span class="filter-label">Catégories</span>
+        <div class="categories-scroll">
+          <button
+            class="category-chip"
+            [class.active]="selectedCategorie() === 'all'"
+            (click)="setCategorie('all')"
+          >
+            Toutes
+          </button>
+          @for (cat of categories(); track cat.id) {
+            <button
+              class="category-chip"
+              [class.active]="selectedCategorie() === cat.id"
+              (click)="setCategorie(cat.id)"
+            >
+              {{ cat.nom }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Active Filters -->
+      @if (hasActiveFilters()) {
+        <div class="active-filters">
+          <span class="results-count">{{ boutiqueCount() }} résultat(s)</span>
+          <button class="clear-filters" (click)="clearFilters()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Effacer les filtres
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Boutiques Grid -->
+<section class="boutiques-section">
+  <div class="container">
+    @if (filteredBoutiques().length > 0) {
+      <div class="boutiques-grid">
+        @for (boutique of filteredBoutiques(); track boutique.id) {
+          <article class="boutique-card">
+            <a [routerLink]="['/boutique', boutique.id]" class="card-link">
+              <div class="boutique-image">
+                <img [src]="boutique.image" [alt]="boutique.nom" loading="lazy">
+                @if (boutique.nouveau) {
+                  <span class="badge badge-gold">Nouveau</span>
+                }
+                <div class="boutique-overlay">
+                  <span class="explore-btn">Explorer</span>
+                </div>
+              </div>
+            </a>
+            <div class="boutique-content">
+              <div class="boutique-header">
+                <div class="boutique-meta">
+                  <span class="boutique-type" [class.restaurant]="boutique.type === 'restaurant'">
+                    {{ boutique.type === 'restaurant' ? 'Restaurant' : boutique.type === 'service' ? 'Service' : 'Boutique' }}
+                  </span>
+                  <span class="boutique-floor">Étage {{ boutique.etage }}</span>
+                </div>
+                <div class="boutique-rating">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                  <span>{{ boutique.note }}</span>
+                  <span class="avis">({{ boutique.avis }})</span>
+                </div>
+              </div>
+              <h3>{{ boutique.nom }}</h3>
+              <p>{{ boutique.description }}</p>
+              <div class="boutique-tags">
+                @for (tag of boutique.tags.slice(0, 3); track tag) {
+                  <span class="tag">{{ tag }}</span>
+                }
+              </div>
+              <div class="boutique-footer">
+                <div class="boutique-hours">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>{{ boutique.horaires.lundi }}</span>
+                </div>
+                <a [routerLink]="['/boutique', boutique.id]" class="btn-explore">
+                  Voir plus
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="no-results">
+        <div class="no-results-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+        </div>
+        <h3>Aucun résultat</h3>
+        <p>Aucune boutique ne correspond à vos critères de recherche.</p>
+        <button class="btn btn-primary" (click)="clearFilters()">Réinitialiser les filtres</button>
+      </div>
+    }
+  </div>
+</section>

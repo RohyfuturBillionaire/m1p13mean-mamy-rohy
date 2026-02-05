@@ -1,0 +1,96 @@
+<div class="messages-page">
+  <div class="messages-layout">
+    <!-- Conversations List -->
+    <div class="conversations-panel">
+      <div class="panel-header">
+        <h2>Messages</h2>
+        @if (unreadTotal() > 0) {
+          <span class="unread-badge">{{ unreadTotal() }}</span>
+        }
+      </div>
+      <div class="conversations-list">
+        @for (conv of conversations(); track conv.id) {
+          <div
+            class="conversation-item"
+            [class.active]="selectedConversation()?.id === conv.id"
+            [class.unread]="conv.nonLus > 0"
+            (click)="selectConversation(conv)"
+          >
+            <div class="conv-avatar" [class]="conv.participantRole">
+              <span class="material-icons">{{ getParticipantIcon(conv.participantRole) }}</span>
+            </div>
+            <div class="conv-content">
+              <div class="conv-header">
+                <span class="conv-name">{{ conv.participantNom }}</span>
+                <span class="conv-time">{{ formatDate(conv.dateLastMessage) }}</span>
+              </div>
+              <div class="conv-preview">
+                <span class="conv-message">{{ conv.dernierMessage }}</span>
+                @if (conv.nonLus > 0) {
+                  <span class="conv-unread">{{ conv.nonLus }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+        @if (conversations().length === 0) {
+          <div class="empty-conversations">
+            <span class="material-icons">chat_bubble_outline</span>
+            <p>Aucune conversation</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Messages Panel -->
+    <div class="messages-panel">
+      @if (selectedConversation()) {
+        <div class="panel-header">
+          <div class="chat-info">
+            <div class="chat-avatar" [class]="selectedConversation()!.participantRole">
+              <span class="material-icons">{{ getParticipantIcon(selectedConversation()!.participantRole) }}</span>
+            </div>
+            <div>
+              <h3>{{ selectedConversation()!.participantNom }}</h3>
+              <span class="chat-type">{{ selectedConversation()!.participantRole === 'admin' ? 'Administration' : 'Client' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="messages-container" #messagesContainer>
+          @for (msg of messages(); track msg.id) {
+            <div class="message" [class.own]="isOwnMessage(msg)">
+              <div class="message-content">
+                <p>{{ msg.contenu }}</p>
+                <span class="message-time">{{ formatFullDate(msg.date) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="message-input">
+          <input
+            type="text"
+            [(ngModel)]="newMessage"
+            (keyup.enter)="sendMessage()"
+            placeholder="Écrire un message..."
+            [disabled]="isSending()"
+          >
+          <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage().trim() || isSending()">
+            @if (isSending()) {
+              <span class="loader-sm"></span>
+            } @else {
+              <span class="material-icons">send</span>
+            }
+          </button>
+        </div>
+      } @else {
+        <div class="no-selection">
+          <span class="material-icons">chat</span>
+          <h3>Sélectionnez une conversation</h3>
+          <p>Choisissez une conversation dans la liste pour voir les messages</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

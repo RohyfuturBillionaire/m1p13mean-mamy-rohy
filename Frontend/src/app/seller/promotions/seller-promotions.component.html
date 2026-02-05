@@ -1,0 +1,111 @@
+<div class="promotions-page">
+  <div class="page-header">
+    <div><h1>Mes Promotions</h1><p>Gérez vos offres promotionnelles</p></div>
+    <button class="btn btn-primary" (click)="openModal()">
+      <span class="material-icons">add</span> Nouvelle Promotion
+    </button>
+  </div>
+
+  <div class="info-banner">
+    <span class="material-icons">info</span>
+    <p>Les promotions doivent être validées par l'administration avant publication. Le délai de validation est généralement de 24-48h.</p>
+  </div>
+
+  <div class="promotions-grid">
+    @for (promo of promotions(); track promo.id) {
+      <div class="promo-card" [class]="promo.statut">
+        <div class="promo-header">
+          <span class="promo-type">{{ getTypeLabel(promo.type) }}</span>
+          <span class="promo-status" [class]="promo.statut">{{ getStatusLabel(promo.statut) }}</span>
+        </div>
+        <div class="promo-body">
+          <h3>{{ promo.titre }}</h3>
+          <p>{{ promo.description }}</p>
+          @if (promo.valeur) {
+            <div class="promo-value">
+              @if (promo.type === 'pourcentage') { -{{ promo.valeur }}% }
+              @else if (promo.type === 'montant') { -{{ promo.valeur }} Ar }
+            </div>
+          }
+          <div class="promo-dates">
+            <span class="material-icons">event</span>
+            {{ formatDate(promo.dateDebut) }} - {{ formatDate(promo.dateFin) }}
+          </div>
+        </div>
+        <div class="promo-footer">
+          @if (promo.statut === 'brouillon') {
+            <button class="btn btn-sm btn-outline" (click)="openModal(promo)"><span class="material-icons">edit</span></button>
+            <button class="btn btn-sm btn-primary" (click)="submitForApproval(promo)">Soumettre</button>
+            <button class="btn btn-sm btn-danger" (click)="deletePromo(promo)"><span class="material-icons">delete</span></button>
+          }
+          @if (promo.statut === 'refusee') {
+            <span class="refus-motif">Motif: {{ promo.motifRefus || 'Non spécifié' }}</span>
+          }
+        </div>
+      </div>
+    }
+    @if (promotions().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons">local_offer</span>
+        <h3>Aucune promotion</h3>
+        <p>Créez votre première promotion</p>
+        <button class="btn btn-primary" (click)="openModal()"><span class="material-icons">add</span> Créer</button>
+      </div>
+    }
+  </div>
+</div>
+
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ editingPromo() ? 'Modifier' : 'Nouvelle' }} Promotion</h2>
+      <button class="close-btn" (click)="closeModal()"><span class="material-icons">close</span></button>
+    </div>
+    <form (ngSubmit)="submitForm()" class="modal-body">
+      <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" [value]="formData().titre" (input)="updateField('titre', $any($event.target).value)" required>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea rows="3" [value]="formData().description" (input)="updateField('description', $any($event.target).value)"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type</label>
+          <select [value]="formData().type" (change)="updateField('type', $any($event.target).value)">
+            <option value="pourcentage">Réduction %</option>
+            <option value="montant">Réduction fixe</option>
+            <option value="offre">Offre spéciale</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Valeur</label>
+          <input type="number" [value]="formData().valeur" (input)="updateField('valeur', +$any($event.target).value)" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date début *</label>
+          <input type="date" [value]="formData().dateDebut" (input)="updateField('dateDebut', $any($event.target).value)" required>
+        </div>
+        <div class="form-group">
+          <label>Date fin *</label>
+          <input type="date" [value]="formData().dateFin" (input)="updateField('dateFin', $any($event.target).value)" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Conditions</label>
+        <input type="text" [value]="formData().conditions" (input)="updateField('conditions', $any($event.target).value)" placeholder="Ex: Min. 50 000 Ar d'achat">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+          @if (isSubmitting()) { <span class="loader-sm"></span> }
+          Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+}

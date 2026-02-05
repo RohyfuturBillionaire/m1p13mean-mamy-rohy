@@ -1,0 +1,951 @@
+// ============================================
+// Admin Layout - Premium SaaS Dashboard
+// ============================================
+
+// Variables
+$sidebar-width: 280px;
+$sidebar-collapsed-width: 80px;
+$topbar-height: 70px;
+$admin-primary: #C9A962;
+$admin-primary-light: #E5D4A1;
+$admin-primary-dark: #9A7B3A;
+$admin-dark: #1a1a2e;
+$admin-darker: #12121f;
+$admin-light: #f8f9fc;
+$admin-border: rgba(255, 255, 255, 0.08);
+$transition-fast: 0.2s ease;
+$transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+// ============================================
+// Admin Layout Container
+// ============================================
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: $admin-light;
+}
+
+// ============================================
+// Sidebar
+// ============================================
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: $sidebar-width;
+  background: linear-gradient(180deg, $admin-dark 0%, $admin-darker 100%);
+  display: flex;
+  flex-direction: column;
+  transition: all $transition-normal;
+  z-index: 100;
+  overflow: hidden;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+
+  .sidebar-collapsed & {
+    width: $sidebar-collapsed-width;
+  }
+}
+
+// Sidebar Header
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border-bottom: 1px solid $admin-border;
+  min-height: 85px;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  overflow: hidden;
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.logo-icon {
+  min-width: 46px;
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(135deg, $admin-primary 0%, $admin-primary-dark 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: white;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba($admin-primary, 0.3);
+  flex-shrink: 0;
+  transition: transform $transition-fast;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.logo-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity $transition-fast, width $transition-normal;
+
+  .sidebar-collapsed & {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+}
+
+// Collapse Button
+.collapse-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex-shrink: 0;
+
+  .material-icons {
+    font-size: 1.25rem;
+    transition: transform $transition-fast;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.2);
+
+    .material-icons {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// Sidebar Header adjustments when collapsed
+.sidebar-collapsed {
+  .sidebar-header {
+    justify-content: center;
+    padding: 1.25rem 0.5rem;
+  }
+
+  .logo {
+    justify-content: center;
+  }
+
+  .collapse-btn.desktop-toggle {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: $admin-dark;
+    border: 2px solid $admin-border;
+    z-index: 10;
+
+    &:hover {
+      background: lighten($admin-dark, 10%);
+    }
+  }
+}
+
+// Sidebar Navigation
+.sidebar-nav {
+  flex: 1;
+  padding: 1.25rem 0.875rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+// Navigation Item
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  border-radius: 12px;
+  margin-bottom: 0.35rem;
+  transition: all $transition-fast;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+
+  .material-icons {
+    min-width: 24px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    transition: transform $transition-fast;
+  }
+
+  .nav-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 1;
+    transition: opacity $transition-fast;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+
+    .material-icons {
+      transform: scale(1.1);
+    }
+  }
+
+  &.active {
+    background: linear-gradient(135deg, $admin-primary 0%, $admin-primary-dark 100%);
+    color: white;
+    box-shadow: 0 4px 20px rgba($admin-primary, 0.35);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 60%;
+      background: white;
+      border-radius: 0 4px 4px 0;
+    }
+  }
+
+  // Collapsed state with tooltip
+  .sidebar-collapsed & {
+    justify-content: center;
+    padding: 0.875rem;
+
+    .nav-label {
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+      position: absolute;
+    }
+
+    &.active::before {
+      display: none;
+    }
+
+    // Tooltip
+    &::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: $admin-dark;
+      color: white;
+      padding: 0.5rem 0.875rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all $transition-fast;
+      pointer-events: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: calc(100% + 4px);
+      top: 50%;
+      transform: translateY(-50%);
+      border: 6px solid transparent;
+      border-right-color: $admin-dark;
+      opacity: 0;
+      visibility: hidden;
+      transition: all $transition-fast;
+    }
+
+    &:hover::after,
+    &:hover::before {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    &.active::before {
+      display: block;
+    }
+  }
+}
+
+// Sidebar Footer
+.sidebar-footer {
+  padding: 0.875rem;
+  border-top: 1px solid $admin-border;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  .material-icons {
+    font-size: 1.35rem;
+  }
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  .sidebar-collapsed & {
+    justify-content: center;
+    padding: 0.875rem;
+
+    .nav-label {
+      display: none;
+    }
+
+    // Tooltip
+    &::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: $admin-dark;
+      color: white;
+      padding: 0.5rem 0.875rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all $transition-fast;
+      pointer-events: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+    }
+
+    &:hover::after {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
+// ============================================
+// Mobile Sidebar
+// ============================================
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ============================================
+// Main Wrapper
+// ============================================
+.main-wrapper {
+  flex: 1;
+  margin-left: $sidebar-width;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left $transition-normal;
+
+  .sidebar-collapsed & {
+    margin-left: $sidebar-collapsed-width;
+  }
+}
+
+// ============================================
+// Topbar
+// ============================================
+.topbar {
+  position: sticky;
+  top: 0;
+  height: $topbar-height;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  border-bottom: 1px solid #eef0f3;
+  z-index: 90;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.menu-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  background: $admin-light;
+  border: none;
+  color: $admin-dark;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all $transition-fast;
+
+  .material-icons {
+    font-size: 1.5rem;
+  }
+
+  &:hover {
+    background: #eee;
+  }
+
+  @media (max-width: 1024px) {
+    display: flex;
+  }
+}
+
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: $admin-dark;
+  letter-spacing: -0.3px;
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// Search Box
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1.25rem;
+  background: $admin-light;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  min-width: 280px;
+  transition: all $transition-fast;
+
+  &:focus-within {
+    border-color: $admin-primary;
+    box-shadow: 0 0 0 3px rgba($admin-primary, 0.1);
+  }
+
+  .material-icons {
+    color: #999;
+    font-size: 1.25rem;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    outline: none;
+    color: $admin-dark;
+    font-family: inherit;
+
+    &::placeholder {
+      color: #aaa;
+    }
+  }
+
+  @media (max-width: 900px) {
+    min-width: 200px;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+// Icon Button
+.icon-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $admin-light;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all $transition-fast;
+
+  .material-icons {
+    font-size: 1.4rem;
+  }
+
+  &:hover,
+  &.active {
+    background: #eee;
+    color: $admin-dark;
+  }
+
+  .badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    animation: pulse 2s infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+// ============================================
+// Dropdowns
+// ============================================
+.notification-wrapper,
+.user-wrapper {
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: dropdownSlide 0.25s ease;
+  z-index: 1000;
+  border: 1px solid #eef0f3;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Notification Dropdown
+.notification-dropdown {
+  width: 400px;
+  max-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #eef0f3;
+  background: $admin-light;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $admin-dark;
+    font-family: inherit;
+  }
+
+  .unread-count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $admin-primary;
+    background: rgba($admin-primary, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+  }
+}
+
+.dropdown-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+.empty-notifications {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  color: #999;
+
+  .material-icons {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  p {
+    font-size: 0.9rem;
+  }
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1rem 1.5rem;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background $transition-fast;
+  border-bottom: 1px solid #f5f5f5;
+  font-family: inherit;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $admin-light;
+  }
+
+  &.unread {
+    background: rgba($admin-primary, 0.04);
+
+    .notif-title {
+      font-weight: 600;
+    }
+  }
+}
+
+.notif-icon {
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $admin-light;
+  border-radius: 12px;
+  font-size: 1.25rem;
+}
+
+.notif-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.notif-title {
+  font-size: 0.9rem;
+  color: $admin-dark;
+}
+
+.notif-message {
+  font-size: 0.8rem;
+  color: #666;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notif-time {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.dropdown-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #eef0f3;
+  text-align: center;
+  background: $admin-light;
+
+  a {
+    color: $admin-primary;
+    font-size: 0.85rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $admin-primary-dark;
+      text-decoration: underline;
+    }
+  }
+}
+
+// User Button & Dropdown
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  padding-right: 1rem;
+  background: $admin-light;
+  border: 1px solid #eef0f3;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all $transition-fast;
+  font-family: inherit;
+
+  &:hover,
+  &.active {
+    background: #eee;
+    border-color: #ddd;
+  }
+}
+
+.user-avatar {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, $admin-primary 0%, $admin-primary-dark 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+
+  .material-icons {
+    font-size: 1.25rem;
+  }
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: $admin-dark;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.arrow {
+  color: #999;
+  font-size: 1.25rem !important;
+  transition: transform $transition-fast;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.user-dropdown {
+  width: 220px;
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  color: #444;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: all $transition-fast;
+  font-family: inherit;
+
+  .material-icons {
+    color: #666;
+    font-size: 1.25rem;
+  }
+
+  &:hover {
+    background: $admin-light;
+    color: $admin-dark;
+  }
+
+  &.logout {
+    color: #ef4444;
+
+    .material-icons {
+      color: #ef4444;
+    }
+
+    &:hover {
+      background: rgba(#ef4444, 0.08);
+    }
+  }
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #eef0f3;
+  margin: 0.5rem 0;
+}
+
+// Dropdown Backdrop
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+// ============================================
+// Main Content
+// ============================================
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  background: $admin-light;
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+  }
+}
+
+// ============================================
+// Responsive - Mobile
+// ============================================
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: $sidebar-width;
+
+    .sidebar-mobile-open & {
+      transform: translateX(0);
+    }
+
+    .sidebar-collapsed & {
+      width: $sidebar-width;
+    }
+  }
+
+  .collapse-btn.desktop-toggle {
+    display: none;
+  }
+
+  .main-wrapper {
+    margin-left: 0;
+
+    .sidebar-collapsed & {
+      margin-left: 0;
+    }
+  }
+
+  // Disable tooltip on mobile
+  .nav-item::after,
+  .nav-item::before,
+  .logout-btn::after {
+    display: none !important;
+  }
+
+  // Show labels on mobile sidebar
+  .sidebar-collapsed .nav-item .nav-label,
+  .sidebar-collapsed .logout-btn .nav-label {
+    opacity: 1;
+    width: auto;
+    position: static;
+  }
+
+  .sidebar-collapsed .nav-item,
+  .sidebar-collapsed .logout-btn {
+    justify-content: flex-start;
+    padding: 0.875rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 1rem;
+  }
+
+  .notification-dropdown {
+    width: calc(100vw - 2rem);
+    right: -1rem;
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-dropdown {
+    right: -3.5rem;
+  }
+}

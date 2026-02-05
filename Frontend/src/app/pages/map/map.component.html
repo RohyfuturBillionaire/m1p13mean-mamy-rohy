@@ -1,0 +1,218 @@
+<!-- Page Header -->
+<section class="page-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="header-left">
+        <button class="menu-btn">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+      <div class="header-center">
+        <h1>Tana Center</h1>
+        <p>Votre centre commercial</p>
+      </div>
+      <div class="header-right">
+        <div class="status-badge open">
+          <span class="status-text">OUVERT</span>
+          <span class="status-time">Ferme à 21:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Map Section -->
+<section class="map-section">
+  <div class="container">
+    <!-- Floor Tabs -->
+    <div class="floor-tabs">
+      <button
+        class="floor-tab"
+        [class.active]="selectedEtage() === 1"
+        (click)="setEtage(1)"
+      >
+        1er étage
+      </button>
+      <button
+        class="floor-tab"
+        [class.active]="selectedEtage() === 2"
+        (click)="setEtage(2)"
+      >
+        2ème étage
+      </button>
+    </div>
+
+    <!-- Floor Title -->
+    <div class="floor-title">
+      <h2>{{ selectedEtage() === 1 ? '1er' : '2ème' }} étage</h2>
+      <div class="title-underline"></div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-container">
+      <!-- Floor Plan Grid -->
+      <div class="floor-plan">
+        <!-- Row 1 -->
+        <div class="plan-row">
+          @for (boutique of boutiquesEtage(); track boutique.id) {
+            @if (getMapPosition(boutique).row === 1) {
+              <button
+                class="shop-block"
+                [class.active]="selectedBoutique()?.id === boutique.id"
+                [class.hovered]="hoveredBoutique() === boutique.id"
+                [style.background]="getBoutiqueColor(boutique)"
+                [style.grid-column]="'span ' + getMapPosition(boutique).width"
+                [style.grid-row]="'span ' + getMapPosition(boutique).height"
+                (click)="selectBoutique(boutique)"
+                (mouseenter)="setHoveredBoutique(boutique.id)"
+                (mouseleave)="setHoveredBoutique(null)"
+              >
+                <span class="shop-name">{{ boutique.nom.toUpperCase() }}</span>
+              </button>
+            }
+          }
+        </div>
+
+        <!-- Central Zone -->
+        <div class="plan-center">
+          <div class="plan-row side-left">
+            @for (boutique of boutiquesEtage(); track boutique.id) {
+              @if (getMapPosition(boutique).row === 2 && getMapPosition(boutique).col <= 2) {
+                <button
+                  class="shop-block"
+                  [class.active]="selectedBoutique()?.id === boutique.id"
+                  [class.hovered]="hoveredBoutique() === boutique.id"
+                  [style.background]="getBoutiqueColor(boutique)"
+                  (click)="selectBoutique(boutique)"
+                  (mouseenter)="setHoveredBoutique(boutique.id)"
+                  (mouseleave)="setHoveredBoutique(null)"
+                >
+                  <span class="shop-name">{{ boutique.nom.toUpperCase() }}</span>
+                </button>
+              }
+            }
+          </div>
+
+          <!-- Allée centrale -->
+          <div class="central-aisle">
+            <div class="escalator-zone">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+              <span>Escalators</span>
+            </div>
+            <div class="aisle-arrow">
+              <span>&#8592;</span>
+              <span class="aisle-text">Food Court & Services</span>
+            </div>
+          </div>
+
+          <div class="plan-row side-right">
+            @for (boutique of boutiquesEtage(); track boutique.id) {
+              @if (getMapPosition(boutique).row === 2 && getMapPosition(boutique).col > 2) {
+                <button
+                  class="shop-block"
+                  [class.active]="selectedBoutique()?.id === boutique.id"
+                  [class.hovered]="hoveredBoutique() === boutique.id"
+                  [style.background]="getBoutiqueColor(boutique)"
+                  (click)="selectBoutique(boutique)"
+                  (mouseenter)="setHoveredBoutique(boutique.id)"
+                  (mouseleave)="setHoveredBoutique(null)"
+                >
+                  <span class="shop-name">{{ boutique.nom.toUpperCase() }}</span>
+                </button>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="plan-row bottom-row">
+          @for (boutique of boutiquesEtage(); track boutique.id) {
+            @if (getMapPosition(boutique).row === 3) {
+              <button
+                class="shop-block"
+                [class.active]="selectedBoutique()?.id === boutique.id"
+                [class.hovered]="hoveredBoutique() === boutique.id"
+                [style.background]="getBoutiqueColor(boutique)"
+                (click)="selectBoutique(boutique)"
+                (mouseenter)="setHoveredBoutique(boutique.id)"
+                (mouseleave)="setHoveredBoutique(null)"
+              >
+                <span class="shop-name">{{ boutique.nom.toUpperCase() }}</span>
+              </button>
+            }
+          }
+
+          <!-- WC et autres services -->
+          <div class="service-block wc">
+            <span>WC</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Legend -->
+      <div class="map-legend">
+        @for (item of legendItems; track item.label) {
+          <div class="legend-item">
+            <span class="legend-dot" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Selected Boutique Info -->
+    @if (selectedBoutique()) {
+      <div class="boutique-info-card">
+        <button class="close-btn" (click)="closeBoutiqueInfo()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="info-header">
+          <img [src]="selectedBoutique()!.image" [alt]="selectedBoutique()!.nom" class="info-image">
+          <div class="info-content">
+            <span class="info-type" [style.background]="getBoutiqueColor(selectedBoutique()!)">
+              {{ selectedBoutique()!.type === 'restaurant' ? 'Restaurant' : selectedBoutique()!.type === 'service' ? 'Service' : 'Boutique' }}
+            </span>
+            <h3>{{ selectedBoutique()!.nom }}</h3>
+            <p>{{ selectedBoutique()!.description }}</p>
+          </div>
+        </div>
+        <div class="info-details">
+          <div class="detail-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>{{ selectedBoutique()!.horaires.lundi }}</span>
+          </div>
+          <div class="detail-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>Étage {{ selectedBoutique()!.etage }}</span>
+          </div>
+          <div class="detail-item rating">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <span>{{ selectedBoutique()!.note }} ({{ selectedBoutique()!.avis }} avis)</span>
+          </div>
+        </div>
+        <a [routerLink]="['/boutique', selectedBoutique()!.id]" class="btn btn-primary">
+          Voir la boutique
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    }
+  </div>
+</section>

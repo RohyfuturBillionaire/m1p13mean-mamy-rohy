@@ -1,0 +1,579 @@
+import { Injectable, signal, computed } from '@angular/core';
+import { Observable, of, delay } from 'rxjs';
+import {
+  SellerUser,
+  SellerBoutique,
+  SellerProduit,
+  StockMovement,
+  SellerCommande,
+  SellerLivraison,
+  SellerPromotion,
+  SellerFAQ,
+  SellerConversation,
+  SellerMessage,
+  SellerNotification,
+  SellerKPI,
+  SellerChartData
+} from '../models/seller.model';
+import {
+  MOCK_SELLER_USER,
+  MOCK_SELLER_BOUTIQUE,
+  MOCK_SELLER_PRODUITS,
+  MOCK_STOCK_MOVEMENTS,
+  MOCK_SELLER_COMMANDES,
+  MOCK_SELLER_LIVRAISONS,
+  MOCK_SELLER_PROMOTIONS,
+  MOCK_SELLER_FAQ,
+  MOCK_SELLER_CONVERSATIONS,
+  MOCK_SELLER_MESSAGES,
+  MOCK_SELLER_NOTIFICATIONS,
+  MOCK_SELLER_KPIS,
+  MOCK_VENTES_MENSUELLES,
+  MOCK_BEST_SELLERS,
+  MOCK_COMMANDES_VS_LIVRAISONS,
+  MOCK_STOCK_STATUS
+} from '../data/seller-mock-data';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class SellerService {
+  // =============================================
+  // STATE
+  // =============================================
+  private isAuthenticated = signal(false);
+  private currentUser = signal<SellerUser | null>(null);
+  private boutique = signal<SellerBoutique | null>(null);
+  private produits = signal<SellerProduit[]>([]);
+  private stockMovements = signal<StockMovement[]>([]);
+  private commandes = signal<SellerCommande[]>([]);
+  private livraisons = signal<SellerLivraison[]>([]);
+  private promotions = signal<SellerPromotion[]>([]);
+  private faqs = signal<SellerFAQ[]>([]);
+  private conversations = signal<SellerConversation[]>([]);
+  private messages = signal<SellerMessage[]>([]);
+  private notifications = signal<SellerNotification[]>([]);
+
+  // =============================================
+  // COMPUTED
+  // =============================================
+  unreadNotificationsCount = computed(() =>
+    this.notifications().filter(n => !n.lu).length
+  );
+
+  unreadMessagesCount = computed(() =>
+    this.conversations().reduce((acc, conv) => acc + conv.nonLus, 0)
+  );
+
+  lowStockProducts = computed(() =>
+    this.produits().filter(p => p.stock <= p.stockAlerte && p.stock > 0)
+  );
+
+  outOfStockProducts = computed(() =>
+    this.produits().filter(p => p.stock === 0)
+  );
+
+  pendingOrders = computed(() =>
+    this.commandes().filter(c => c.statut === 'en_attente' || c.statut === 'payee')
+  );
+
+  constructor() {
+    this.loadInitialData();
+  }
+
+  private loadInitialData(): void {
+    this.produits.set([...MOCK_SELLER_PRODUITS]);
+    this.stockMovements.set([...MOCK_STOCK_MOVEMENTS]);
+    this.commandes.set([...MOCK_SELLER_COMMANDES]);
+    this.livraisons.set([...MOCK_SELLER_LIVRAISONS]);
+    this.promotions.set([...MOCK_SELLER_PROMOTIONS]);
+    this.faqs.set([...MOCK_SELLER_FAQ]);
+    this.conversations.set([...MOCK_SELLER_CONVERSATIONS]);
+    this.messages.set([...MOCK_SELLER_MESSAGES]);
+    this.notifications.set([...MOCK_SELLER_NOTIFICATIONS]);
+  }
+
+  // =============================================
+  // AUTHENTICATION
+  // =============================================
+  login(username: string, password: string): Observable<boolean> {
+    if (username === 'boutique' && password === 'boutique') {
+      this.isAuthenticated.set(true);
+      this.currentUser.set(MOCK_SELLER_USER);
+      this.boutique.set(MOCK_SELLER_BOUTIQUE);
+      return of(true).pipe(delay(500));
+    }
+    return of(false).pipe(delay(500));
+  }
+
+  logout(): void {
+    this.isAuthenticated.set(false);
+    this.currentUser.set(null);
+    this.boutique.set(null);
+  }
+
+  isLoggedIn(): boolean {
+    return this.isAuthenticated();
+  }
+
+  getCurrentUser(): SellerUser | null {
+    return this.currentUser();
+  }
+
+  // =============================================
+  // BOUTIQUE
+  // =============================================
+  getBoutique(): Observable<SellerBoutique | null> {
+    return of(this.boutique());
+  }
+
+  updateBoutique(updates: Partial<SellerBoutique>): Observable<SellerBoutique> {
+    const current = this.boutique();
+    if (current) {
+      const updated = { ...current, ...updates };
+      this.boutique.set(updated);
+      return of(updated);
+    }
+    return of(MOCK_SELLER_BOUTIQUE);
+  }
+
+  toggleBoutiqueStatus(): Observable<boolean> {
+    const current = this.boutique();
+    if (current) {
+      const updated = { ...current, estOuvert: !current.estOuvert };
+      this.boutique.set(updated);
+      return of(updated.estOuvert);
+    }
+    return of(false);
+  }
+
+  // =============================================
+  // PRODUCTS
+  // =============================================
+  getProduits(): Observable<SellerProduit[]> {
+    return of(this.produits());
+  }
+
+  getProduitById(id: string): Observable<SellerProduit | undefined> {
+    return of(this.produits().find(p => p.id === id));
+  }
+
+  addProduit(produit: Omit<SellerProduit, 'id' | 'dateCreation' | 'dateModification' | 'vendu'>): Observable<SellerProduit> {
+    const newProduit: SellerProduit = {
+      ...produit,
+      id: `p${Date.now()}`,
+      dateCreation: new Date(),
+      dateModification: new Date(),
+      vendu: 0
+    };
+    this.produits.update(produits => [...produits, newProduit]);
+    return of(newProduit);
+  }
+
+  updateProduit(id: string, updates: Partial<SellerProduit>): Observable<SellerProduit | undefined> {
+    const index = this.produits().findIndex(p => p.id === id);
+    if (index >= 0) {
+      const updated = { ...this.produits()[index], ...updates, dateModification: new Date() };
+      this.produits.update(produits => {
+        const newProduits = [...produits];
+        newProduits[index] = updated;
+        return newProduits;
+      });
+      return of(updated);
+    }
+    return of(undefined);
+  }
+
+  deleteProduit(id: string): Observable<boolean> {
+    this.produits.update(produits => produits.filter(p => p.id !== id));
+    return of(true);
+  }
+
+  toggleProduitStatus(id: string): Observable<SellerProduit | undefined> {
+    const produit = this.produits().find(p => p.id === id);
+    if (produit) {
+      const newStatut = produit.statut === 'actif' ? 'inactif' : 'actif';
+      return this.updateProduit(id, { statut: newStatut });
+    }
+    return of(undefined);
+  }
+
+  // =============================================
+  // STOCK
+  // =============================================
+  getStockMovements(): Observable<StockMovement[]> {
+    return of(this.stockMovements());
+  }
+
+  addStockMovement(movement: Omit<StockMovement, 'id' | 'date'>): Observable<StockMovement> {
+    const newMovement: StockMovement = {
+      ...movement,
+      id: `sm${Date.now()}`,
+      date: new Date()
+    };
+    this.stockMovements.update(movements => [newMovement, ...movements]);
+
+    // Update product stock
+    const produit = this.produits().find(p => p.id === movement.produitId);
+    if (produit) {
+      this.updateProduit(movement.produitId, {
+        stock: movement.stockApres,
+        statut: movement.stockApres === 0 ? 'rupture' : produit.statut === 'rupture' ? 'actif' : produit.statut
+      });
+    }
+
+    return of(newMovement);
+  }
+
+  getStockAlerts(): Observable<{ lowStock: SellerProduit[], outOfStock: SellerProduit[] }> {
+    return of({
+      lowStock: this.lowStockProducts(),
+      outOfStock: this.outOfStockProducts()
+    });
+  }
+
+  // =============================================
+  // ORDERS
+  // =============================================
+  getCommandes(): Observable<SellerCommande[]> {
+    return of(this.commandes());
+  }
+
+  getCommandeById(id: string): Observable<SellerCommande | undefined> {
+    return of(this.commandes().find(c => c.id === id));
+  }
+
+  updateCommandeStatut(id: string, statut: SellerCommande['statut']): Observable<SellerCommande | undefined> {
+    const index = this.commandes().findIndex(c => c.id === id);
+    if (index >= 0) {
+      const updated = { ...this.commandes()[index], statut };
+
+      // Add dates based on status
+      if (statut === 'expediee') {
+        updated.dateExpedition = new Date();
+      } else if (statut === 'livree') {
+        updated.dateLivraison = new Date();
+      }
+
+      this.commandes.update(commandes => {
+        const newCommandes = [...commandes];
+        newCommandes[index] = updated;
+        return newCommandes;
+      });
+      return of(updated);
+    }
+    return of(undefined);
+  }
+
+  // =============================================
+  // DELIVERIES
+  // =============================================
+  getLivraisons(): Observable<SellerLivraison[]> {
+    return of(this.livraisons());
+  }
+
+  getLivraisonByCommande(commandeId: string): Observable<SellerLivraison | undefined> {
+    return of(this.livraisons().find(l => l.commandeId === commandeId));
+  }
+
+  createLivraison(commandeId: string): Observable<SellerLivraison> {
+    const commande = this.commandes().find(c => c.id === commandeId);
+    const newLivraison: SellerLivraison = {
+      id: `liv${Date.now()}`,
+      commandeId,
+      numeroSuivi: `TC-LIV-${new Date().getFullYear()}-${String(this.livraisons().length + 1).padStart(4, '0')}`,
+      transporteur: 'Tana Express',
+      statut: 'en_preparation',
+      adresseLivraison: commande?.clientAdresse || '',
+      dateExpedition: new Date(),
+      dateEstimee: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // +2 days
+      historique: [
+        { date: new Date(), statut: 'Colis pris en charge', lieu: 'Tana Center' }
+      ]
+    };
+    this.livraisons.update(livraisons => [...livraisons, newLivraison]);
+    return of(newLivraison);
+  }
+
+  updateLivraisonStatut(id: string, statut: SellerLivraison['statut'], lieu: string): Observable<SellerLivraison | undefined> {
+    const index = this.livraisons().findIndex(l => l.id === id);
+    if (index >= 0) {
+      const livraison = this.livraisons()[index];
+      const updated: SellerLivraison = {
+        ...livraison,
+        statut,
+        historique: [
+          ...livraison.historique,
+          { date: new Date(), statut: this.getStatutLabel(statut), lieu }
+        ]
+      };
+      if (statut === 'livree') {
+        updated.dateLivraison = new Date();
+      }
+      this.livraisons.update(livraisons => {
+        const newLivraisons = [...livraisons];
+        newLivraisons[index] = updated;
+        return newLivraisons;
+      });
+      return of(updated);
+    }
+    return of(undefined);
+  }
+
+  private getStatutLabel(statut: string): string {
+    const labels: Record<string, string> = {
+      'en_preparation': 'En préparation',
+      'expediee': 'Expédié',
+      'en_transit': 'En transit',
+      'livree': 'Livré'
+    };
+    return labels[statut] || statut;
+  }
+
+  // =============================================
+  // PROMOTIONS
+  // =============================================
+  getPromotions(): Observable<SellerPromotion[]> {
+    return of(this.promotions());
+  }
+
+  getPromotionById(id: string): Observable<SellerPromotion | undefined> {
+    return of(this.promotions().find(p => p.id === id));
+  }
+
+  addPromotion(promo: Omit<SellerPromotion, 'id' | 'dateCreation'>): Observable<SellerPromotion> {
+    const newPromo: SellerPromotion = {
+      ...promo,
+      id: `promo${Date.now()}`,
+      dateCreation: new Date()
+    };
+    this.promotions.update(promotions => [...promotions, newPromo]);
+    return of(newPromo);
+  }
+
+  updatePromotion(id: string, updates: Partial<SellerPromotion>): Observable<SellerPromotion | undefined> {
+    const index = this.promotions().findIndex(p => p.id === id);
+    if (index >= 0) {
+      const updated = { ...this.promotions()[index], ...updates };
+      this.promotions.update(promotions => {
+        const newPromotions = [...promotions];
+        newPromotions[index] = updated;
+        return newPromotions;
+      });
+      return of(updated);
+    }
+    return of(undefined);
+  }
+
+  deletePromotion(id: string): Observable<boolean> {
+    this.promotions.update(promotions => promotions.filter(p => p.id !== id));
+    return of(true);
+  }
+
+  submitPromotion(id: string): Observable<SellerPromotion | undefined> {
+    return this.updatePromotion(id, {
+      statut: 'en_attente',
+      dateSoumission: new Date()
+    });
+  }
+
+  // =============================================
+  // FAQ
+  // =============================================
+  getFAQs(): Observable<SellerFAQ[]> {
+    return of(this.faqs().sort((a, b) => a.ordre - b.ordre));
+  }
+
+  addFAQ(faq: Omit<SellerFAQ, 'id' | 'dateCreation' | 'dateModification'>): Observable<SellerFAQ> {
+    const newFAQ: SellerFAQ = {
+      ...faq,
+      id: `faq${Date.now()}`,
+      dateCreation: new Date(),
+      dateModification: new Date()
+    };
+    this.faqs.update(faqs => [...faqs, newFAQ]);
+    return of(newFAQ);
+  }
+
+  updateFAQ(id: string, updates: Partial<SellerFAQ>): Observable<SellerFAQ | undefined> {
+    const index = this.faqs().findIndex(f => f.id === id);
+    if (index >= 0) {
+      const updated = { ...this.faqs()[index], ...updates, dateModification: new Date() };
+      this.faqs.update(faqs => {
+        const newFAQs = [...faqs];
+        newFAQs[index] = updated;
+        return newFAQs;
+      });
+      return of(updated);
+    }
+    return of(undefined);
+  }
+
+  deleteFAQ(id: string): Observable<boolean> {
+    this.faqs.update(faqs => faqs.filter(f => f.id !== id));
+    return of(true);
+  }
+
+  // =============================================
+  // MESSAGES
+  // =============================================
+  getConversations(): Observable<SellerConversation[]> {
+    return of(this.conversations().sort((a, b) =>
+      new Date(b.dateLastMessage).getTime() - new Date(a.dateLastMessage).getTime()
+    ));
+  }
+
+  getMessages(conversationId: string): Observable<SellerMessage[]> {
+    return of(this.messages()
+      .filter(m => m.conversationId === conversationId)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    );
+  }
+
+  sendMessage(conversationId: string, contenu: string): Observable<SellerMessage> {
+    const user = this.currentUser();
+    const newMessage: SellerMessage = {
+      id: `msg${Date.now()}`,
+      conversationId,
+      expediteurId: user?.id || 'seller-1',
+      expediteurNom: this.boutique()?.nom || 'Boutique',
+      expediteurRole: 'boutique',
+      contenu,
+      date: new Date(),
+      lu: true
+    };
+    this.messages.update(messages => [...messages, newMessage]);
+
+    // Update conversation
+    const convIndex = this.conversations().findIndex(c => c.id === conversationId);
+    if (convIndex >= 0) {
+      this.conversations.update(conversations => {
+        const newConversations = [...conversations];
+        newConversations[convIndex] = {
+          ...newConversations[convIndex],
+          dernierMessage: contenu,
+          dateLastMessage: new Date()
+        };
+        return newConversations;
+      });
+    }
+
+    return of(newMessage);
+  }
+
+  markConversationAsRead(conversationId: string): void {
+    // Mark messages as read
+    this.messages.update(messages =>
+      messages.map(m =>
+        m.conversationId === conversationId && !m.lu && m.expediteurRole !== 'boutique'
+          ? { ...m, lu: true }
+          : m
+      )
+    );
+
+    // Update conversation unread count
+    const convIndex = this.conversations().findIndex(c => c.id === conversationId);
+    if (convIndex >= 0) {
+      this.conversations.update(conversations => {
+        const newConversations = [...conversations];
+        newConversations[convIndex] = { ...newConversations[convIndex], nonLus: 0 };
+        return newConversations;
+      });
+    }
+  }
+
+  // =============================================
+  // NOTIFICATIONS
+  // =============================================
+  getNotifications(): Observable<SellerNotification[]> {
+    return of(this.notifications().sort((a, b) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    ));
+  }
+
+  markNotificationAsRead(id: string): Observable<boolean> {
+    this.notifications.update(notifications =>
+      notifications.map(n => n.id === id ? { ...n, lu: true } : n)
+    );
+    return of(true);
+  }
+
+  markAllNotificationsAsRead(): void {
+    this.notifications.update(notifications =>
+      notifications.map(n => ({ ...n, lu: true }))
+    );
+  }
+
+  getUnreadMessagesCount(): number {
+    return this.unreadMessagesCount();
+  }
+
+  getStockAlertsArray(): SellerProduit[] {
+    return [...this.lowStockProducts(), ...this.outOfStockProducts()];
+  }
+
+  // =============================================
+  // DASHBOARD DATA
+  // =============================================
+  getKPIs(): Observable<SellerKPI[]> {
+    return of(MOCK_SELLER_KPIS);
+  }
+
+  getVentesMensuelles(): Observable<SellerChartData> {
+    return of(MOCK_VENTES_MENSUELLES);
+  }
+
+  getBestSellers(): Observable<SellerChartData> {
+    return of(MOCK_BEST_SELLERS);
+  }
+
+  getCommandesVsLivraisons(): Observable<SellerChartData> {
+    return of(MOCK_COMMANDES_VS_LIVRAISONS);
+  }
+
+  getStockStatus(): Observable<SellerChartData> {
+    return of(MOCK_STOCK_STATUS);
+  }
+
+  // =============================================
+  // UTILITIES
+  // =============================================
+  formatPrix(prix: number): string {
+    return new Intl.NumberFormat('fr-MG', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(prix) + ' Ar';
+  }
+
+  formatDate(date: Date): string {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  formatDateTime(date: Date): string {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  getRelativeTime(date: Date): string {
+    const now = new Date();
+    const diff = now.getTime() - new Date(date).getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'À l\'instant';
+    if (minutes < 60) return `Il y a ${minutes}min`;
+    if (hours < 24) return `Il y a ${hours}h`;
+    if (days < 7) return `Il y a ${days}j`;
+    return this.formatDate(date);
+  }
+}

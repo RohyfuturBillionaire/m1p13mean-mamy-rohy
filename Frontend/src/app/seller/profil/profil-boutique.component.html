@@ -1,0 +1,132 @@
+<div class="profil-page">
+  <div class="page-header">
+    <div><h1>Ma Boutique</h1><p>Gérez les informations de votre boutique</p></div>
+    <div class="header-actions">
+      <button class="btn" [class.btn-outline]="!isEditing()" [class.btn-secondary]="isEditing()" (click)="toggleEdit()">
+        <span class="material-icons">{{ isEditing() ? 'close' : 'edit' }}</span>
+        {{ isEditing() ? 'Annuler' : 'Modifier' }}
+      </button>
+      @if (isEditing()) {
+        <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+          @if (isSaving()) { <span class="loader-sm"></span> }
+          <span class="material-icons">save</span> Enregistrer
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (boutique()) {
+    <div class="profil-content">
+      <!-- Header Card -->
+      <div class="header-card">
+        <div class="boutique-cover">
+          <img [src]="boutique()!.image || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200'" alt="Cover">
+        </div>
+        <div class="boutique-header">
+          <div class="boutique-logo">
+            @if (boutique()!.logo) {
+              <img [src]="boutique()!.logo" [alt]="boutique()!.nom">
+            } @else {
+              <span>{{ boutique()!.nom.charAt(0) }}</span>
+            }
+          </div>
+          <div class="boutique-info">
+            <h2>{{ boutique()!.nom }}</h2>
+            <span class="boutique-type">{{ getTypeLabel(boutique()!.type) }} • Étage {{ boutique()!.etage }}</span>
+          </div>
+          <div class="boutique-status">
+            <span class="status-indicator" [class.open]="boutique()!.estOuvert"></span>
+            <span>{{ boutique()!.estOuvert ? 'Ouvert' : 'Fermé' }}</span>
+            <button class="toggle-btn" (click)="toggleStatus()">
+              <span class="material-icons">{{ boutique()!.estOuvert ? 'toggle_on' : 'toggle_off' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Informations -->
+        <div class="card">
+          <div class="card-header"><h3>Informations</h3></div>
+          <div class="card-body">
+            @if (isEditing()) {
+              <div class="form-group">
+                <label>Nom de la boutique</label>
+                <input type="text" [value]="editData().nom" (input)="updateField('nom', $any($event.target).value)">
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea rows="3" [value]="editData().description" (input)="updateField('description', $any($event.target).value)"></textarea>
+              </div>
+            } @else {
+              <p class="description">{{ boutique()!.description }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="card">
+          <div class="card-header"><h3>Contact</h3></div>
+          <div class="card-body">
+            @if (isEditing()) {
+              <div class="form-group">
+                <label>Téléphone</label>
+                <input type="tel" [value]="editData().telephone" (input)="updateField('telephone', $any($event.target).value)">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" [value]="editData().email" (input)="updateField('email', $any($event.target).value)">
+              </div>
+            } @else {
+              <div class="info-item"><span class="material-icons">phone</span><span>{{ boutique()!.telephone }}</span></div>
+              <div class="info-item"><span class="material-icons">email</span><span>{{ boutique()!.email }}</span></div>
+              <div class="info-item"><span class="material-icons">location_on</span><span>Étage {{ boutique()!.etage }}, Local {{ boutique()!.numeroBoutique }}</span></div>
+            }
+          </div>
+        </div>
+
+        <!-- Horaires -->
+        <div class="card">
+          <div class="card-header"><h3>Horaires d'ouverture</h3></div>
+          <div class="card-body">
+            @if (isEditing()) {
+              <div class="horaires-grid">
+                <div class="form-group">
+                  <label>Lundi</label>
+                  <input type="text" [value]="editData().horaires?.lundi" (input)="updateHoraire('lundi', $any($event.target).value)" placeholder="09:00 - 19:00">
+                </div>
+                <div class="form-group">
+                  <label>Samedi</label>
+                  <input type="text" [value]="editData().horaires?.samedi" (input)="updateHoraire('samedi', $any($event.target).value)" placeholder="09:00 - 18:00">
+                </div>
+                <div class="form-group">
+                  <label>Dimanche</label>
+                  <input type="text" [value]="editData().horaires?.dimanche" (input)="updateHoraire('dimanche', $any($event.target).value)" placeholder="Fermé">
+                </div>
+              </div>
+            } @else {
+              <div class="horaires-list">
+                <div class="horaire-item"><span>Lundi</span><span>{{ boutique()!.horaires.lundi }}</span></div>
+                <div class="horaire-item"><span>Samedi</span><span>{{ boutique()!.horaires.samedi }}</span></div>
+                <div class="horaire-item"><span>Dimanche</span><span>{{ boutique()!.horaires.dimanche }}</span></div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card">
+          <div class="card-header"><h3>Statistiques</h3></div>
+          <div class="card-body">
+            <div class="stats-grid">
+              <div class="stat"><span class="stat-value">{{ boutique()!.superficie }}</span><span class="stat-label">m² de surface</span></div>
+              <div class="stat"><span class="stat-value">{{ boutique()!.tags.length }}</span><span class="stat-label">Tags</span></div>
+              <div class="stat"><span class="stat-value">{{ boutique()!.note }}/5</span><span class="stat-label">Note moyenne</span></div>
+              <div class="stat"><span class="stat-value">{{ boutique()!.avis }}</span><span class="stat-label">Avis clients</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,268 @@
+<div class="loyers-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>Loyers & Factures</h1>
+      <p>Suivi des paiements et génération de factures</p>
+    </div>
+    <button class="btn btn-primary">
+      <span>🧾</span>
+      Nouvelle Facture
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card success">
+      <span class="stat-icon">✅</span>
+      <div class="stat-content">
+        <span class="stat-value">{{ formatMontant(getStats().totalPaye) }} Ar</span>
+        <span class="stat-label">Total encaissé</span>
+      </div>
+    </div>
+    <div class="stat-card warning">
+      <span class="stat-icon">⏳</span>
+      <div class="stat-content">
+        <span class="stat-value">{{ formatMontant(getStats().totalEnAttente) }} Ar</span>
+        <span class="stat-label">En attente</span>
+      </div>
+    </div>
+    <div class="stat-card danger">
+      <span class="stat-icon">⚠️</span>
+      <div class="stat-content">
+        <span class="stat-value">{{ formatMontant(getStats().totalEnRetard) }} Ar</span>
+        <span class="stat-label">En retard ({{ getStats().nbEnRetard }})</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-container">
+    <div class="tabs">
+      <button
+        class="tab"
+        [class.active]="activeTab() === 'paiements'"
+        (click)="activeTab.set('paiements')"
+      >
+        💰 Paiements
+      </button>
+      <button
+        class="tab"
+        [class.active]="activeTab() === 'factures'"
+        (click)="activeTab.set('factures')"
+      >
+        🧾 Factures
+      </button>
+    </div>
+
+    <div class="filter-tabs">
+      <button
+        class="filter-tab"
+        [class.active]="filterStatus() === 'all'"
+        (click)="filterStatus.set('all')"
+      >
+        Tous
+      </button>
+      @if (activeTab() === 'paiements') {
+        <button
+          class="filter-tab"
+          [class.active]="filterStatus() === 'paye'"
+          (click)="filterStatus.set('paye')"
+        >
+          ✅ Payés
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="filterStatus() === 'en_attente'"
+          (click)="filterStatus.set('en_attente')"
+        >
+          ⏳ En attente
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="filterStatus() === 'en_retard'"
+          (click)="filterStatus.set('en_retard')"
+        >
+          ⚠️ En retard
+        </button>
+      } @else {
+        <button
+          class="filter-tab"
+          [class.active]="filterStatus() === 'payee'"
+          (click)="filterStatus.set('payee')"
+        >
+          ✅ Payées
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="filterStatus() === 'en_attente'"
+          (click)="filterStatus.set('en_attente')"
+        >
+          ⏳ En attente
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="filterStatus() === 'en_retard'"
+          (click)="filterStatus.set('en_retard')"
+        >
+          ⚠️ En retard
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Paiements Table -->
+  @if (activeTab() === 'paiements') {
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Boutique</th>
+            <th>Mois</th>
+            <th>Montant</th>
+            <th>Échéance</th>
+            <th>Date paiement</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (paiement of getFilteredPaiements(); track paiement.id) {
+            <tr [class]="paiement.statut === 'en_retard' ? 'row-danger' : ''">
+              <td>
+                <span class="boutique-name">{{ paiement.boutiqueNom }}</span>
+              </td>
+              <td>{{ paiement.mois }} {{ paiement.annee }}</td>
+              <td>
+                <span class="amount">{{ formatMontant(paiement.montant) }} Ar</span>
+              </td>
+              <td>{{ formatDate(paiement.dateEcheance) }}</td>
+              <td>
+                @if (paiement.statut === 'paye') {
+                  {{ formatDate(paiement.datePaiement) }}
+                } @else {
+                  -
+                }
+              </td>
+              <td>
+                <span class="status-badge" [class]="getStatusClass(paiement.statut)">
+                  {{ getStatusIcon(paiement.statut) }} {{ getStatusLabel(paiement.statut) }}
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  @if (paiement.statut !== 'paye') {
+                    <button
+                      class="action-btn success"
+                      title="Marquer comme payé"
+                      (click)="markAsPaid(paiement)"
+                    >
+                      ✅
+                    </button>
+                    <button class="action-btn" title="Envoyer rappel">
+                      ✉️
+                    </button>
+                  }
+                  <button class="action-btn" title="Voir">
+                    👁️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (getFilteredPaiements().length === 0) {
+        <div class="empty-state">
+          <span>💰</span>
+          <p>Aucun paiement trouvé</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Factures Table -->
+  @if (activeTab() === 'factures') {
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>N° Facture</th>
+            <th>Boutique</th>
+            <th>Client</th>
+            <th>Montant HT</th>
+            <th>TVA</th>
+            <th>Total TTC</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (facture of getFilteredFactures(); track facture.id) {
+            <tr>
+              <td>
+                <span class="facture-num">{{ facture.numero }}</span>
+              </td>
+              <td>{{ facture.boutiqueNom }}</td>
+              <td>{{ facture.clientNom }}</td>
+              <td>{{ formatMontant(facture.montant) }} Ar</td>
+              <td>{{ formatMontant(facture.tva) }} Ar</td>
+              <td>
+                <span class="amount">{{ formatMontant(facture.total) }} Ar</span>
+              </td>
+              <td>
+                <span class="status-badge" [class]="getStatusClass(facture.statut)">
+                  {{ getStatusIcon(facture.statut) }} {{ getStatusLabel(facture.statut) }}
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  <button
+                    class="action-btn"
+                    title="Voir la facture"
+                    (click)="viewFacture(facture)"
+                  >
+                    📄
+                  </button>
+                  <button class="action-btn" title="Télécharger">
+                    ⬇️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (getFilteredFactures().length === 0) {
+        <div class="empty-state">
+          <span>🧾</span>
+          <p>Aucune facture trouvée</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Facture Modal -->
+@if (showFactureModal() && selectedFacture()) {
+  <div class="modal-overlay" (click)="closeFactureModal()">
+    <div class="modal modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Facture {{ selectedFacture()!.numero }}</h2>
+        <div class="header-actions">
+          <button class="btn btn-outline" (click)="downloadFacture()">
+            ⬇️ Télécharger
+          </button>
+          <button class="close-btn" (click)="closeFactureModal()">✕</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="facture-preview">
+          <pre>{{ generateFactureText(selectedFacture()!) }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+}

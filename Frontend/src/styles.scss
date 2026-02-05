@@ -1,0 +1,496 @@
+// ============================================
+// TANA CENTER - Styles Globaux Premium
+// ============================================
+
+// Variables de couleurs luxueuses
+:root {
+  // Couleurs principales
+  --primary-gold: #C9A962;
+  --primary-gold-light: #E5D4A1;
+  --primary-gold-dark: #9A7B3A;
+
+  // Couleurs neutres élégantes
+  --black: #0A0A0A;
+  --dark-gray: #1A1A1A;
+  --medium-gray: #2D2D2D;
+  --light-gray: #F5F5F5;
+  --white: #FFFFFF;
+  --off-white: #FAFAFA;
+
+  // Couleurs d'accent
+  --accent-burgundy: #722F37;
+  --accent-navy: #1B365D;
+  --accent-emerald: #2E5A4C;
+
+  // Couleurs de statut
+  --success: #4CAF50;
+  --error: #E53935;
+  --warning: #FFC107;
+
+  // Ombres
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.16);
+  --shadow-gold: 0 4px 20px rgba(201, 169, 98, 0.25);
+
+  // Transitions
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  // Border radius
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  // Espacements
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  --spacing-xxl: 5rem;
+}
+
+// ============================================
+// Reset & Base
+// ============================================
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--off-white);
+  color: var(--dark-gray);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ============================================
+// Typography
+// ============================================
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--black);
+}
+
+h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+h2 { font-size: clamp(2rem, 4vw, 3rem); }
+h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
+h4 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--medium-gray);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color var(--transition-fast);
+}
+
+// ============================================
+// Utility Classes
+// ============================================
+
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.section {
+  padding: var(--spacing-xxl) 0;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+
+  h2 {
+    position: relative;
+    display: inline-block;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary-gold), var(--primary-gold-light));
+      border-radius: 2px;
+    }
+  }
+
+  p {
+    margin-top: var(--spacing-md);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+// ============================================
+// Buttons
+// ============================================
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+
+  &-primary {
+    background: linear-gradient(135deg, var(--primary-gold), var(--primary-gold-dark));
+    color: var(--white);
+    box-shadow: var(--shadow-gold);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(201, 169, 98, 0.4);
+    }
+  }
+
+  &-secondary {
+    background: transparent;
+    color: var(--primary-gold);
+    border: 2px solid var(--primary-gold);
+
+    &:hover {
+      background: var(--primary-gold);
+      color: var(--white);
+    }
+  }
+
+  &-dark {
+    background: var(--black);
+    color: var(--white);
+
+    &:hover {
+      background: var(--dark-gray);
+    }
+  }
+
+  &-white {
+    background: var(--white);
+    color: var(--black);
+
+    &:hover {
+      background: var(--light-gray);
+    }
+  }
+}
+
+// ============================================
+// Cards
+// ============================================
+
+.card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+
+  &:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-5px);
+  }
+
+  &-image {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16/10;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform var(--transition-slow);
+    }
+
+    &:hover img {
+      transform: scale(1.05);
+    }
+  }
+
+  &-content {
+    padding: var(--spacing-md);
+  }
+
+  &-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &-description {
+    font-size: 0.9rem;
+    color: var(--medium-gray);
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+// ============================================
+// Form Elements
+// ============================================
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--dark-gray);
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  color: var(--black);
+  background: var(--white);
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-gold);
+    box-shadow: 0 0 0 4px rgba(201, 169, 98, 0.1);
+  }
+
+  &::placeholder {
+    color: #999;
+  }
+}
+
+// ============================================
+// Badges & Tags
+// ============================================
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: var(--radius-sm);
+
+  &-gold {
+    background: linear-gradient(135deg, var(--primary-gold), var(--primary-gold-light));
+    color: var(--white);
+  }
+
+  &-dark {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  &-promo {
+    background: var(--error);
+    color: var(--white);
+  }
+}
+
+// ============================================
+// Animations
+// ============================================
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.6s ease forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.6s ease forwards;
+}
+
+// ============================================
+// Responsive Grid
+// ============================================
+
+.grid {
+  display: grid;
+  gap: var(--spacing-md);
+
+  &-2 { grid-template-columns: repeat(2, 1fr); }
+  &-3 { grid-template-columns: repeat(3, 1fr); }
+  &-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(3, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+
+// ============================================
+// Scrollbar
+// ============================================
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--light-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-gold);
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--primary-gold-dark);
+  }
+}
+
+// ============================================
+// Selection
+// ============================================
+
+::selection {
+  background: var(--primary-gold);
+  color: var(--white);
+}
+
+// ============================================
+// Loader
+// ============================================
+
+.loader {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--light-gray);
+  border-top-color: var(--primary-gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ============================================
+// Overlay
+// ============================================
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+
+  &.active {
+    opacity: 1;
+    visibility: visible;
+  }
+}

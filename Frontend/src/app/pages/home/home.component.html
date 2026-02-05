@@ -1,0 +1,286 @@
+<!-- Hero Slider -->
+<section class="hero-slider">
+  <div class="slider-wrapper">
+    @for (slide of sliderImages(); track slide.id; let i = $index) {
+      <div class="slide" [class.active]="i === currentSlide()">
+        <div class="slide-image" [style.backgroundImage]="'url(' + slide.image + ')'"></div>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <h1 class="animate-fade-in-up">{{ slide.titre }}</h1>
+          <p class="animate-fade-in-up">{{ slide.sousTitre }}</p>
+          <a routerLink="/boutiques" class="btn btn-primary animate-fade-in-up">{{ slide.bouton }}</a>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Slider Controls -->
+  <button class="slider-btn prev" (click)="prevSlide()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m15 18-6-6 6-6"/>
+    </svg>
+  </button>
+  <button class="slider-btn next" (click)="nextSlide()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m9 18 6-6-6-6"/>
+    </svg>
+  </button>
+
+  <!-- Slider Dots -->
+  <div class="slider-dots">
+    @for (slide of sliderImages(); track slide.id; let i = $index) {
+      <button class="dot" [class.active]="i === currentSlide()" (click)="goToSlide(i)"></button>
+    }
+  </div>
+
+  <!-- Scroll Indicator -->
+  <div class="scroll-indicator">
+    <span>Découvrir</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14M19 12l-7 7-7-7"/>
+    </svg>
+  </div>
+</section>
+
+<!-- Welcome Section -->
+<section class="section welcome-section">
+  <div class="container">
+    <div class="welcome-content">
+      <div class="welcome-text">
+        <span class="section-label">Bienvenue</span>
+        <h2>L'excellence du shopping à Antananarivo</h2>
+        <p>
+          Tana Center redéfinit l'expérience shopping à Madagascar. Sur deux étages d'élégance,
+          découvrez plus de 50 boutiques de prestige, des restaurants gastronomiques et des services
+          exclusifs dans un cadre architectural exceptionnel.
+        </p>
+        <div class="welcome-stats">
+          <div class="stat">
+            <span class="stat-number">50+</span>
+            <span class="stat-label">Boutiques</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">15</span>
+            <span class="stat-label">Restaurants</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">2</span>
+            <span class="stat-label">Étages</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">500</span>
+            <span class="stat-label">Places parking</span>
+          </div>
+        </div>
+        <a routerLink="/map" class="btn btn-secondary">Découvrir le plan</a>
+      </div>
+      <div class="welcome-images">
+        <div class="image-grid">
+          <img src="https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=600" alt="Tana Center intérieur" class="img-main">
+          <img src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400" alt="Shopping luxe" class="img-secondary">
+          <img src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400" alt="Mode premium" class="img-tertiary">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Categories Section -->
+<section class="section categories-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>Explorez nos univers</h2>
+      <p>Trouvez votre bonheur parmi nos différentes catégories de boutiques</p>
+    </div>
+    <div class="categories-grid">
+      @for (cat of categories(); track cat.id) {
+        <a [routerLink]="['/boutiques']" [queryParams]="{categorie: cat.id}" class="category-card">
+          <div class="category-icon">
+            <span class="material-icon">{{ cat.icone }}</span>
+          </div>
+          <h4>{{ cat.nom }}</h4>
+          <p>{{ cat.description }}</p>
+        </a>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Featured Boutiques -->
+<section class="section featured-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">
+        <h2>Boutiques en vedette</h2>
+        <p>Découvrez notre sélection des meilleures enseignes</p>
+      </div>
+      <a routerLink="/boutiques" class="btn btn-secondary">Voir toutes les boutiques</a>
+    </div>
+    <div class="boutiques-grid">
+      @for (boutique of boutiquesVedettes(); track boutique.id) {
+        <article class="boutique-card">
+          <div class="boutique-image">
+            <img [src]="boutique.image" [alt]="boutique.nom" loading="lazy">
+            @if (boutique.nouveau) {
+              <span class="badge badge-gold">Nouveau</span>
+            }
+            <div class="boutique-rating">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>{{ boutique.note }}</span>
+            </div>
+          </div>
+          <div class="boutique-content">
+            <div class="boutique-meta">
+              <span class="boutique-type">{{ boutique.type === 'restaurant' ? 'Restaurant' : 'Boutique' }}</span>
+              <span class="boutique-floor">Étage {{ boutique.etage }}</span>
+            </div>
+            <h3>{{ boutique.nom }}</h3>
+            <p>{{ boutique.description }}</p>
+            <div class="boutique-tags">
+              @for (tag of boutique.tags.slice(0, 3); track tag) {
+                <span class="tag">{{ tag }}</span>
+              }
+            </div>
+            <a [routerLink]="['/boutique', boutique.id]" class="btn btn-dark">Explorer</a>
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Promotions Section -->
+@if (promotions().length > 0) {
+  <section class="section promotions-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-title">
+          <h2>Offres du moment</h2>
+          <p>Profitez de nos promotions exclusives</p>
+        </div>
+        <a routerLink="/promotions" class="btn btn-white">Toutes les promotions</a>
+      </div>
+      <div class="promotions-grid">
+        @for (promo of promotions(); track promo.id) {
+          <article class="promo-card">
+            <div class="promo-image">
+              <img [src]="promo.image" [alt]="promo.titre" loading="lazy">
+              <span class="promo-badge">{{ getReductionText(promo) }}</span>
+            </div>
+            <div class="promo-content">
+              <div class="promo-boutique">
+                <img [src]="promo.boutiqueLogo" [alt]="promo.boutiqueNom" class="promo-logo">
+                <span>{{ promo.boutiqueNom }}</span>
+              </div>
+              <h4>{{ promo.titre }}</h4>
+              <p>{{ promo.description }}</p>
+              @if (promo.code) {
+                <div class="promo-code">
+                  Code : <strong>{{ promo.code }}</strong>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+  </section>
+}
+
+<!-- New Arrivals -->
+@if (nouveautes().length > 0) {
+  <section class="section nouveautes-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Nouvelles ouvertures</h2>
+        <p>Découvrez les dernières enseignes à avoir rejoint Tana Center</p>
+      </div>
+      <div class="nouveautes-grid">
+        @for (boutique of nouveautes(); track boutique.id) {
+          <a [routerLink]="['/boutique', boutique.id]" class="nouveaute-card">
+            <div class="nouveaute-image">
+              <img [src]="boutique.image" [alt]="boutique.nom" loading="lazy">
+            </div>
+            <div class="nouveaute-content">
+              <span class="nouveaute-badge">Nouveau</span>
+              <h4>{{ boutique.nom }}</h4>
+              <p>{{ boutique.description }}</p>
+            </div>
+          </a>
+        }
+      </div>
+    </div>
+  </section>
+}
+
+<!-- Services Section -->
+<section class="section services-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>Nos services premium</h2>
+      <p>Une expérience shopping sur mesure</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+        </div>
+        <h4>Parking gratuit</h4>
+        <p>500 places de parking souterrain sécurisé gratuites pour nos visiteurs</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+          </svg>
+        </div>
+        <h4>WiFi gratuit</h4>
+        <p>Connexion haut débit gratuite dans tout le centre commercial</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h4>Conciergerie</h4>
+        <p>Service de conciergerie disponible pour vous accompagner</p>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+        <h4>Espace enfants</h4>
+        <p>Aire de jeux surveillée pour que vos enfants s'amusent en toute sécurité</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-content">
+      <h2>Rejoignez notre programme de fidélité</h2>
+      <p>Bénéficiez d'avantages exclusifs, d'offres personnalisées et d'invitations VIP</p>
+      <div class="cta-buttons">
+        <a routerLink="/inscription" class="btn btn-primary">S'inscrire gratuitement</a>
+        <a href="#" class="btn btn-white">En savoir plus</a>
+      </div>
+    </div>
+  </div>
+</section>

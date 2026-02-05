@@ -1,0 +1,271 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <div>
+      <h1>Tableau de Bord</h1>
+      <p>Bienvenue dans votre espace vendeur</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline">
+        <span class="material-icons">calendar_today</span>
+        Février 2024
+      </button>
+      <button class="btn btn-primary">
+        <span class="material-icons">download</span>
+        Exporter
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    @for (kpi of kpis(); track kpi.label) {
+      <div class="kpi-card" [style.--accent-color]="kpi.couleur">
+        <div class="kpi-icon">
+          <span class="material-icons">{{ getKPIIcon(kpi.icon) }}</span>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">{{ kpi.label }}</span>
+          <span class="kpi-value">{{ kpi.valeur }}{{ kpi.unite }}</span>
+          @if (kpi.evolution) {
+            <span class="kpi-change" [class.positive]="kpi.evolution > 0" [class.negative]="kpi.evolution < 0">
+              <span class="material-icons">{{ kpi.evolution > 0 ? 'trending_up' : 'trending_down' }}</span>
+              {{ kpi.evolution > 0 ? '+' : '' }}{{ kpi.evolution }}%
+            </span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row">
+    <!-- Ventes Mensuelles -->
+    <div class="chart-card large">
+      <div class="card-header">
+        <h3>Ventes Mensuelles</h3>
+        <span class="period">2024</span>
+      </div>
+      <div class="chart-container">
+        <div class="bar-chart">
+          @for (value of getChartData(ventesMensuelles()); track $index; let i = $index) {
+            <div class="bar-item">
+              <div class="bar-wrapper">
+                <div
+                  class="bar"
+                  [style.height.%]="(value / getMaxVentes()) * 100"
+                  [style.background]="chartColors[i % chartColors.length]"
+                >
+                  <span class="bar-tooltip">{{ formatMontant(value) }} Ar</span>
+                </div>
+              </div>
+              <span class="bar-label">{{ ventesMensuelles().labels[i] }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Best Sellers -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h3>Produits Populaires</h3>
+        <a routerLink="/seller/produits" class="link">Voir tout</a>
+      </div>
+      <div class="chart-container">
+        <div class="horizontal-bars">
+          @for (value of getChartData(bestSellers()); track $index; let i = $index) {
+            <div class="h-bar-item">
+              <div class="h-bar-label">{{ bestSellers().labels[i] }}</div>
+              <div class="h-bar-wrapper">
+                <div
+                  class="h-bar"
+                  [style.width.%]="(value / getMaxBestSeller()) * 100"
+                  [style.background]="chartColors[i % chartColors.length]"
+                ></div>
+                <span class="h-bar-value">{{ value }} vendus</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Second Row -->
+  <div class="info-row">
+    <!-- Stock Status -->
+    <div class="info-card">
+      <div class="card-header">
+        <h3>État des Stocks</h3>
+        <a routerLink="/seller/stocks" class="link">Gérer</a>
+      </div>
+      <div class="donut-chart-container">
+        <div class="donut-chart">
+          <svg viewBox="0 0 36 36" class="circular-chart">
+            @for (value of getChartData(stockStatus()); track $index; let i = $index) {
+              <circle
+                class="donut-segment"
+                [attr.stroke]="stockColors[i]"
+                [attr.stroke-dasharray]="getStockPercentage(value) + ' ' + (100 - getStockPercentage(value))"
+                [attr.stroke-dashoffset]="getDonutOffset(i)"
+                cx="18" cy="18" r="15.915"
+              />
+            }
+          </svg>
+          <div class="donut-center">
+            <span class="donut-value">{{ getTotalStock() }}</span>
+            <span class="donut-label">Produits</span>
+          </div>
+        </div>
+        <div class="donut-legend">
+          @for (label of stockStatus().labels; track $index; let i = $index) {
+            <div class="legend-item">
+              <span class="legend-dot" [style.background]="stockColors[i]"></span>
+              <span class="legend-label">{{ label }}</span>
+              <span class="legend-value">{{ getChartData(stockStatus())[i] }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Commandes en attente -->
+    <div class="info-card">
+      <div class="card-header">
+        <h3>Commandes à Traiter</h3>
+        <a routerLink="/seller/commandes" class="link">Voir tout</a>
+      </div>
+      <div class="orders-list">
+        @if (pendingOrders().length === 0) {
+          <div class="empty-state">
+            <span class="material-icons">check_circle</span>
+            <p>Aucune commande en attente</p>
+          </div>
+        } @else {
+          @for (order of pendingOrders(); track order.id) {
+            <div class="order-item">
+              <div class="order-info">
+                <span class="order-number">{{ order.numeroCommande }}</span>
+                <span class="order-client">{{ order.clientNom }}</span>
+              </div>
+              <div class="order-details">
+                <span class="order-amount">{{ formatPrix(order.total) }}</span>
+                <span class="order-status" [class]="getOrderStatusClass(order.statut)">
+                  {{ getOrderStatusLabel(order.statut) }}
+                </span>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Alertes Stock -->
+    <div class="info-card alerts-card">
+      <div class="card-header">
+        <h3>Alertes Stock</h3>
+        @if (stockAlerts().lowStock.length + stockAlerts().outOfStock.length > 0) {
+          <span class="badge warning">{{ stockAlerts().lowStock.length + stockAlerts().outOfStock.length }}</span>
+        }
+      </div>
+
+      @if (stockAlerts().outOfStock.length > 0) {
+        <div class="alert-section">
+          <h4>
+            <span class="material-icons">error</span>
+            Rupture de Stock
+          </h4>
+          @for (product of stockAlerts().outOfStock; track product.id) {
+            <div class="alert-item danger">
+              <div class="alert-content">
+                <span class="alert-title">{{ product.nom }}</span>
+                <span class="alert-desc">Stock: 0 unités</span>
+              </div>
+              <a routerLink="/seller/stocks" class="alert-action">Réapprovisionner</a>
+            </div>
+          }
+        </div>
+      }
+
+      @if (stockAlerts().lowStock.length > 0) {
+        <div class="alert-section">
+          <h4>
+            <span class="material-icons">warning</span>
+            Stock Faible
+          </h4>
+          @for (product of stockAlerts().lowStock; track product.id) {
+            <div class="alert-item warning">
+              <div class="alert-content">
+                <span class="alert-title">{{ product.nom }}</span>
+                <span class="alert-desc">Stock: {{ product.stock }} / Alerte: {{ product.stockAlerte }}</span>
+              </div>
+              <a routerLink="/seller/stocks" class="alert-action">Gérer</a>
+            </div>
+          }
+        </div>
+      }
+
+      @if (stockAlerts().lowStock.length === 0 && stockAlerts().outOfStock.length === 0) {
+        <div class="no-alerts">
+          <span class="material-icons">check_circle</span>
+          <p>Tous les stocks sont normaux</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Notifications & Quick Actions -->
+  <div class="bottom-row">
+    <!-- Notifications -->
+    <div class="info-card">
+      <div class="card-header">
+        <h3>Notifications Récentes</h3>
+        <span class="badge">{{ recentNotifications().length }}</span>
+      </div>
+      <div class="notifications-list">
+        @if (recentNotifications().length === 0) {
+          <div class="empty-state">
+            <span class="material-icons">notifications_none</span>
+            <p>Aucune notification</p>
+          </div>
+        } @else {
+          @for (notif of recentNotifications(); track notif.id) {
+            <div class="notif-item" [class.unread]="!notif.lu">
+              <span class="notif-icon material-icons" [style.color]="getNotificationColor(notif.type)">
+                {{ getNotificationIcon(notif.type) }}
+              </span>
+              <div class="notif-content">
+                <span class="notif-title">{{ notif.titre }}</span>
+                <span class="notif-message">{{ notif.message }}</span>
+              </div>
+              <span class="notif-time">{{ formatDate(notif.date) }}</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-card">
+      <h3>Actions Rapides</h3>
+      <div class="actions-grid">
+        <a routerLink="/seller/produits" class="action-card">
+          <span class="material-icons">add_box</span>
+          <span class="action-label">Nouveau Produit</span>
+        </a>
+        <a routerLink="/seller/stocks" class="action-card">
+          <span class="material-icons">inventory</span>
+          <span class="action-label">Gérer Stock</span>
+        </a>
+        <a routerLink="/seller/promotions" class="action-card">
+          <span class="material-icons">local_offer</span>
+          <span class="action-label">Créer Promo</span>
+        </a>
+        <a routerLink="/seller/messages" class="action-card">
+          <span class="material-icons">chat</span>
+          <span class="action-label">Messages</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

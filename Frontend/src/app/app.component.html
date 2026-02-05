@@ -1,0 +1,16 @@
+@if (showNavbarFooter) {
+  <app-navbar></app-navbar>
+}
+
+<main [class.admin-main]="!showNavbarFooter">
+  <router-outlet></router-outlet>
+</main>
+
+@if (showNavbarFooter) {
+  <app-footer></app-footer>
+}
+
+<!-- Cart Drawer (visible on all public pages) -->
+@if (showNavbarFooter) {
+  <app-cart-drawer></app-cart-drawer>
+}
