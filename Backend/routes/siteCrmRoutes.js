@@ -6,6 +6,7 @@ router.post('/', async (req, res) => {
  try {
  const siteCrm = new SiteCrm(req.body);
  await siteCrm.save();
+ console.log(siteCrm);
  res.status(201).json(siteCrm);
  } catch (error) {
  res.status(400).json({ message: error.message });
@@ -15,6 +16,14 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
  try {
  const siteCrm = await SiteCrm.find();
+ res.json(siteCrm);
+ } catch (error) {
+ res.status(500).json({ message: error.message });
+ }
+});
+router.get('/last', async (req, res) => {
+ try {
+ const siteCrm = await SiteCrm.find().sort({ createdAt: -1 }).limit(1);
  res.json(siteCrm);
  } catch (error) {
  res.status(500).json({ message: error.message });
