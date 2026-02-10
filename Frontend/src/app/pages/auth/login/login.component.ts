@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { SellerService } from '../../../core/services/seller.service';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +23,7 @@ export class LoginComponent {
   constructor(
     private router: Router,
     private adminService: AdminService,
+    private authService: AuthService,
     private sellerService: SellerService
   ) {}
 
@@ -38,24 +40,40 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
-
-    // Check for boutique credentials first
-    this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {
-      if (sellerSuccess) {
+    this.authService.login(this.username, this.password).subscribe(user => {
+      if ( user.role === undefined ) {
+        console.log('Logged in as admin:', user.role);
+        localStorage.setItem('user', JSON.stringify(user));
         this.isLoading.set(false);
+        this.router.navigate(['/admin/dashboard']);
+      } else if (user.role === 'boutique') {
+        this.isLoading.set(false);
+        console.log('Logged in as boutique:', user);
+        localStorage.setItem('user', JSON.stringify(user));
         this.router.navigate(['/seller/dashboard']);
-        return;
       }
-
-      // If not boutique, check for admin credentials
-      this.adminService.login(this.username, this.password).subscribe(adminSuccess => {
-        this.isLoading.set(false);
-        if (adminSuccess) {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
+      else {
           this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
         }
-      });
     });
+    // this.authService.login(this.username, this.password)
+    // Check for boutique credentials first
+  //   this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {
+  //     if (sellerSuccess) {
+  //       this.isLoading.set(false);
+  //       this.router.navigate(['/seller/dashboard']);
+  //       return;
+  //     }
+
+  //     // If not boutique, check for admin credentials
+  //     this.adminService.login(this.username, this.password).subscribe(adminSuccess => {
+  //       this.isLoading.set(false);
+  //       if (adminSuccess) {
+  //         this.router.navigate(['/admin/dashboard']);
+  //       } else {
+  //         this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
+  //       }
+  //     });
+  //   });
   }
 }

@@ -26,3 +26,56 @@
     }
   }
 }
+
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-primary, #333);
+}
+
+.radio-input {
+  display: none;
+}
+
+.radio-checkmark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color, #ccc);
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.2s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--primary-gold, #c9a050);
+    transition: transform 0.2s ease;
+  }
+}
+
+.radio-input:checked + .radio-checkmark {
+  border-color: var(--primary-gold, #c9a050);
+
+  &::after {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.radio-text {
+  text-transform: capitalize;
+}
