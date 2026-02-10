@@ -126,6 +126,16 @@ export interface ParametresSite {
   inscriptionOuverte: boolean;
 }
 
+export interface ParametresCrm {
+    nom_centre_commercial:string,
+    slogan:string,
+    email:string,
+    telephone:string,
+    adresse:string,
+    horaire_ouverture:string,
+    horaire_fermeture:string 
+}
+
 export interface KPI {
   label: string;
   value: number | string;
