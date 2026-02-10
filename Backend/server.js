@@ -23,6 +23,32 @@ app.use('/api/contracts', require('./routes/contractRoutes'));
 app.use('/api/contract-types', require('./routes/contractTypeRoutes'));
 app.use('/api/boutiques', require('./routes/boutiqueRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/promotions', require('./routes/promotionRoutes'));
+
+// Cron jobs
+const cron = require('node-cron');
+const { generateCurrentMonthPayments, checkOverduePayments } = require('./utils/paymentGenerator');
+
+// Verification quotidienne des retards a minuit
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const result = await checkOverduePayments();
+    console.log(`[CRON] Verification retards: ${result.updated} paiements mis a jour`);
+  } catch (error) {
+    console.error('[CRON] Erreur verification retards:', error.message);
+  }
+});
+
+// Generation automatique le 1er de chaque mois a 1h du matin
+cron.schedule('0 1 1 * *', async () => {
+  try {
+    const result = await generateCurrentMonthPayments();
+    console.log(`[CRON] Generation mensuelle: ${result.created} crees, ${result.skipped} ignores`);
+  } catch (error) {
+    console.error('[CRON] Erreur generation mensuelle:', error.message);
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BoutiqueApiService, BoutiqueApi, CategoryApi } from '../../core/services/boutique-api.service';
+import { ContractService } from '../../core/services/contract.service';
 
 @Component({
   selector: 'app-gestion-boutiques',
@@ -21,9 +22,11 @@ export class GestionBoutiquesComponent implements OnInit {
   logoPreview: string | null = null;
 
   form: any = this.getEmptyForm();
+  private pendingContratId: string | null = null;
 
   constructor(
     private boutiqueService: BoutiqueApiService,
+    private contractService: ContractService,
     private route: ActivatedRoute
   ) {}
 
@@ -35,6 +38,9 @@ export class GestionBoutiquesComponent implements OnInit {
         this.form = this.getEmptyForm();
         if (params['loyer']) {
           this.form.loyer = Number(params['loyer']);
+        }
+        if (params['contratId']) {
+          this.pendingContratId = params['contratId'];
         }
         this.showModal.set(true);
       }
@@ -127,9 +133,23 @@ export class GestionBoutiquesComponent implements OnInit {
         this.closeModal();
       });
     } else {
-      this.boutiqueService.create(formData).subscribe(() => {
-        this.loadData();
-        this.closeModal();
+      this.boutiqueService.create(formData).subscribe(created => {
+        if (this.pendingContratId && created?._id) {
+          this.contractService.updateContract(this.pendingContratId, { id_boutique: created._id }).subscribe({
+            next: () => {
+              this.pendingContratId = null;
+              this.loadData();
+              this.closeModal();
+            },
+            error: () => {
+              this.loadData();
+              this.closeModal();
+            }
+          });
+        } else {
+          this.loadData();
+          this.closeModal();
+        }
       });
     }
   }
