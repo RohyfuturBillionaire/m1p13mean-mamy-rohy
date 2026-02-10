@@ -51,7 +51,7 @@ const loginUser = async (user, res) => {
 // SIGNUP
 router.post('/signup', async (req, res) => {
   try {
-    const { username, email, password,role} = req.body;
+    const { username, email, password, id_role } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -68,7 +68,7 @@ router.post('/signup', async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      role
+      id_role
     });
     await user.save();
 
