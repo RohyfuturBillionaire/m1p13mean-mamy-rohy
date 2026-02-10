@@ -17,6 +17,7 @@ export class MessagesComponent implements OnInit {
   messages = signal<MessageDB[]>([]);
   users = signal<UserDB[]>([]);
   boutiqueUsers = signal<UserDB[]>([]);
+  lastMessages = signal<Map<string, MessageDB>>(new Map());
 
   selectedConversation = signal<ConversationDB | null>(null);
   newMessage = signal('');
@@ -59,9 +60,36 @@ export class MessagesComponent implements OnInit {
     if (!this.currentUserId) return;
     
     this.conversationService.getConversationsByUser(this.currentUserId).subscribe({
-      next: (conversations) => this.conversations.set(conversations),
+      next: (conversations) => {
+        this.conversations.set(conversations);
+        // Load last message for each conversation
+        conversations.forEach(conv => this.loadLastMessage(conv._id));
+      },
       error: (err) => console.error('Error loading conversations:', err)
     });
+  }
+
+  private loadLastMessage(conversationId: string) {
+    this.conversationService.getMessagesByConversation(conversationId).subscribe({
+      next: (messages) => {
+        if (messages.length > 0) {
+          const lastMsg = messages[messages.length - 1];
+          const currentMap = new Map(this.lastMessages());
+          currentMap.set(conversationId, lastMsg);
+          this.lastMessages.set(currentMap);
+        }
+      }
+    });
+  }
+
+  getLastMessage(conversationId: string): string {
+    const lastMsg = this.lastMessages().get(conversationId);
+    if (!lastMsg) return 'Aucun message';
+    // Truncate message if too long
+    const maxLength = 30;
+    return lastMsg.message.length > maxLength 
+      ? lastMsg.message.substring(0, maxLength) + '...' 
+      : lastMsg.message;
   }
 
   private loadUsers() {
@@ -105,7 +133,11 @@ export class MessagesComponent implements OnInit {
     this.conversationService.sendMessage(newMsg).subscribe({
       next: () => {
         this.conversationService.getMessagesByConversation(conv._id).subscribe({
-          next: (messages) => this.messages.set(messages)
+          next: (messages) => {
+            this.messages.set(messages);
+            // Update last message for this conversation
+            this.loadLastMessage(conv._id);
+          }
         });
         this.newMessage.set('');
       },

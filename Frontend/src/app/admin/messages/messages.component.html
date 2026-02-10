@@ -42,7 +42,7 @@
                   <span class="conv-name">{{ getOtherParticipant(conv)?.username || 'Utilisateur' }}</span>
                   <span class="conv-time">{{ formatTime(conv.updatedAt) }}</span>
                 </div>
-                <p class="conv-preview">{{ getRoleName(getOtherParticipant(conv)) | titlecase }}</p>
+                <p class="conv-preview">{{ getLastMessage(conv._id) }}</p>
               </div>
             </button>
           }
