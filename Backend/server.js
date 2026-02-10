@@ -36,6 +36,8 @@ app.use('/articles', authenticateToken, require('./routes/articleRoutes'));
 app.use('/sitecrm', require('./routes/siteCrmRoutes'));
 app.use('/sitecontenu', authenticateToken, require('./routes/siteContenuRoutes'));
 app.use('/imgslider', authenticateToken, require('./routes/imgSliderRoutes'));
+app.use('/conversations', authenticateToken, require('./routes/conversationRoute'));
+app.use('/messages', authenticateToken, require('./routes/MessageRoute'));
 
 // API routes
 app.use('/api/contracts', require('./routes/contractRoutes'));
