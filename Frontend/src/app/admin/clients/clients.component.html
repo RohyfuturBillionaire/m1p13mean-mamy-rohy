@@ -5,10 +5,10 @@
       <h1>Gestion des Clients</h1>
       <p>Gérez les utilisateurs et leurs rôles</p>
     </div>
-    <button class="btn btn-primary" (click)="openAddModal()">
+    <!-- <button class="btn btn-primary" (click)="openAddModal()">
       <span>+</span>
       Nouveau Client
-    </button>
+    </button> -->
   </div>
 
   <!-- Stats Cards -->
@@ -37,8 +37,8 @@
     <div class="stat-card">
       <span class="stat-icon">✅</span>
       <div class="stat-content">
-        <span class="stat-value">{{ getStats().actifs }}</span>
-        <span class="stat-label">Actifs</span>
+        <span class="stat-value">{{ getStats().Nouveaux }}</span>
+        <span class="stat-label">Nouveaux Inscrits</span>
       </div>
     </div>
   </div>
@@ -62,27 +62,15 @@
       >
         Tous
       </button>
-      <button
-        class="filter-tab"
-        [class.active]="roleFilter() === 'client'"
-        (click)="onRoleFilterChange('client')"
-      >
-        Clients
-      </button>
-      <button
-        class="filter-tab"
-        [class.active]="roleFilter() === 'boutique'"
-        (click)="onRoleFilterChange('boutique')"
-      >
-        Boutiques
-      </button>
-      <button
-        class="filter-tab"
-        [class.active]="roleFilter() === 'admin'"
-        (click)="onRoleFilterChange('admin')"
-      >
-        Admins
-      </button>
+      @for (role of roles(); track role._id) {
+        <button
+          class="filter-tab"
+          [class.active]="roleFilter() === role.role_name"
+          (click)="onRoleFilterChange(role.role_name)"
+        >
+          {{ role.role_name | titlecase }}
+        </button>
+      }
     </div>
   </div>
 
@@ -93,7 +81,7 @@
         <tr>
           <th>Utilisateur</th>
           <th>Email</th>
-          <th>Téléphone</th>
+          <!-- <th>Téléphone</th> -->
           <th>Rôle</th>
           <th>Inscription</th>
           <!-- <th>Statut</th> -->
@@ -101,37 +89,41 @@
         </tr>
       </thead>
       <tbody>
-        @for (user of filteredUsers(); track user.id) {
+        @for (user of filteredUsers(); track user._id) {
           <tr>
             <td>
               <div class="user-cell">
-                <div class="user-avatar" [class.has-image]="user.avatar">
-                  @if (user.avatar) {
+                <!-- <div class="user-avatar" [class.has-image]="user.avatar"> -->
+                <div class="user-avatar" >
+
+                  <!-- @if (user.avatar) {
                     <img [src]="user.avatar" [alt]="user.nom">
-                  } @else {
-                    {{ user.prenom[0] }}{{ user.nom[0] }}
-                  }
+                  } @else { -->
+                    {{ user.username.split(' ')[0] === undefined ? '' : user.username.split(' ')[0].charAt(0) }}{{ user.username.split(' ')[1] === undefined ? '' : user.username.split(' ')[1].charAt(0) }}
+                  <!-- } -->
                 </div>
                 <div class="user-info">
-                  <span class="user-name">{{ user.prenom }} {{ user.nom }}</span>
+                  <!-- <span class="user-name">{{ user.username.split(' ')[0] }} {{ user.username.split(' ')[1] }}</span>4 -->
+                   <span class="user-name">{{ user.username}} </span>
                 </div>
               </div>
             </td>
             <td>{{ user.email }}</td>
-            <td>{{ user.telephone }}</td>
+            <!-- <td>{{ user.telephone }}</td> -->
             <td>
               <select
                 class="role-select"
-                [class]="getRoleClass(user.role)"
-                [value]="user.role"
-                (change)="changeUserRole(user, $any($event.target).value)"
+                [class]="getRoleClass(getRoleName(user))"
+                [ngModel]="getRoleName(user)"
+                (ngModelChange)="changeUserRole(user, $event)"
               >
-                <option value="client">Client</option>
-                <option value="boutique">Boutique</option>
-                <option value="admin">Admin</option>
+              <option [ngValue]="'admin'">Admin</option>
+                @for (role of roles(); track role._id) {
+                  <option [ngValue]="role.role_name">{{ role.role_name | titlecase }}</option>
+                }
               </select>
             </td>
-            <td>{{ formatDate(user.dateInscription) }}</td>
+            <td>{{ formatDate(user.createdAt!) }}</td>
             <!-- <td>
               <button
                 class="status-toggle"
@@ -177,7 +169,7 @@
         <button class="close-btn" (click)="closeModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div class="form-row">
+       <div class="form-row">
           <div class="form-group">
             <label>Prénom</label>
             <input
@@ -195,6 +187,7 @@
             >
           </div>
         </div>
+
         <div class="form-group">
           <label>Email</label>
           <input
@@ -203,30 +196,30 @@
             placeholder="email@exemple.com"
           >
         </div>
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label>Téléphone</label>
           <input
             type="tel"
             [(ngModel)]="currentUser.telephone"
             placeholder="+261 xx xxx xx"
           >
-        </div>
+        </div> -->
         <div class="form-row">
           <div class="form-group">
             <label>Rôle</label>
-            <select [(ngModel)]="currentUser.role">
-              <option value="client">Client</option>
-              <option value="boutique">Boutique</option>
-              <option value="admin">Administrateur</option>
+            <select [(ngModel)]="currentUser.id_role">
+              @for (role of roles(); track role._id) {
+                <option [ngValue]="role._id">{{ role.role_name | titlecase }}</option>
+              }
             </select>
           </div>
-          <div class="form-group">
+          <!-- <div class="form-group">
             <label>Statut</label>
             <select [(ngModel)]="currentUser.actif">
               <option [ngValue]="true">Actif</option>
               <option [ngValue]="false">Inactif</option>
             </select>
-          </div>
+          </div> -->
         </div>
       </div>
       <div class="modal-footer">
@@ -246,7 +239,7 @@
       <div class="modal-body">
         <span class="confirm-icon">⚠️</span>
         <h3>Confirmer la suppression</h3>
-        <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ userToDelete()?.prenom }} {{ userToDelete()?.nom }}</strong> ?</p>
+        <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ userToDelete()?.username }} </strong> ?</p>
         <p class="warning-text">Cette action est irréversible.</p>
       </div>
       <div class="modal-footer">

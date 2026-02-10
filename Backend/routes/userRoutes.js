@@ -10,7 +10,7 @@ router.use(myLogger);
 // Lire tous les utilisateurs
 router.get('/', async (req, res) => {
  try {
- const users = await User.find();
+ const users = await User.find().populate('id_role', 'role_name');
  res.json(users);
  } catch (error) {
  res.status(500).json({ message: error.message });
