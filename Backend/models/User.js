@@ -4,7 +4,7 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true },
   email: { type: String, required: true },
   password: { type: String, required: true },
-  id_role: { type: mongoose.Schema.Types.ObjectId, ref: 'role' },
+  id_role: { type: mongoose.Schema.Types.ObjectId, ref: 'roles' },
   article_souhait: [{ type: mongoose.Schema.Types.ObjectId, ref: 'article' }],
   boutique_favoris: [{ type: mongoose.Schema.Types.ObjectId, ref: 'boutique' }],
   achat: [{
