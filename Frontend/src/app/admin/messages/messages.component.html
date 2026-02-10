@@ -4,8 +4,8 @@
     <aside class="conversations-panel">
       <div class="panel-header">
         <h2>Messages</h2>
-        <button class="icon-btn" title="Nouvel email" (click)="openEmailModal()">
-          ✉️
+        <button class="icon-btn" title="Nouvelle conversation" (click)="openNewConversationModal()">
+          ➕
         </button>
       </div>
 
@@ -19,38 +19,33 @@
       </div>
 
       <div class="conversations-list">
-        @for (conv of getFilteredConversations(); track conv.id) {
-          <button
-            class="conversation-item"
-            [class.active]="selectedConversation()?.id === conv.id"
-            [class.unread]="conv.nonLus > 0"
-            (click)="selectConversation(conv)"
-          >
-            <div class="conv-avatar">
-              @if (getOtherParticipant(conv)?.avatar) {
-                <img [src]="getOtherParticipant(conv)?.avatar" [alt]="getOtherParticipant(conv)?.nom">
-              } @else {
-                <span>{{ getRoleIcon(getOtherParticipant(conv)?.role || 'client') }}</span>
-              }
-            </div>
-            <div class="conv-content">
-              <div class="conv-header">
-                <span class="conv-name">{{ getOtherParticipant(conv)?.nom }}</span>
-                <span class="conv-time">{{ formatTime(conv.dateModification) }}</span>
-              </div>
-              <p class="conv-preview">{{ conv.dernierMessage }}</p>
-            </div>
-            @if (conv.nonLus > 0) {
-              <span class="unread-badge">{{ conv.nonLus }}</span>
-            }
-          </button>
-        }
-
         @if (getFilteredConversations().length === 0) {
           <div class="empty-conversations">
             <span>💬</span>
             <p>Aucune conversation</p>
+            <button class="btn btn-primary" (click)="openNewConversationModal()">
+              ➕ Nouvelle conversation
+            </button>
           </div>
+        } @else {
+          @for (conv of getFilteredConversations(); track conv._id) {
+            <button
+              class="conversation-item"
+              [class.active]="selectedConversation()?._id === conv._id"
+              (click)="selectConversation(conv)"
+            >
+              <div class="conv-avatar">
+                <span>{{ getInitials(getOtherParticipant(conv)) }}</span>
+              </div>
+              <div class="conv-content">
+                <div class="conv-header">
+                  <span class="conv-name">{{ getOtherParticipant(conv)?.username || 'Utilisateur' }}</span>
+                  <span class="conv-time">{{ formatTime(conv.updatedAt) }}</span>
+                </div>
+                <p class="conv-preview">{{ getLastMessage(conv._id) }}</p>
+              </div>
+            </button>
+          }
         }
       </div>
     </aside>
@@ -62,39 +57,37 @@
         <div class="chat-header">
           <div class="chat-user">
             <div class="chat-avatar">
-              @if (getOtherParticipant(selectedConversation()!)?.avatar) {
-                <img [src]="getOtherParticipant(selectedConversation()!)?.avatar" alt="">
-              } @else {
-                <span>{{ getRoleIcon(getOtherParticipant(selectedConversation()!)?.role || 'client') }}</span>
-              }
+              <span>{{ getInitials(getOtherParticipant(selectedConversation()!)) }}</span>
             </div>
             <div class="chat-info">
-              <span class="chat-name">{{ getOtherParticipant(selectedConversation()!)?.nom }}</span>
-              <span class="chat-role">{{ getOtherParticipant(selectedConversation()!)?.role === 'boutique' ? 'Boutique' : 'Client' }}</span>
+              <span class="chat-name">{{ getOtherParticipant(selectedConversation()!)?.username }}</span>
+              <span class="chat-role">{{ getRoleName(getOtherParticipant(selectedConversation()!)) | titlecase }}</span>
             </div>
           </div>
           <div class="chat-actions">
-            <button class="icon-btn" title="Appeler">📞</button>
-            <button class="icon-btn" title="Email" (click)="openEmailModal()">✉️</button>
             <button class="icon-btn" title="Plus">⋮</button>
           </div>
         </div>
 
         <!-- Messages -->
         <div class="messages-list">
-          @for (msg of messages(); track msg.id) {
+          @for (msg of messages(); track msg._id) {
             <div class="message" [class.own]="isOwnMessage(msg)">
               <div class="message-bubble">
-                <p>{{ msg.contenu }}</p>
-                <span class="message-time">{{ formatMessageTime(msg.dateEnvoi) }}</span>
+                <p>{{ msg.message }}</p>
+                <span class="message-time">{{ formatMessageTime(msg.date_envoie) }}</span>
               </div>
+            </div>
+          }
+          @if (messages().length === 0) {
+            <div class="empty-messages">
+              <p>Aucun message. Commencez la conversation!</p>
             </div>
           }
         </div>
 
         <!-- Input -->
         <div class="chat-input">
-          <button class="attach-btn" title="Joindre un fichier">📎</button>
           <input
             type="text"
             placeholder="Écrivez votre message..."
@@ -110,9 +103,9 @@
         <div class="no-conversation">
           <span>💬</span>
           <h3>Sélectionnez une conversation</h3>
-          <p>Choisissez une conversation dans la liste ou envoyez un nouvel email</p>
-          <button class="btn btn-primary" (click)="openEmailModal()">
-            ✉️ Envoyer un email
+          <p>Choisissez une conversation dans la liste ou créez une nouvelle conversation</p>
+          <button class="btn btn-primary" (click)="openNewConversationModal()">
+            ➕ Nouvelle conversation
           </button>
         </div>
       }
@@ -120,50 +113,38 @@
   </div>
 </div>
 
-<!-- Email Modal -->
-@if (showEmailModal()) {
-  <div class="modal-overlay" (click)="closeEmailModal()">
+<!-- New Conversation Modal -->
+@if (showNewConversationModal()) {
+  <div class="modal-overlay" (click)="closeNewConversationModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Envoyer un Email</h2>
-        <button class="close-btn" (click)="closeEmailModal()">✕</button>
+        <h2>Nouvelle conversation</h2>
+        <button class="close-btn" (click)="closeNewConversationModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label>Destinataire</label>
-          <select [(ngModel)]="emailData.destinataire">
-            <option value="">Sélectionner un destinataire</option>
-            @for (user of users(); track user.id) {
-              <option [value]="user.email">{{ user.prenom }} {{ user.nom }} ({{ user.email }})</option>
+        <p>Sélectionnez une boutique pour démarrer une conversation:</p>
+        <div class="user-list">
+          @if (boutiqueUsers().length === 0) {
+            <div class="empty-users">
+              <p>Aucune boutique disponible</p>
+            </div>
+          } @else {
+            @for (user of boutiqueUsers(); track user._id) {
+              <button class="user-item" (click)="startConversation(user)">
+                <div class="user-avatar">
+                  <span>{{ getInitials(user) }}</span>
+                </div>
+                <div class="user-info">
+                  <span class="user-name">{{ user.username }}</span>
+                  <span class="user-email">{{ user.email }}</span>
+                </div>
+              </button>
             }
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Template</label>
-          <select [(ngModel)]="emailData.template">
-            @for (template of emailTemplates; track template.id) {
-              <option [value]="template.id">{{ template.label }}</option>
-            }
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Sujet</label>
-          <input type="text" [(ngModel)]="emailData.sujet" placeholder="Objet de l'email">
-        </div>
-        <div class="form-group">
-          <label>Message</label>
-          <textarea
-            [(ngModel)]="emailData.message"
-            rows="6"
-            placeholder="Écrivez votre message..."
-          ></textarea>
+          }
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" (click)="closeEmailModal()">Annuler</button>
-        <button class="btn btn-primary" (click)="sendEmail()">
-          ✉️ Envoyer
-        </button>
+        <button class="btn btn-outline" (click)="closeNewConversationModal()">Annuler</button>
       </div>
     </div>
   </div>
