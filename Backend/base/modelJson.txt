@@ -15,3 +15,7 @@ siteContenu={
   "SHOW_BOUTIQUES": true,
   "SHOW_EVENEMENTS": false
 }
+
+role = {
+  "role_name":"",
+}
