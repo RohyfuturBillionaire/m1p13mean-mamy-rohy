@@ -29,11 +29,11 @@ mongoose.connect(process.env.MONGO_URI, {}).then(() => console.log("MongoDB conn
 // Public routes (no auth required)
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/roles', require('./routes/roleRoutes'));
-app.use('/users', require('./routes/userRoutes'));
+app.use('/users', authenticateToken, require('./routes/userRoutes'));
 
 // Protected routes (auth required)
 app.use('/articles', authenticateToken, require('./routes/articleRoutes'));
-app.use('/sitecrm', authenticateToken, require('./routes/siteCrmRoutes'));
+app.use('/sitecrm', require('./routes/siteCrmRoutes'));
 app.use('/sitecontenu', authenticateToken, require('./routes/siteContenuRoutes'));
 app.use('/imgslider', authenticateToken, require('./routes/imgSliderRoutes'));
 

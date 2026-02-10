@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AdminService } from '../../core/services/admin.service';
 import { Notification } from '../../core/models/admin.model';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-admin-layout',
@@ -35,6 +36,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
 
   constructor(
     private adminService: AdminService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -116,8 +118,10 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    this.adminService.logout();
-    this.router.navigate(['/login']);
+    // this.adminService.logout();
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/login']);
+    });
   }
 
   getNotificationIcon(type: string): string {

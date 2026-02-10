@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Role = require('../models/Role');
+const authenticateToken = require('../middleware/authMiddleware');
 // Créer un role
-router.post('/', async (req, res) => {
+router.post('/',authenticateToken ,async (req, res) => {
  try {
  const role = new Role(req.body);
  await role.save();
@@ -26,7 +27,7 @@ router.get('/', async (req, res) => {
  }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
  try {
  const role = await Role.findByIdAndUpdate(req.params.id,
 req.body, { new: true });
@@ -36,7 +37,7 @@ req.body, { new: true });
  }
 });
 // Supprimer un role
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
  try {
  await Role.findByIdAndDelete(req.params.id);
  res.json({ message: "Role supprimé" });

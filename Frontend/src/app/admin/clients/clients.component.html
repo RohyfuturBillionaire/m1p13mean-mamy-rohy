@@ -96,7 +96,7 @@
           <th>Téléphone</th>
           <th>Rôle</th>
           <th>Inscription</th>
-          <th>Statut</th>
+          <!-- <th>Statut</th> -->
           <th>Actions</th>
         </tr>
       </thead>
@@ -132,7 +132,7 @@
               </select>
             </td>
             <td>{{ formatDate(user.dateInscription) }}</td>
-            <td>
+            <!-- <td>
               <button
                 class="status-toggle"
                 [class.active]="user.actif"
@@ -143,7 +143,7 @@
                 </span>
                 <span class="toggle-label">{{ user.actif ? 'Actif' : 'Inactif' }}</span>
               </button>
-            </td>
+            </td> -->
             <td>
               <div class="actions">
                 <button class="action-btn edit" title="Modifier" (click)="openEditModal(user)">

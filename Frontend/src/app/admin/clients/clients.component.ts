@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/services/admin.service';
 import { User } from '../../core/models/admin.model';
+import { UsersService } from './services/users.service';
 
 @Component({
   selector: 'app-clients',
@@ -30,13 +31,18 @@ export class ClientsComponent implements OnInit {
     actif: true
   };
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService,private usersService: UsersService) {}
 
   ngOnInit() {
     this.loadUsers();
   }
 
   private loadUsers() {
+    this.usersService.getUsers().subscribe(users => {
+      // this.users.set(users);
+      // this.applyFilters();
+      console.log('Fetched users:', users);
+    });
     this.adminService.getUsers().subscribe(users => {
       this.users.set(users);
       this.applyFilters();

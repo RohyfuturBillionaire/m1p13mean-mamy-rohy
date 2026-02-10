@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
+const Role = require('../models/Role');
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRY = '15m';
@@ -45,7 +46,18 @@ const loginUser = async (user, res) => {
     maxAge: REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000
   });
 
-  return { accessToken, user: { id: user._id, email: user.email, username: user.username } };
+  // Get role by id
+  const role = user.id_role ? await Role.findById(user.id_role) : null;
+
+  return { 
+    accessToken, 
+    user: { 
+      id: user._id, 
+      email: user.email, 
+      username: user.username, 
+      role: role ? role.role_name : null 
+    } 
+  };
 };
 
 // SIGNUP
