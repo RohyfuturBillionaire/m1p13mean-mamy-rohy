@@ -1,16 +1,54 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Connexion à MongoDB
 mongoose.connect(process.env.MONGO_URI, {}).then(() => console.log("MongoDB connecté")).catch(err => console.log(err));
 
+// Legacy routes
 app.use('/articles', require('./routes/articleRoutes'));
+
+// API routes
+app.use('/api/contracts', require('./routes/contractRoutes'));
+app.use('/api/contract-types', require('./routes/contractTypeRoutes'));
+app.use('/api/boutiques', require('./routes/boutiqueRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/promotions', require('./routes/promotionRoutes'));
+
+// Cron jobs
+const cron = require('node-cron');
+const { generateCurrentMonthPayments, checkOverduePayments } = require('./utils/paymentGenerator');
+
+// Verification quotidienne des retards a minuit
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const result = await checkOverduePayments();
+    console.log(`[CRON] Verification retards: ${result.updated} paiements mis a jour`);
+  } catch (error) {
+    console.error('[CRON] Erreur verification retards:', error.message);
+  }
+});
+
+// Generation automatique le 1er de chaque mois a 1h du matin
+cron.schedule('0 1 1 * *', async () => {
+  try {
+    const result = await generateCurrentMonthPayments();
+    console.log(`[CRON] Generation mensuelle: ${result.created} crees, ${result.skipped} ignores`);
+  } catch (error) {
+    console.error('[CRON] Erreur generation mensuelle:', error.message);
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

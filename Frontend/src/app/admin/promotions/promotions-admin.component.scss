@@ -144,15 +144,15 @@ $danger: #EF5350;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   }
 
-  &.status-en_attente {
+  &.status-PENDING {
     border-top: 4px solid $warning;
   }
 
-  &.status-validee {
+  &.status-APPROVED {
     border-top: 4px solid $success;
   }
 
-  &.status-refusee {
+  &.status-REJECTED {
     border-top: 4px solid $danger;
   }
 }
@@ -174,17 +174,17 @@ $danger: #EF5350;
   font-size: 0.8rem;
   font-weight: 500;
 
-  &.status-en_attente {
+  &.status-PENDING {
     background: rgba($warning, 0.15);
     color: darken($warning, 10%);
   }
 
-  &.status-validee {
+  &.status-APPROVED {
     background: rgba($success, 0.15);
     color: $success;
   }
 
-  &.status-refusee {
+  &.status-REJECTED {
     background: rgba($danger, 0.15);
     color: $danger;
   }
@@ -430,9 +430,18 @@ $danger: #EF5350;
   gap: 1rem;
 }
 
+.detail-image {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
   padding: 1.25rem 1.5rem;
   border-top: 1px solid #eee;
 }
