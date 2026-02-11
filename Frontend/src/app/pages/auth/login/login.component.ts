@@ -40,17 +40,19 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
-    this.authService.login(this.username, this.password).subscribe(user => {
-      if ( user.role === undefined ) {
-        console.log('Logged in as admin:', user.role);
-        localStorage.setItem('user', JSON.stringify(user));
+    this.authService.login(this.username, this.password).subscribe(u => {
+      console.log('Login response:', u);
+      if ( u.user.role === null ) {
+        console.log('Logged in as admin:', u.user.role);
+        localStorage.setItem('user', JSON.stringify(u));
         this.isLoading.set(false);
         this.router.navigate(['/admin/dashboard']);
-      } else if (user.role === 'boutique') {
+      } else if (u.user.role === 'boutique') {
         this.isLoading.set(false);
-        console.log('Logged in as boutique:', user);
-        localStorage.setItem('user', JSON.stringify(user));
+        console.log('Logged in as boutique:', u);
+        localStorage.setItem('user', JSON.stringify(u));
         this.router.navigate(['/seller/dashboard']);
+        return;
       }
       else {
           this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
