@@ -51,6 +51,8 @@ export class LoginComponent {
         this.isLoading.set(false);
         console.log('Logged in as boutique:', u);
         localStorage.setItem('user', JSON.stringify(u));
+        this.sellerService.login("boutique", "boutique");
+  //     }
         this.router.navigate(['/seller/dashboard']);
         return;
       }
