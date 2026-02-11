@@ -7,19 +7,25 @@ import { environment } from '../../../environments/environments';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private accessToken: string | null = null; // Store in memory only!
-  private apiUrl= `${environment.apiUrl}/sitecrm`;
+  private apiUrl= `${environment.apiUrl}/auth`;
   
   constructor(private http: HttpClient) {}
 
   login(email: string, password: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password }, { withCredentials: true })
+    return this.http.post<any>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })
       .pipe(tap(response => {
         this.accessToken = response.accessToken; // Store access token in memory
       }));
   }
 
+  register(user: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/signup`, user, { withCredentials: true }).pipe(tap(response => {
+      this.accessToken = response.accessToken; // Store access token in memory
+    }));
+  }
+
   refreshToken(): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/refresh`, {}, { withCredentials: true })
+    return this.http.post<any>(`${this.apiUrl}/refresh`, {}, { withCredentials: true })
       .pipe(tap(response => {
         this.accessToken = response.accessToken;
       }));
@@ -27,7 +33,7 @@ export class AuthService {
 
   logout(): Observable<any> {
     this.accessToken = null;
-    return this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true });
+    return this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true });
   }
 
   getAccessToken(): string | null {

@@ -1,5 +1,34 @@
 // Models for Admin Module
 
+export interface Role {
+  _id: string;
+  role_name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Achat {
+  article_id: string;
+  prix: number;
+  quantite: number;
+  date_achat: Date;
+}
+
+export interface UserDB {
+  _id: string;
+  username: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  password?: string;
+  id_role: Role | string;
+  article_souhait: string[];
+  boutique_favoris: string[];
+  achat: Achat[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface User {
   id: string;
   nom: string;
