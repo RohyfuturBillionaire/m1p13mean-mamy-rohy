@@ -67,7 +67,12 @@
       <div class="form-row">
         <div class="form-group">
           <label>Catégorie</label>
-          <input type="text" [value]="formData().categorie" (input)="updateField('categorie', $any($event.target).value)" placeholder="Ex: Livraison">
+          <select [value]="formData().categorie" (change)="updateField('categorie', $any($event.target).value)">
+            <option value="">Sélectionner une catégorie</option>
+            @for (cat of faqCategories(); track cat._id) {
+              <option [value]="cat.nom_categorie">{{ cat.nom_categorie }}</option>
+            }
+          </select>
         </div>
         <div class="form-group">
           <label>Ordre</label>

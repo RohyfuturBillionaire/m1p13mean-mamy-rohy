@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SellerService } from '../../core/services/seller.service';
 import { SellerFAQ } from '../../core/models/seller.model';
+import { FaqCategoriesService } from './services/faq-categories.service';
 
 @Component({
   selector: 'app-faq',
@@ -14,18 +15,27 @@ import { SellerFAQ } from '../../core/models/seller.model';
 export class FaqComponent implements OnInit {
   faqs = signal<SellerFAQ[]>([]);
   showModal = signal(false);
+  faqCategories = signal<any[]>([]);
   editingFaq = signal<SellerFAQ | null>(null);
   isSubmitting = signal(false);
   expandedId = signal<string | null>(null);
 
   formData = signal({ question: '', reponse: '', categorie: '', ordre: 0 });
 
-  constructor(private sellerService: SellerService) {}
+  constructor(private sellerService: SellerService, private faqCategoriesService: FaqCategoriesService) {}
 
-  ngOnInit() { this.loadFaqs(); }
+  ngOnInit() { this.loadFaqs(); this.loadFaqsCategories(); }
 
   loadFaqs() {
     this.sellerService.getFAQs().subscribe(f => this.faqs.set(f));
+  }
+
+  loadFaqsCategories() {
+    this.faqCategoriesService.getFaqCategories().subscribe(c => {
+      this.faqCategories.set(c);
+      console.log('FAQ categories:', c);
+    });
+  
   }
 
   toggleExpand(id: string) {
