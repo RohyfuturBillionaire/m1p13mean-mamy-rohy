@@ -45,5 +45,5 @@ export class ConversationService {
   // POST /messages - Send a message
   sendMessage(message: Partial<MessageDB>): Observable<MessageDB> {
     return this.http.post<MessageDB>(`${this.baseUrl}/messages`, message);
-  }
+  } 
 }
