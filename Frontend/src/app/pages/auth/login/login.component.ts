@@ -13,7 +13,7 @@ import { SellerService } from '../../../core/services/seller.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  username = '';
+  email = '';
   password = '';
   showPassword = signal(false);
   isLoading = signal(false);
@@ -32,12 +32,13 @@ export class LoginComponent {
   onSubmit() {
     this.error.set('');
 
-    if (!this.username || !this.password) {
+    if (!this.email || !this.password) {
       this.error.set('Veuillez remplir tous les champs');
       return;
     }
 
     this.isLoading.set(true);
+<<<<<<< Updated upstream
 
     // Check for boutique credentials first
     this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {
@@ -56,6 +57,27 @@ export class LoginComponent {
           this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
         }
       });
+=======
+    this.authService.login(this.email, this.password).subscribe({
+      next: (u) => {
+        console.log('Login response:', u);
+        localStorage.setItem('user', JSON.stringify(u));
+        this.isLoading.set(false);
+
+        if (u.user.role === null) {
+          this.router.navigate(['/admin/dashboard']);
+        } else if (u.user.role === 'boutique') {
+          this.sellerService.login("boutique", "boutique");
+          this.router.navigate(['/seller/dashboard']);
+        } else {
+          this.router.navigate(['/']);
+        }
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.error.set(err.error?.message || 'Email ou mot de passe incorrect');
+      }
+>>>>>>> Stashed changes
     });
   }
 }
