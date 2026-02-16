@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { SellerService } from '../../../core/services/seller.service';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +23,7 @@ export class LoginComponent {
   constructor(
     private router: Router,
     private adminService: AdminService,
+    private authService: AuthService,
     private sellerService: SellerService
   ) {}
 
@@ -38,26 +40,6 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
-<<<<<<< Updated upstream
-
-    // Check for boutique credentials first
-    this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {
-      if (sellerSuccess) {
-        this.isLoading.set(false);
-        this.router.navigate(['/seller/dashboard']);
-        return;
-      }
-
-      // If not boutique, check for admin credentials
-      this.adminService.login(this.username, this.password).subscribe(adminSuccess => {
-        this.isLoading.set(false);
-        if (adminSuccess) {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
-          this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
-        }
-      });
-=======
     this.authService.login(this.email, this.password).subscribe({
       next: (u) => {
         console.log('Login response:', u);
@@ -77,7 +59,6 @@ export class LoginComponent {
         this.isLoading.set(false);
         this.error.set(err.error?.message || 'Email ou mot de passe incorrect');
       }
->>>>>>> Stashed changes
     });
   }
 }
