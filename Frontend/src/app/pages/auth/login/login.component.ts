@@ -45,10 +45,11 @@ export class LoginComponent {
         console.log('Login response:', u);
         localStorage.setItem('user', JSON.stringify(u));
         this.isLoading.set(false);
+        const roleName = (u.user?.role || '').toLowerCase();
 
-        if (u.user.role === null) {
+        if (!roleName) {
           this.router.navigate(['/admin/dashboard']);
-        } else if (u.user.role === 'boutique') {
+        } else if (roleName === 'boutique') {
           this.sellerService.login("boutique", "boutique");
           this.router.navigate(['/seller/dashboard']);
         } else {

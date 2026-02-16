@@ -89,11 +89,14 @@ export class RegisterComponent implements OnInit {
     this.authService.register(this.user).subscribe({
       next: (userConnected: any) => {
         console.log('Registered user:', userConnected);
-        localStorage.setItem('user', JSON.stringify(userConnected.user));
+        localStorage.setItem('user', JSON.stringify(userConnected));
         this.isLoading.set(false);
-        if (userConnected.user.role === 'boutique') {
+        const roleName = (userConnected.user?.role || '').toLowerCase();
+        if (roleName === 'boutique') {
           this.sellerService.login("boutique", "boutique");
           this.router.navigate(['/seller/dashboard']);
+        } else if (!roleName) {
+          this.router.navigate(['/admin/dashboard']);
         } else {
           this.router.navigate(['/']);
         }

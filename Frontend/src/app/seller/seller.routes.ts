@@ -20,6 +20,10 @@ export const SELLER_ROUTES: Routes = [
         loadComponent: () => import('./produits/produits.component').then(m => m.ProduitsComponent)
       },
       {
+        path: 'categories',
+        loadComponent: () => import('./categories/categories.component').then(m => m.CategoriesComponent)
+      },
+      {
         path: 'stocks',
         loadComponent: () => import('./stocks/stocks.component').then(m => m.StocksComponent)
       },

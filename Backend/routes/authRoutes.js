@@ -86,14 +86,51 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    console.log('[LOGIN] Attempt for:', email);
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log('[LOGIN] No user found with email:', email);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    console.log('[LOGIN] User found:', user.email, '| Password starts with $2:', user.password?.startsWith('$2'));
+
+    // If password is plain text (not hashed), hash it first then compare
+    if (user.password && !user.password.startsWith('$2')) {
+      console.log('[LOGIN] Plain text password detected, hashing it now...');
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(user.password, salt);
+      await user.save();
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    console.log('[LOGIN] Password match:', match);
+
+    if (!match) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const response = await loginUser(user, res);
     res.json(response);
+  } catch (error) {
+    console.error('[LOGIN] Error:', error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// RESET PASSWORD (dev helper)
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ message: 'Password reset successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
