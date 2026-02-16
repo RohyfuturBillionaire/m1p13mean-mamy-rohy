@@ -1,0 +1,511 @@
+<div class="plan-wrapper" [class.sidebar-open]="showBoutiqueSidebar()">
+  <!-- Boutiques Sidebar -->
+  <aside class="boutiques-sidebar" [class.open]="showBoutiqueSidebar()">
+    <div class="sidebar-header">
+      <h3>
+        <span class="material-icons">store</span>
+        <span class="sidebar-title-text">Boutiques</span>
+      </h3>
+      <button class="toggle-btn" (click)="toggleBoutiqueSidebar()">
+        <span class="material-icons">{{ showBoutiqueSidebar() ? 'chevron_left' : 'chevron_right' }}</span>
+      </button>
+    </div>
+
+    <div class="sidebar-body">
+      @if (boutiquesNonAssignees().length === 0) {
+        <div class="empty-boutiques">
+          <span class="material-icons">check_circle</span>
+          <p>Toutes les boutiques sont assignées</p>
+        </div>
+      } @else {
+        <div class="boutique-list">
+          @for (boutique of boutiquesNonAssignees(); track boutique._id) {
+            <div
+              class="boutique-card"
+              [class.dragging]="draggedBoutique()?._id === boutique._id"
+              draggable="true"
+              (dragstart)="onBoutiqueDragStart(boutique, $event)"
+              (dragend)="onBoutiqueDragEnd()"
+            >
+              <div class="boutique-drag-handle">
+                <span class="material-icons">drag_indicator</span>
+              </div>
+              <div class="boutique-logo-placeholder">
+                <span class="material-icons">store</span>
+              </div>
+              <div class="boutique-info">
+                <h4>{{ boutique.nom }}</h4>
+                <span class="boutique-type">{{ boutique.type_boutique || 'Boutique' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="info-box">
+        <span class="material-icons">info</span>
+        <p>Glissez une boutique sur un espace LIBRE pour l'assigner. Glissez un espace pour le repositionner.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="plan-content">
+    <div class="plan-page">
+      <!-- Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <h1>Plan du Centre Commercial</h1>
+          <p>Gérez les espaces et assignez les boutiques</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="material-icons">add</span>
+          Nouvel Espace
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon total">
+            <span class="material-icons">grid_view</span>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().total }}</span>
+            <span class="stat-label">Total Espaces</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon occupied">
+            <span class="material-icons">store</span>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().occupes }}</span>
+            <span class="stat-label">Occupés</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon free">
+            <span class="material-icons">check_circle</span>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().libres }}</span>
+            <span class="stat-label">Libres</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floor Tabs -->
+      <div class="floor-tabs">
+        <button class="floor-tab" [class.active]="selectedEtage() === 1" (click)="setEtage(1)">
+          1er étage
+        </button>
+        <button class="floor-tab" [class.active]="selectedEtage() === 2" (click)="setEtage(2)">
+          2ème étage
+        </button>
+      </div>
+
+      <!-- Floor Title -->
+      <div class="floor-title">
+        <h2>{{ selectedEtage() === 1 ? '1er' : selectedEtage() + 'ème' }} étage</h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <!-- Plan Container -->
+      <div class="map-container">
+        @if (locauxEtage().length === 0) {
+          <div class="empty-state">
+            <span class="material-icons">grid_view</span>
+            <h3>Aucun espace sur cet étage</h3>
+            <p>Ajoutez des espaces pour configurer le plan</p>
+            <button class="btn btn-primary" (click)="openAddModal()">
+              <span class="material-icons">add</span>
+              Ajouter un espace
+            </button>
+          </div>
+        } @else {
+          <div class="floor-plan">
+            <!-- Row 1 (top) -->
+            <div class="plan-row">
+              @for (local of locauxEtage(); track local._id) {
+                @if (local.y === 1) {
+                  <div
+                    class="shop-block"
+                    [class.active]="selectedLocal()?._id === local._id"
+                    [class.libre]="local.statut === 'LIBRE'"
+                    [class.drop-target]="local.statut === 'LIBRE' && draggedBoutique()"
+                    [class.is-dragging]="draggedLocal()?._id === local._id"
+                    [style.background]="local.couleur || '#C9A962'"
+                    [style.grid-column]="'span ' + (local.largeur || 1)"
+                    draggable="true"
+                    (click)="onLocalClick(local)"
+                    (dragstart)="onLocalDragStart(local, $event)"
+                    (dragend)="onLocalDragEnd()"
+                    (dragover)="onSpaceDragOver(local, $event)"
+                    (drop)="onSpaceDrop(local, $event)"
+                  >
+                    <span class="shop-name">{{ local.id_boutique?.nom || local.numero }}</span>
+                    @if (local.statut === 'LIBRE') {
+                      @if (draggedBoutique()) {
+                        <span class="drop-hint">
+                          <span class="material-icons">add_circle</span>
+                          Déposer
+                        </span>
+                      } @else {
+                        <span class="shop-libre">LIBRE</span>
+                      }
+                    } @else {
+                      <button class="unassign-btn" (click)="unassignBoutique(local, $event)" title="Libérer l'espace">
+                        <span class="material-icons">close</span>
+                      </button>
+                    }
+                  </div>
+                }
+              }
+            </div>
+
+            <!-- Central Zone -->
+            <div class="plan-center">
+              <div class="plan-row side-left">
+                @for (local of locauxEtage(); track local._id) {
+                  @if (local.y === 2 && local.x <= 2) {
+                    <div
+                      class="shop-block"
+                      [class.active]="selectedLocal()?._id === local._id"
+                      [class.libre]="local.statut === 'LIBRE'"
+                      [class.drop-target]="local.statut === 'LIBRE' && draggedBoutique()"
+                      [class.is-dragging]="draggedLocal()?._id === local._id"
+                      [style.background]="local.couleur || '#C9A962'"
+                      draggable="true"
+                      (click)="onLocalClick(local)"
+                      (dragstart)="onLocalDragStart(local, $event)"
+                      (dragend)="onLocalDragEnd()"
+                      (dragover)="onSpaceDragOver(local, $event)"
+                      (drop)="onSpaceDrop(local, $event)"
+                    >
+                      <span class="shop-name">{{ local.id_boutique?.nom || local.numero }}</span>
+                      @if (local.statut === 'LIBRE') {
+                        @if (draggedBoutique()) {
+                          <span class="drop-hint">
+                            <span class="material-icons">add_circle</span>
+                            Déposer
+                          </span>
+                        } @else {
+                          <span class="shop-libre">LIBRE</span>
+                        }
+                      } @else {
+                        <button class="unassign-btn" (click)="unassignBoutique(local, $event)" title="Libérer l'espace">
+                          <span class="material-icons">close</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+
+              <!-- Allée centrale -->
+              <div class="central-aisle">
+                <div class="escalator-zone">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                  </svg>
+                  <span>Escalators</span>
+                </div>
+                <div class="aisle-arrow">
+                  <span>&#8592;</span>
+                  <span class="aisle-text">Food Court & Services</span>
+                </div>
+              </div>
+
+              <div class="plan-row side-right">
+                @for (local of locauxEtage(); track local._id) {
+                  @if (local.y === 2 && local.x > 2) {
+                    <div
+                      class="shop-block"
+                      [class.active]="selectedLocal()?._id === local._id"
+                      [class.libre]="local.statut === 'LIBRE'"
+                      [class.drop-target]="local.statut === 'LIBRE' && draggedBoutique()"
+                      [class.is-dragging]="draggedLocal()?._id === local._id"
+                      [style.background]="local.couleur || '#C9A962'"
+                      draggable="true"
+                      (click)="onLocalClick(local)"
+                      (dragstart)="onLocalDragStart(local, $event)"
+                      (dragend)="onLocalDragEnd()"
+                      (dragover)="onSpaceDragOver(local, $event)"
+                      (drop)="onSpaceDrop(local, $event)"
+                    >
+                      <span class="shop-name">{{ local.id_boutique?.nom || local.numero }}</span>
+                      @if (local.statut === 'LIBRE') {
+                        @if (draggedBoutique()) {
+                          <span class="drop-hint">
+                            <span class="material-icons">add_circle</span>
+                            Déposer
+                          </span>
+                        } @else {
+                          <span class="shop-libre">LIBRE</span>
+                        }
+                      } @else {
+                        <button class="unassign-btn" (click)="unassignBoutique(local, $event)" title="Libérer l'espace">
+                          <span class="material-icons">close</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+
+            <!-- Row 3 (bottom) -->
+            <div class="plan-row bottom-row">
+              @for (local of locauxEtage(); track local._id) {
+                @if (local.y === 3) {
+                  <div
+                    class="shop-block"
+                    [class.active]="selectedLocal()?._id === local._id"
+                    [class.libre]="local.statut === 'LIBRE'"
+                    [class.drop-target]="local.statut === 'LIBRE' && draggedBoutique()"
+                    [class.is-dragging]="draggedLocal()?._id === local._id"
+                    [style.background]="local.couleur || '#C9A962'"
+                    draggable="true"
+                    (click)="onLocalClick(local)"
+                    (dragstart)="onLocalDragStart(local, $event)"
+                    (dragend)="onLocalDragEnd()"
+                    (dragover)="onSpaceDragOver(local, $event)"
+                    (drop)="onSpaceDrop(local, $event)"
+                  >
+                    <span class="shop-name">{{ local.id_boutique?.nom || local.numero }}</span>
+                    @if (local.statut === 'LIBRE') {
+                      @if (draggedBoutique()) {
+                        <span class="drop-hint">
+                          <span class="material-icons">add_circle</span>
+                          Déposer
+                        </span>
+                      } @else {
+                        <span class="shop-libre">LIBRE</span>
+                      }
+                    } @else {
+                      <button class="unassign-btn" (click)="unassignBoutique(local, $event)" title="Libérer l'espace">
+                        <span class="material-icons">close</span>
+                      </button>
+                    }
+                  </div>
+                }
+              }
+
+              <!-- WC et autres services -->
+              <div class="service-block wc">
+                <span>WC</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map Legend -->
+          <div class="map-legend">
+            @for (item of legendItems(); track item.label) {
+              <div class="legend-item">
+                <span class="legend-dot" [style.background]="item.color"></span>
+                <span class="legend-label">{{ item.label }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Modifier l'espace {{ selectedLocal()?.numero }}</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Numéro</label>
+        <input
+          type="text"
+          [value]="editForm().numero"
+          (input)="updateEditField('numero', $any($event.target).value)"
+          placeholder="Ex: A1, B2..."
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Couleur</label>
+        <div class="color-picker-row">
+          <input
+            type="color"
+            [value]="editForm().couleur"
+            (input)="updateEditField('couleur', $any($event.target).value)"
+            class="color-input"
+          >
+          <span class="color-value">{{ editForm().couleur }}</span>
+          <div class="color-presets">
+            @for (color of ['#C41E3A','#E75480','#C9A962','#722F37','#A9A9A9','#D4A5A5','#10B981','#6366F1']; track color) {
+              <button
+                class="preset-dot"
+                [style.background]="color"
+                [class.active]="editForm().couleur === color"
+                (click)="updateEditField('couleur', color)"
+              ></button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Boutique assignée</label>
+        <select
+          [value]="editForm().id_boutique"
+          (change)="updateEditField('id_boutique', $any($event.target).value)"
+        >
+          <option value="">-- Aucune (LIBRE) --</option>
+          @for (b of boutiques(); track b._id) {
+            <option [value]="b._id">{{ b.nom }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-info">
+        <div class="info-row">
+          <span>Position:</span>
+          <span>Col {{ selectedLocal()?.x }}, Ligne {{ selectedLocal()?.y }}</span>
+        </div>
+        <div class="info-row">
+          <span>Taille:</span>
+          <span>{{ selectedLocal()?.largeur }}×{{ selectedLocal()?.hauteur }}</span>
+        </div>
+        <div class="info-row">
+          <span>Étage:</span>
+          <span>{{ selectedLocal()?.etage }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger-outline" (click)="confirmDelete(selectedLocal(), $event)">
+        <span class="material-icons">delete</span>
+        Supprimer
+      </button>
+      <div class="footer-right">
+        <button class="btn btn-outline" (click)="closeModal()">Annuler</button>
+        <button class="btn btn-primary" [disabled]="isSubmitting()" (click)="saveLocal()">
+          @if (isSubmitting()) {
+            <span class="loader-sm"></span>
+          } @else {
+            <span class="material-icons">save</span>
+          }
+          Sauvegarder
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Add Modal -->
+@if (showAddModal()) {
+  <div class="modal-backdrop" (click)="closeAddModal()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Nouvel Espace</h2>
+      <button class="close-btn" (click)="closeAddModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Numéro *</label>
+        <input
+          type="text"
+          [value]="addForm().numero"
+          (input)="updateAddField('numero', $any($event.target).value)"
+          placeholder="Ex: A1, B2, C3..."
+        >
+      </div>
+
+      <div class="form-row two-cols">
+        <div class="form-group">
+          <label>Étage</label>
+          <select [value]="addForm().etage" (change)="updateAddField('etage', +$any($event.target).value)">
+            <option [value]="1">1er Étage</option>
+            <option [value]="2">2ème Étage</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Couleur</label>
+          <input type="color" [value]="addForm().couleur" (input)="updateAddField('couleur', $any($event.target).value)">
+        </div>
+      </div>
+
+      <div class="form-row two-cols">
+        <div class="form-group">
+          <label>Ligne (y) — 1=haut, 2=centre, 3=bas</label>
+          <select [value]="addForm().y" (change)="updateAddField('y', +$any($event.target).value)">
+            <option [value]="1">Rangée du haut</option>
+            <option [value]="2">Zone centrale</option>
+            <option [value]="3">Rangée du bas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Position (x)</label>
+          <input type="number" [value]="addForm().x" (input)="updateAddField('x', +$any($event.target).value)" min="1">
+        </div>
+      </div>
+
+      <div class="form-row two-cols">
+        <div class="form-group">
+          <label>Largeur (colonnes)</label>
+          <input type="number" [value]="addForm().largeur" (input)="updateAddField('largeur', +$any($event.target).value)" min="1">
+        </div>
+        <div class="form-group">
+          <label>Hauteur (lignes)</label>
+          <input type="number" [value]="addForm().hauteur" (input)="updateAddField('hauteur', +$any($event.target).value)" min="1">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeAddModal()">Annuler</button>
+      <button class="btn btn-primary" [disabled]="isSubmitting() || !addForm().numero" (click)="createLocal()">
+        @if (isSubmitting()) {
+          <span class="loader-sm"></span>
+        } @else {
+          <span class="material-icons">add</span>
+        }
+        Créer
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Delete Modal -->
+@if (showDeleteModal()) {
+  <div class="modal-backdrop" (click)="cancelDelete()"></div>
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Supprimer l'espace</h2>
+      <button class="close-btn" (click)="cancelDelete()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-warning">
+        <span class="material-icons">warning</span>
+        <p>Supprimer l'espace <strong>{{ deletingLocal()?.numero }}</strong> ?</p>
+        <p class="warning-text">Cette action est irréversible.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="cancelDelete()">Annuler</button>
+      <button class="btn btn-danger" (click)="deleteLocal()">
+        <span class="material-icons">delete</span>
+        Supprimer
+      </button>
+    </div>
+  </div>
+}

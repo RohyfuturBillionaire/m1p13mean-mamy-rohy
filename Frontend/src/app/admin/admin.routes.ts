@@ -32,6 +32,10 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./gestion-boutiques/gestion-boutiques.component').then(m => m.GestionBoutiquesComponent)
       },
       {
+        path: 'plan-centre',
+        loadComponent: () => import('./plan-centre/plan-centre.component').then(m => m.PlanCentreComponent)
+      },
+      {
         path: 'promotions',
         loadComponent: () => import('./promotions/promotions-admin.component').then(m => m.PromotionsAdminComponent)
       },

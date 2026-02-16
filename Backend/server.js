@@ -33,6 +33,7 @@ app.use('/api/boutiques', require('./routes/boutiqueRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/promotions', require('./routes/promotionRoutes'));
+app.use('/api/locaux', require('./routes/localRoutes'));
 
 // Cron jobs
 const cron = require('node-cron');

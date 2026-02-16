@@ -2,14 +2,20 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DataService } from '../../core/services/data.service';
-import { Boutique, Categorie } from '../../core/models/boutique.model';
+import { LocalApiService } from '../../core/services/local-api.service';
+import { environment } from '../../../environments/environments';
 
-interface MapPosition {
-  row: number;
-  col: number;
-  width: number;
-  height: number;
+interface MapLocal {
+  _id: string;
+  numero: string;
+  etage: number;
+  x: number;
+  y: number;
+  largeur: number;
+  hauteur: number;
+  couleur: string;
+  statut: string;
+  id_boutique: any | null;
 }
 
 @Component({
@@ -20,67 +26,49 @@ interface MapPosition {
   styleUrl: './map.component.scss'
 })
 export class MapComponent implements OnInit {
-  boutiques = signal<Boutique[]>([]);
-  categories = signal<Categorie[]>([]);
+  locaux = signal<MapLocal[]>([]);
   selectedEtage = signal(1);
-  selectedBoutique = signal<Boutique | null>(null);
+  selectedLocal = signal<MapLocal | null>(null);
   searchQuery = signal('');
-  selectedCategorie = signal<string>('all');
-  hoveredBoutique = signal<string | null>(null);
+  hoveredLocal = signal<string | null>(null);
 
-  // Positions prédéfinies pour les boutiques sur la grille (étage 1)
-  mapPositionsEtage1: { [key: string]: MapPosition } = {
-    'elegance-paris': { row: 1, col: 1, width: 2, height: 1 },
-    'gentleman-store': { row: 1, col: 3, width: 1, height: 1 },
-    'beaute-divine': { row: 1, col: 4, width: 1, height: 1 },
-    'parfums-orient': { row: 1, col: 5, width: 1, height: 2 },
-    'or-diamant': { row: 2, col: 1, width: 1, height: 1 },
-    'cafe-imperial': { row: 2, col: 2, width: 1, height: 1 },
-    'banque-premiere': { row: 2, col: 3, width: 2, height: 1 },
-    'tech-premium': { row: 3, col: 1, width: 1, height: 1 },
-  };
-
-  // Positions pour l'étage 2
-  mapPositionsEtage2: { [key: string]: MapPosition } = {
-    'urban-style': { row: 1, col: 1, width: 1, height: 1 },
-    'la-terrasse': { row: 1, col: 2, width: 2, height: 1 },
-    'sakura-sushi': { row: 1, col: 4, width: 1, height: 1 },
-    'art-interieur': { row: 2, col: 1, width: 2, height: 1 },
-    'sport-elite': { row: 2, col: 3, width: 1, height: 1 },
-  };
-
-  boutiquesEtage = computed(() => {
-    let filtered = this.boutiques().filter(b => b.etage === this.selectedEtage());
+  locauxEtage = computed(() => {
+    let filtered = this.locaux().filter(l => l.etage === this.selectedEtage());
 
     const query = this.searchQuery().toLowerCase();
     if (query) {
-      filtered = filtered.filter(b =>
-        b.nom.toLowerCase().includes(query) ||
-        b.tags.some(t => t.toLowerCase().includes(query))
+      filtered = filtered.filter(l =>
+        l.numero.toLowerCase().includes(query) ||
+        (l.id_boutique?.nom || '').toLowerCase().includes(query)
       );
-    }
-
-    if (this.selectedCategorie() !== 'all') {
-      filtered = filtered.filter(b => b.categorie === this.selectedCategorie());
     }
 
     return filtered;
   });
 
-  // Couleurs par catégorie (style similaire à l'exemple)
-  categoryColors: { [key: string]: string } = {
-    'mode': '#C41E3A',           // Rouge foncé
-    'beaute': '#E75480',         // Rose
-    'bijouterie': '#C9A962',     // Or
-    'electronique': '#D4A5A5',   // Rose clair
-    'maison': '#8B4513',         // Marron
-    'restauration': '#722F37',   // Bordeaux
-    'sport': '#DC143C',          // Rouge crimson
-    'services': '#A9A9A9',       // Gris
-  };
+  // Available floors (derived from data)
+  etages = computed(() => {
+    const floors = [...new Set(this.locaux().map(l => l.etage))].sort();
+    return floors.length > 0 ? floors : [1, 2];
+  });
+
+  // Build legend from unique colors used
+  legendItems = computed(() => {
+    const colorMap = new Map<string, string>();
+    for (const l of this.locaux()) {
+      if (l.statut === 'OCCUPE' && l.id_boutique) {
+        colorMap.set(l.couleur, l.id_boutique.type_boutique || l.id_boutique.nom);
+      }
+    }
+    const items: { label: string; color: string }[] = [];
+    colorMap.forEach((label, color) => items.push({ label, color }));
+    // Add "Libre" to legend
+    items.push({ label: 'Libre', color: '#94A3B8' });
+    return items;
+  });
 
   constructor(
-    private dataService: DataService,
+    private localApi: LocalApiService,
     private route: ActivatedRoute
   ) {}
 
@@ -95,34 +83,31 @@ export class MapComponent implements OnInit {
   }
 
   private loadData() {
-    this.dataService.getBoutiques().subscribe(boutiques => {
-      this.boutiques.set(boutiques);
-    });
-
-    this.dataService.getCategories().subscribe(categories => {
-      this.categories.set(categories);
+    this.localApi.getLocaux().subscribe({
+      next: (locaux) => this.locaux.set(locaux),
+      error: (err) => console.error('Erreur chargement locaux:', err)
     });
   }
 
   private highlightBoutique(boutiqueId: string) {
-    const boutique = this.boutiques().find(b => b.id === boutiqueId);
-    if (boutique) {
-      this.selectedEtage.set(boutique.etage);
-      this.selectedBoutique.set(boutique);
+    const local = this.locaux().find(l => l.id_boutique?._id === boutiqueId);
+    if (local) {
+      this.selectedEtage.set(local.etage);
+      this.selectedLocal.set(local);
     }
   }
 
   setEtage(etage: number) {
     this.selectedEtage.set(etage);
-    this.selectedBoutique.set(null);
+    this.selectedLocal.set(null);
   }
 
-  selectBoutique(boutique: Boutique) {
-    this.selectedBoutique.set(boutique);
+  selectLocal(local: MapLocal) {
+    this.selectedLocal.set(local);
   }
 
-  closeBoutiqueInfo() {
-    this.selectedBoutique.set(null);
+  closeLocalInfo() {
+    this.selectedLocal.set(null);
   }
 
   onSearch(event: Event) {
@@ -130,43 +115,30 @@ export class MapComponent implements OnInit {
     this.searchQuery.set(input.value);
   }
 
-  setCategorie(categorie: string) {
-    this.selectedCategorie.set(categorie);
+  setHoveredLocal(id: string | null) {
+    this.hoveredLocal.set(id);
   }
 
-  setHoveredBoutique(id: string | null) {
-    this.hoveredBoutique.set(id);
+  getLocalColor(local: MapLocal): string {
+    if (local.statut === 'LIBRE') return '#94A3B8';
+    return local.couleur || '#C9A962';
   }
 
-  getMapPosition(boutique: Boutique): MapPosition {
-    const positions = this.selectedEtage() === 1 ? this.mapPositionsEtage1 : this.mapPositionsEtage2;
-    return positions[boutique.id] || { row: 1, col: 1, width: 1, height: 1 };
+  getLocalLabel(local: MapLocal): string {
+    if (local.statut === 'OCCUPE' && local.id_boutique) {
+      return local.id_boutique.nom?.toUpperCase() || local.numero;
+    }
+    return local.numero;
   }
 
-  getBoutiqueGridStyle(boutique: Boutique) {
-    const pos = this.getMapPosition(boutique);
-    return {
-      'grid-row': `${pos.row} / span ${pos.height}`,
-      'grid-column': `${pos.col} / span ${pos.width}`
-    };
+  isLibre(local: MapLocal): boolean {
+    return local.statut === 'LIBRE';
   }
 
-  getBoutiqueColor(boutique: Boutique): string {
-    return this.categoryColors[boutique.categorie] || '#C9A962';
+  getLogoUrl(local: MapLocal): string {
+    const logo = local.id_boutique?.logo;
+    if (!logo) return '';
+    if (logo.startsWith('/')) return `${environment.apiUrl}${logo}`;
+    return logo;
   }
-
-  getCategorieLabel(categorieId: string): string {
-    const cat = this.categories().find(c => c.id === categorieId);
-    return cat ? cat.nom : categorieId;
-  }
-
-  // Légende des couleurs
-  legendItems = [
-    { label: 'Mode', color: '#C41E3A' },
-    { label: 'Beauté', color: '#E75480' },
-    { label: 'Bijouterie', color: '#C9A962' },
-    { label: 'Restauration', color: '#722F37' },
-    { label: 'Services', color: '#A9A9A9' },
-    { label: 'High-Tech', color: '#D4A5A5' },
-  ];
 }

@@ -27,6 +27,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     { label: 'Contrats', icon: 'description', route: '/admin/contrats' },
     { label: 'Types Contrat', icon: 'category', route: '/admin/types-contrat' },
     { label: 'Boutiques', icon: 'store', route: '/admin/gestion-boutiques' },
+    { label: 'Plan Centre', icon: 'map', route: '/admin/plan-centre' },
     { label: 'Promotions', icon: 'local_offer', route: '/admin/promotions' },
     { label: 'Loyers & Factures', icon: 'receipt', route: '/admin/loyers' },
     { label: 'Messages', icon: 'chat', route: '/admin/messages' },
