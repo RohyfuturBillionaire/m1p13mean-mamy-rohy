@@ -80,6 +80,18 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const boutiques = await Boutique.find({ user_proprietaire: req.params.userId }) 
+      .populate('user_proprietaire', 'nom prenom email')
+      .populate('id_categorie')
+      .populate('local_boutique');
+    res.json(boutiques);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } 
+});
+
 // POST create boutique
 router.post('/', upload.single('logo'), async (req, res) => {
   try {
