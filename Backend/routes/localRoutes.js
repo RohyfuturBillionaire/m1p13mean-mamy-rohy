@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Local = require('../models/Local');
+
+// Get available locals (status: true)
+router.get('/available', async (req, res) => {
+  try {
+    const locaux = await Local.find({ status: true });
+    res.json(locaux);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Créer un local
 router.post('/', async (req, res) => {
  try {

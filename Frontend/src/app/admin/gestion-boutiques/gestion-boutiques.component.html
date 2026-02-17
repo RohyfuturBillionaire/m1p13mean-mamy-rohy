@@ -160,6 +160,19 @@
               <input type="number" [(ngModel)]="form.loyer" min="0" step="100000">
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Local</label>
+              <select [(ngModel)]="form.local_boutique">
+                <option value="">-- Selectionner un local --</option>
+                @for (local of availableLocals(); track local._id) {
+                  <option [value]="local._id">
+                    {{ local.numero }} - Etage {{ local.etage === 0 ? 'RDC' : local.etage }} ({{ local.longueur }}m x {{ local.largeur }}m)
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="form-section">

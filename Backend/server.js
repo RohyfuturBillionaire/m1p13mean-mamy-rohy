@@ -31,6 +31,7 @@ app.use('/auth', require('./routes/authRoutes'));
 app.use('/roles', require('./routes/roleRoutes'));
 app.use('/users', authenticateToken, require('./routes/userRoutes'));
 app.use('/horaire',require('./routes/horaireBoutiqueRoutes'));
+app.use('/local', require('./routes/localRoutes'));
 // Protected routes (auth required)
 app.use('/articles', authenticateToken, require('./routes/articleRoutes'));
 app.use('/sitecrm', require('./routes/siteCrmRoutes'));
