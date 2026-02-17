@@ -8,6 +8,7 @@ const BoutiqueSchema = new mongoose.Schema({
   horaire_ouvert: { type: String },
   user_proprietaire: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   id_categorie: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+  local_boutique : { type: mongoose.Schema.Types.ObjectId, ref: 'Local' },
   loyer: { type: Number },
   type_boutique: { type: String },
   status: { type: Boolean, default: true },

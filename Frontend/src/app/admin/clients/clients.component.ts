@@ -69,6 +69,11 @@ export class ClientsComponent implements OnInit {
     return typeof user.id_role === 'object' ? user.id_role.role_name : '';
   }
 
+  isShop(user: UserDB): boolean {
+    if (!user.id_role) return false;
+    return typeof user.id_role === 'object' ? user.id_role.role_name==="boutique": false;
+  }
+
   applyFilters() {
     let filtered = [...this.users()];
 

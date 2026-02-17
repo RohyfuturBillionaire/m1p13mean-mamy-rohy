@@ -86,6 +86,7 @@
           <th>Inscription</th>
           <!-- <th>Statut</th> -->
           <th>Actions</th>
+          <th>liaison</th>
         </tr>
       </thead>
       <tbody>
@@ -145,6 +146,12 @@
                   🗑️
                 </button>
               </div>
+            </td>
+            <td>
+              <button class="action-btn" *ngIf="isShop(user)">
+                
+                🔗
+              </button>
             </td>
           </tr>
         }
