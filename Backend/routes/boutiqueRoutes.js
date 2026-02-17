@@ -82,7 +82,7 @@ router.get('/:id', async (req, res) => {
 
 router.get("/user/:userId", async (req, res) => {
   try {
-    const boutiques = await Boutique.find({ user_proprietaire: req.params.userId }) 
+    const boutiques = await Boutique.findOne({ user_proprietaire: req.params.userId }) 
       .populate('user_proprietaire', 'nom prenom email')
       .populate('id_categorie')
       .populate('local_boutique');
