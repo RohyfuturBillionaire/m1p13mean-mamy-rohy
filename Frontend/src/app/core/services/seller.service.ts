@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import {
   SellerUser,
   SellerBoutique,
@@ -33,6 +33,7 @@ import {
   MOCK_COMMANDES_VS_LIVRAISONS,
   MOCK_STOCK_STATUS
 } from '../data/seller-mock-data';
+import { BoutiqueApiService } from './boutique-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -77,7 +78,7 @@ export class SellerService {
     this.commandes().filter(c => c.statut === 'en_attente' || c.statut === 'payee')
   );
 
-  constructor() {
+  constructor(private boutiqueApi: BoutiqueApiService) {
     this.loadInitialData();
   }
 
@@ -94,36 +95,60 @@ export class SellerService {
   }
 
   // =============================================
-  // AUTHENTICATION
+  // AUTHENTICATION (uses localStorage from real login)
   // =============================================
-  login(username: string, password: string): Observable<boolean> {
-    if (username === 'boutique' && password === 'boutique') {
-      this.isAuthenticated.set(true);
-      this.currentUser.set(MOCK_SELLER_USER);
-      this.boutique.set(MOCK_SELLER_BOUTIQUE);
-      return of(true).pipe(delay(500));
+  isLoggedIn(): boolean {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const role = (userData?.user?.role || '').toLowerCase();
+      return role === 'boutique';
+    } catch {
+      return false;
     }
-    return of(false).pipe(delay(500));
   }
 
   logout(): void {
     this.isAuthenticated.set(false);
     this.currentUser.set(null);
     this.boutique.set(null);
-  }
-
-  isLoggedIn(): boolean {
-    return this.isAuthenticated();
+    localStorage.removeItem('user');
   }
 
   getCurrentUser(): SellerUser | null {
     return this.currentUser();
   }
 
+  getBoutiqueId(): string | null {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      return userData?.user?.boutiqueId || null;
+    } catch {
+      return null;
+    }
+  }
+
   // =============================================
-  // BOUTIQUE
+  // BOUTIQUE (real API for fetch, mock for rest)
   // =============================================
   getBoutique(): Observable<SellerBoutique | null> {
+    const boutiqueId = this.getBoutiqueId();
+    if (boutiqueId) {
+      return this.boutiqueApi.getMyBoutique().pipe(
+        map(b => {
+          // Map API response to SellerBoutique shape for compatibility
+          const sellerBoutique: SellerBoutique = {
+            ...MOCK_SELLER_BOUTIQUE,
+            id: b._id,
+            nom: b.nom,
+            description: b.description || MOCK_SELLER_BOUTIQUE.description,
+            email: b.email || MOCK_SELLER_BOUTIQUE.email,
+            logo: b.logo ? (b.logo.startsWith('http') ? b.logo : 'http://localhost:5000' + b.logo) : MOCK_SELLER_BOUTIQUE.logo,
+          };
+          this.boutique.set(sellerBoutique);
+          return sellerBoutique;
+        })
+      );
+    }
     return of(this.boutique());
   }
 

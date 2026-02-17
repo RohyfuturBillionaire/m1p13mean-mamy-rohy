@@ -43,13 +43,27 @@ const loginUser = async (user, res) => {
 
   const role = user.id_role ? await Role.findById(user.id_role) : null;
 
+  let boutiqueId = null;
+  let hasBoutique = true;
+  if (role && role.role_name === 'boutique') {
+    const Boutique = require('../models/Boutique');
+    const bout = await Boutique.findOne({ user_proprietaire: user._id, status: true });
+    if (bout) {
+      boutiqueId = bout._id;
+    } else {
+      hasBoutique = false;
+    }
+  }
+
   return {
     accessToken,
     user: {
       id: user._id,
       email: user.email,
       username: user.username,
-      role: role ? role.role_name : null
+      role: role ? role.role_name : null,
+      boutiqueId,
+      hasBoutique
     }
   };
 };

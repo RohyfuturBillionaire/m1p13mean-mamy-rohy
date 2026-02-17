@@ -4,7 +4,6 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RoleService } from '../../../core/services/role.service';
-import { SellerService } from '../../../core/services/seller.service';
 
 @Component({
   selector: 'app-register',
@@ -37,8 +36,7 @@ export class RegisterComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private roleService: RoleService,
-    private sellerService: SellerService
+    private roleService: RoleService
   ) {}
 
   togglePassword() {
@@ -93,7 +91,6 @@ export class RegisterComponent implements OnInit {
         this.isLoading.set(false);
         const roleName = (userConnected.user?.role || '').toLowerCase();
         if (roleName === 'boutique') {
-          this.sellerService.login("boutique", "boutique");
           this.router.navigate(['/seller/dashboard']);
         } else if (!roleName) {
           this.router.navigate(['/admin/dashboard']);

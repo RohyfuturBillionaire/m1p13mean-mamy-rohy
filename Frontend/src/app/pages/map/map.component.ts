@@ -84,7 +84,7 @@ export class MapComponent implements OnInit {
 
   private loadData() {
     this.localApi.getLocaux().subscribe({
-      next: (locaux) => this.locaux.set(locaux),
+      next: (locaux) => this.locaux.set(locaux.filter((l: any) => !l.masque)),
       error: (err) => console.error('Erreur chargement locaux:', err)
     });
   }

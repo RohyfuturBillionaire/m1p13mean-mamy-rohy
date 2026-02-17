@@ -33,4 +33,12 @@ export class LocalApiService {
   deleteLocal(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
+
+  swapPositions(idA: string, idB: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/swap/positions`, { idA, idB });
+  }
+
+  toggleMasque(id: string, masque: boolean): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}`, { masque });
+  }
 }

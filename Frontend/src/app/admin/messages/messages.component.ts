@@ -138,11 +138,11 @@ export class MessagesComponent implements OnInit {
 
   getRoleIcon(role: string): string {
     const icons: Record<string, string> = {
-      'admin': '👤',
-      'boutique': '🏪',
-      'client': '👥'
+      'admin': 'admin_panel_settings',
+      'boutique': 'store',
+      'client': 'person'
     };
-    return icons[role] || '👤';
+    return icons[role] || 'person';
   }
 
   isOwnMessage(msg: Message): boolean {

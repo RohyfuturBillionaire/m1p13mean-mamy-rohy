@@ -8,7 +8,15 @@ export class AuthService {
   private accessToken: string | null = null;
   private apiUrl = `${environment.apiUrl}/auth`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    // Restore token from localStorage on app init (survives page refresh)
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      if (userData?.accessToken) {
+        this.accessToken = userData.accessToken;
+      }
+    } catch {}
+  }
 
   login(email: string, password: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })

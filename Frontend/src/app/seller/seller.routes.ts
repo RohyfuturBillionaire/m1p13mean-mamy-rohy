@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 import { SellerLayoutComponent } from './layout/seller-layout.component';
+import { sellerGuard } from '../auth/guards/seller.guard';
 
 export const SELLER_ROUTES: Routes = [
   {
     path: '',
     component: SellerLayoutComponent,
+    canActivate: [sellerGuard],
     children: [
       {
         path: '',

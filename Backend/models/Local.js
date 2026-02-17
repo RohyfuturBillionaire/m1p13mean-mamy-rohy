@@ -9,7 +9,8 @@ const LocalSchema = new mongoose.Schema({
   hauteur: { type: Number, default: 1 },
   couleur: { type: String, default: '#C9A962' },
   statut: { type: String, enum: ['LIBRE', 'OCCUPE'], default: 'LIBRE' },
-  id_boutique: { type: mongoose.Schema.Types.ObjectId, ref: 'Boutique', default: null }
+  id_boutique: { type: mongoose.Schema.Types.ObjectId, ref: 'Boutique', default: null },
+  masque: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Local', LocalSchema);

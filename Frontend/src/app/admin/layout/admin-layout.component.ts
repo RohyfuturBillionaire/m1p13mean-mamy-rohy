@@ -30,6 +30,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     { label: 'Plan Centre', icon: 'map', route: '/admin/plan-centre' },
     { label: 'Promotions', icon: 'local_offer', route: '/admin/promotions' },
     { label: 'Loyers & Factures', icon: 'receipt', route: '/admin/loyers' },
+    { label: 'Associations', icon: 'link', route: '/admin/association-boutiques' },
     { label: 'Messages', icon: 'chat', route: '/admin/messages' },
     { label: 'Paramètres', icon: 'settings', route: '/admin/parametres' }
   ];

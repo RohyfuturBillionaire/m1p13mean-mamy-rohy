@@ -18,10 +18,10 @@ export class ParametresComponent implements OnInit {
   saveSuccess = signal(false);
 
   sections = [
-    { id: 'general', label: 'Général', icon: '🏪' },
-    { id: 'contenu', label: 'Contenu', icon: '📝' },
-    { id: 'utilisateurs', label: 'Utilisateurs', icon: '👥' },
-    { id: 'systeme', label: 'Système', icon: '⚙️' }
+    { id: 'general', label: 'Général', icon: 'store' },
+    { id: 'contenu', label: 'Contenu', icon: 'edit_note' },
+    { id: 'utilisateurs', label: 'Utilisateurs', icon: 'group' },
+    { id: 'systeme', label: 'Système', icon: 'settings' }
   ];
 
   sliderImages = [

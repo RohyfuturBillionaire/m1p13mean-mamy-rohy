@@ -52,10 +52,6 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    if (!this.sellerService.isLoggedIn()) {
-      this.router.navigate(['/connexion']);
-      return;
-    }
     this.loadData();
     this.checkScreenSize();
   }

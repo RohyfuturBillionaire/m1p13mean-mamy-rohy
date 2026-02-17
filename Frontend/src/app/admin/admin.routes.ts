@@ -48,6 +48,10 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./messages/messages.component').then(m => m.MessagesComponent)
       },
       {
+        path: 'association-boutiques',
+        loadComponent: () => import('./association-boutiques/association-boutiques.component').then(m => m.AssociationBoutiquesComponent)
+      },
+      {
         path: 'parametres',
         loadComponent: () => import('./parametres/parametres.component').then(m => m.ParametresComponent)
       }

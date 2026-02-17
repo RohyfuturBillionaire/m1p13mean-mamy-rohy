@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
-import { SellerService } from '../../../core/services/seller.service';
 import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
@@ -23,8 +22,7 @@ export class LoginComponent {
   constructor(
     private router: Router,
     private adminService: AdminService,
-    private authService: AuthService,
-    private sellerService: SellerService
+    private authService: AuthService
   ) {}
 
   togglePassword() {
@@ -50,8 +48,11 @@ export class LoginComponent {
         if (!roleName) {
           this.router.navigate(['/admin/dashboard']);
         } else if (roleName === 'boutique') {
-          this.sellerService.login("boutique", "boutique");
-          this.router.navigate(['/seller/dashboard']);
+          if (u.user?.hasBoutique === false) {
+            this.router.navigate(['/boutique-pending']);
+          } else {
+            this.router.navigate(['/seller/dashboard']);
+          }
         } else {
           this.router.navigate(['/']);
         }

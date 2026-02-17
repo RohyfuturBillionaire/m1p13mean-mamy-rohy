@@ -49,14 +49,46 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/locaux/swap/positions — swap positions of two spaces (admin)
+// Must be before /:id to avoid matching "swap" as an id
+router.put('/swap/positions', async (req, res) => {
+  try {
+    const { idA, idB } = req.body;
+    if (!idA || !idB) return res.status(400).json({ message: 'idA et idB sont requis' });
+
+    const [localA, localB] = await Promise.all([
+      Local.findById(idA),
+      Local.findById(idB)
+    ]);
+
+    if (!localA || !localB) return res.status(404).json({ message: 'Local non trouvé' });
+
+    // Swap x, y, etage
+    const tempX = localA.x, tempY = localA.y, tempEtage = localA.etage;
+    localA.x = localB.x; localA.y = localB.y; localA.etage = localB.etage;
+    localB.x = tempX; localB.y = tempY; localB.etage = tempEtage;
+
+    await Promise.all([localA.save(), localB.save()]);
+
+    const [updatedA, updatedB] = await Promise.all([
+      Local.findById(idA).populate('id_boutique', 'nom logo type_boutique description'),
+      Local.findById(idB).populate('id_boutique', 'nom logo type_boutique description')
+    ]);
+
+    res.json({ localA: updatedA, localB: updatedB });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // PUT /api/locaux/:id — update space properties (admin)
 router.put('/:id', async (req, res) => {
   try {
-    const { numero, etage, x, y, largeur, hauteur, couleur, statut } = req.body;
+    const { numero, etage, x, y, largeur, hauteur, couleur, statut, masque } = req.body;
 
     const local = await Local.findByIdAndUpdate(
       req.params.id,
-      { numero, etage, x, y, largeur, hauteur, couleur, statut },
+      { numero, etage, x, y, largeur, hauteur, couleur, statut, masque },
       { new: true, runValidators: true }
     ).populate('id_boutique', 'nom logo type_boutique description');
 

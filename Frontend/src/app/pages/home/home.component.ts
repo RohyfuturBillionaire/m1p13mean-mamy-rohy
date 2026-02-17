@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DataService } from '../../core/services/data.service';
-import { Boutique, Categorie } from '../../core/models/boutique.model';
+import { BoutiqueApiService, BoutiqueApi, CategoryApi } from '../../core/services/boutique-api.service';
 import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
 
 @Component({
@@ -15,15 +15,16 @@ import { PromotionService, PromotionApi } from '../../core/services/promotion.se
 export class HomeComponent implements OnInit, OnDestroy {
   sliderImages = signal<any[]>([]);
   currentSlide = signal(0);
-  boutiquesVedettes = signal<Boutique[]>([]);
+  boutiquesVedettes = signal<BoutiqueApi[]>([]);
   promotions = signal<PromotionApi[]>([]);
-  categories = signal<Categorie[]>([]);
-  nouveautes = signal<Boutique[]>([]);
+  categories = signal<CategoryApi[]>([]);
+  nouveautes = signal<BoutiqueApi[]>([]);
 
   private sliderInterval: any;
 
   constructor(
     private dataService: DataService,
+    private boutiqueApi: BoutiqueApiService,
     private promotionService: PromotionService
   ) {}
 
@@ -41,20 +42,21 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.sliderImages.set(images);
     });
 
-    this.dataService.getBoutiquesVedettes().subscribe(boutiques => {
-      this.boutiquesVedettes.set(boutiques);
+    this.boutiqueApi.getAll({ status: true }).subscribe(boutiques => {
+      this.boutiquesVedettes.set(boutiques.slice(0, 6));
+      // Newest boutiques by createdAt
+      const sorted = [...boutiques].sort((a, b) =>
+        new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+      );
+      this.nouveautes.set(sorted.slice(0, 4));
     });
 
     this.promotionService.getActive().subscribe(promos => {
       this.promotions.set(promos.slice(0, 4));
     });
 
-    this.dataService.getCategories().subscribe(cats => {
+    this.boutiqueApi.getCategories().subscribe(cats => {
       this.categories.set(cats);
-    });
-
-    this.dataService.getNouvellesBoutiques().subscribe(boutiques => {
-      this.nouveautes.set(boutiques);
     });
   }
 
@@ -86,8 +88,18 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.startSlider();
   }
 
+  getLogoUrl(boutique: BoutiqueApi): string {
+    if (!boutique.logo) return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800';
+    if (boutique.logo.startsWith('http')) return boutique.logo;
+    return 'http://localhost:5000' + boutique.logo;
+  }
+
   formatPrix(prix: number): string {
-    return this.dataService.formatPrix(prix);
+    return new Intl.NumberFormat('fr-MG', {
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(prix) + ' Ar';
   }
 
   getReductionText(promo: PromotionApi): string {

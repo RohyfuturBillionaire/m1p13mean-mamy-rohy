@@ -34,6 +34,7 @@ app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/promotions', require('./routes/promotionRoutes'));
 app.use('/api/locaux', require('./routes/localRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Cron jobs
 const cron = require('node-cron');

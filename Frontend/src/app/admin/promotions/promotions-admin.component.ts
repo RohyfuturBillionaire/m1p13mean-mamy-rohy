@@ -70,9 +70,9 @@ export class PromotionsAdminComponent implements OnInit {
 
   getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
-      'PENDING': '⏳',
-      'APPROVED': '✅',
-      'REJECTED': '❌'
+      'PENDING': 'hourglass_empty',
+      'APPROVED': 'check_circle',
+      'REJECTED': 'cancel'
     };
     return icons[status] || '';
   }
