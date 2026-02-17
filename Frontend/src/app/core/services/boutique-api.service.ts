@@ -55,6 +55,16 @@ export class BoutiqueApiService {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
+  getUnlinkedBoutiques(): Observable<BoutiqueApi[]> {
+    return this.http.get<{ data: BoutiqueApi[] }>(`${this.apiUrl}/unlinked`).pipe(
+      map(res => res.data)
+    );
+  }
+
+  linkBoutiqueToUser(boutiqueId: string, userId: string): Observable<BoutiqueApi> {
+    return this.http.put<BoutiqueApi>(`${this.apiUrl}/${boutiqueId}/link-user`, { userId });
+  }
+
   getCategories(): Observable<CategoryApi[]> {
     return this.http.get<CategoryApi[]>(this.categoriesUrl);
   }

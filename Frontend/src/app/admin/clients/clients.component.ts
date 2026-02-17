@@ -5,6 +5,7 @@ import { AdminService } from '../../core/services/admin.service';
 import { User, UserDB } from '../../core/models/admin.model';
 import { UsersService } from './services/users.service';
 import { RoleService } from '../../core/role_user/services/role.service';
+import { BoutiqueApiService, BoutiqueApi } from '../../core/services/boutique-api.service';
 
 @Component({
   selector: 'app-clients',
@@ -24,6 +25,12 @@ export class ClientsComponent implements OnInit {
   editMode = signal(false);
   showDeleteConfirm = signal(false);
   userToDelete = signal<UserDB | null>(null);
+  
+  // Link boutique modal
+  showLinkBoutiqueModal = signal(false);
+  unlinkedBoutiques = signal<BoutiqueApi[]>([]);
+  selectedUserForLink = signal<UserDB | null>(null);
+  selectedBoutiqueId = signal<string>('');
 
   currentUser: Partial<UserDB> = {
       username: '',
@@ -36,7 +43,8 @@ export class ClientsComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private usersService: UsersService,
-    private roleService: RoleService
+    private roleService: RoleService,
+    private boutiqueApiService: BoutiqueApiService
   ) {}
 
   ngOnInit() {
@@ -219,5 +227,42 @@ export class ClientsComponent implements OnInit {
       }).length
       // actifs: users.filter(u => u.actif).length
     };
+  }
+
+  // Link Boutique Modal Methods
+  openLinkBoutiqueModal(user: UserDB) {
+    this.selectedUserForLink.set(user);
+    this.selectedBoutiqueId.set('');
+    this.loadUnlinkedBoutiques();
+    this.showLinkBoutiqueModal.set(true);
+  }
+
+  closeLinkBoutiqueModal() {
+    this.showLinkBoutiqueModal.set(false);
+    this.selectedUserForLink.set(null);
+    this.selectedBoutiqueId.set('');
+  }
+
+  private loadUnlinkedBoutiques() {
+    this.boutiqueApiService.getUnlinkedBoutiques().subscribe(boutiques => {
+      this.unlinkedBoutiques.set(boutiques);
+    });
+  }
+
+  linkBoutique() {
+    const user = this.selectedUserForLink();
+    const boutiqueId = this.selectedBoutiqueId();
+    
+    if (user && boutiqueId) {
+      this.boutiqueApiService.linkBoutiqueToUser(boutiqueId, user._id).subscribe({
+        next: () => {
+          this.closeLinkBoutiqueModal();
+          this.loadUsers();
+        },
+        error: (error) => {
+          console.error('Error linking boutique:', error);
+        }
+      });
+    }
   }
 }

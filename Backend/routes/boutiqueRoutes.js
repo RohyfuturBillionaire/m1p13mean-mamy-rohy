@@ -26,6 +26,44 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET boutiques without owner (not linked to any user)
+router.get('/unlinked', async (req, res) => {
+  try {
+    const boutiques = await Boutique.find({ 
+      $or: [
+        { user_proprietaire: null },
+        { user_proprietaire: { $exists: false } }
+      ],
+      status: true
+    })
+      .populate('id_categorie')
+      .sort({ createdAt: -1 });
+
+    res.json({ data: boutiques });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Link a boutique to a user
+router.put('/:id/link-user', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const boutique = await Boutique.findByIdAndUpdate(
+      req.params.id, 
+      { user_proprietaire: userId }, 
+      { new: true, runValidators: true }
+    )
+      .populate('user_proprietaire', 'nom prenom email')
+      .populate('id_categorie');
+    
+    if (!boutique) return res.status(404).json({ message: 'Boutique non trouvée' });
+    res.json(boutique);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // GET single boutique
 router.get('/:id', async (req, res) => {
   try {
