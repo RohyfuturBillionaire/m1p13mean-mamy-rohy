@@ -23,6 +23,9 @@ export class HoraireBoutiqueService {
  updateHoraire(id: string, horaire: any): Observable<any> {
  return this.http.put(`${this.apiUrl}/${id}`, horaire);
  }
+ getHoraireByBoutiqueId(boutiqueId: string): Observable<any> {
+ return this.http.get(`${this.apiUrl}/${boutiqueId}`);
+ }
 
  deleteHoraire(id: string): Observable<any> {
  return this.http.delete(`${this.apiUrl}/${id}`);

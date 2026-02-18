@@ -1,6 +1,9 @@
 <div class="profil-page">
   <div class="page-header">
-    <div><h1>Ma Boutique</h1><p>Gérez les informations de votre boutique</p></div>
+    <div>
+      <h1>Ma Boutique</h1>
+      <p>Gérez les informations de votre boutique</p>
+    </div>
     <div class="header-actions">
       <button class="btn" [class.btn-outline]="!isEditing()" [class.btn-secondary]="isEditing()" (click)="toggleEdit()">
         <span class="material-icons">{{ isEditing() ? 'close' : 'edit' }}</span>
@@ -117,19 +120,61 @@
           </div>
         </div>
 
-        <!-- Horaires -->
+        <!-- Horaires d'ouverture (de base) -->
         <div class="card">
           <div class="card-header"><h3>Horaires d'ouverture</h3></div>
           <div class="card-body">
             @if (isEditing()) {
               <div class="form-group">
                 <label>Horaires</label>
-                <input type="text" [value]="editData().horaire_ouvert" (input)="updateField('horaire_ouvert', $any($event.target).value)" placeholder="Ex: 08:00 - 20:00">
+                <input 
+                  type="text" 
+                  [value]="editData().horaire_ouvert" 
+                  (input)="updateField('horaire_ouvert', $any($event.target).value)"
+                  placeholder="Ex: 08:00 - 18:00">
               </div>
             } @else {
               <div class="info-item">
                 <span class="material-icons">schedule</span>
                 <span>{{ boutique()!.horaire_ouvert || 'Non renseigné' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Horaires spéciaux -->
+        <div class="card card-horaires">
+          <div class="card-header">
+            <h3>Horaires spéciaux</h3>
+            <button class="btn btn-sm btn-primary" (click)="openHoraireModal()">
+              <span class="material-icons">add</span> Ajouter
+            </button>
+          </div>
+          <div class="card-body">
+            @if (horaires().length > 0) {
+              <div class="horaires-list">
+                @for (horaire of horaires(); track horaire._id) {
+                  <div class="horaire-item">
+                    <div class="horaire-info">
+                      <span class="horaire-label">{{ horaire.label }}</span>
+                      <span class="horaire-time">{{ horaire.horaire_ouverture }} - {{ horaire.horaire_fermeture }}</span>
+                    </div>
+                    <div class="horaire-actions">
+                      <button class="icon-btn" (click)="openHoraireModal(horaire)" title="Modifier">
+                        <span class="material-icons">edit</span>
+                      </button>
+                      <button class="icon-btn danger" (click)="deleteHoraire(horaire)" title="Supprimer">
+                        <span class="material-icons">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-horaires">
+                <span class="material-icons">event</span>
+                <p>Aucun horaire spécial</p>
+                <small>Ajoutez des horaires pour les jours fériés, week-ends, etc.</small>
               </div>
             }
           </div>
@@ -217,3 +262,48 @@
     </div>
   }
 </div>
+
+<!-- Modal Horaire Spécial -->
+@if (showHoraireModal()) {
+  <div class="modal-backdrop" (click)="closeHoraireModal()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ editingHoraire() ? 'Modifier' : 'Ajouter' }} un horaire spécial</h2>
+      <button class="close-btn" (click)="closeHoraireModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Label *</label>
+        <input 
+          type="text" 
+          [value]="horaireForm().label" 
+          (input)="updateHoraireField('label', $any($event.target).value)"
+          placeholder="Ex: Samedi, Dimanche, Jour férié, Noël...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Heure d'ouverture *</label>
+          <input 
+            type="time" 
+            [value]="horaireForm().horaire_ouverture" 
+            (input)="updateHoraireField('horaire_ouverture', $any($event.target).value)">
+        </div>
+        <div class="form-group">
+          <label>Heure de fermeture *</label>
+          <input 
+            type="time" 
+            [value]="horaireForm().horaire_fermeture" 
+            (input)="updateHoraireField('horaire_fermeture', $any($event.target).value)">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeHoraireModal()">Annuler</button>
+      <button class="btn btn-primary" (click)="saveHoraire()">
+        {{ editingHoraire() ? 'Mettre à jour' : 'Enregistrer' }}
+      </button>
+    </div>
+  </div>
+}

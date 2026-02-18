@@ -2,10 +2,19 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environments';
-import { BoutiqueApi, BoutiqueApiService } from '../../core/services/boutique-api.service';
+import { BoutiqueApiService } from '../../core/services/boutique-api.service';
 import { SellerService } from '../../core/services/seller.service';
-// import { BoutiqueService } from '../../core/services/boutique.service';
-// import { environment } from '../../../environments/environment';
+import { HoraireBoutiqueService } from './services/horaire-boutique.service';
+
+export interface HoraireDB {
+  _id: string;
+  horaire_ouverture: string;
+  horaire_fermeture: string;
+  id_boutique: string;
+  label: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface BoutiqueDB {
   _id: string;
@@ -49,12 +58,26 @@ export interface BoutiqueDB {
 })
 export class ProfilBoutiqueComponent implements OnInit {
   boutique = signal<BoutiqueDB | null>(null);
+  horaires = signal<HoraireDB[]>([]);
   isEditing = signal(false);
   editData = signal<Partial<BoutiqueDB>>({});
   isLoading = signal(true);
   apiUrl = environment.apiUrl;
 
-  constructor(private boutiqueService: BoutiqueApiService,private sellerService: SellerService) {}
+  // Horaire modal
+  showHoraireModal = signal(false);
+  editingHoraire = signal<HoraireDB | null>(null);
+  horaireForm = signal<Partial<HoraireDB>>({
+    label: '',
+    horaire_ouverture: '',
+    horaire_fermeture: ''
+  });
+
+  constructor(
+    private boutiqueService: BoutiqueApiService,
+    private sellerService: SellerService,
+    private horaireService: HoraireBoutiqueService
+  ) {}
 
   ngOnInit() {
     this.loadBoutique();
@@ -71,6 +94,7 @@ export class ProfilBoutiqueComponent implements OnInit {
           next: (boutique) => {
             console.log('Boutique loaded:', boutique);
             this.boutique.set(boutique);
+            this.loadHoraires(boutique._id);
             this.isLoading.set(false);
           },
           error: (err) => {
@@ -80,6 +104,18 @@ export class ProfilBoutiqueComponent implements OnInit {
         });
       }
     }
+  }
+
+  private loadHoraires(boutiqueId: string) {
+    this.horaireService.getHoraireByBoutiqueId(boutiqueId).subscribe({
+      next: (data) => {
+        console.log('Horaires loaded:', data);
+        this.horaires.set(data);
+      },
+      error: (err) => {
+        console.error('Error loading horaires:', err);
+      }
+    });
   }
 
   getLogoUrl(): string {
@@ -102,7 +138,6 @@ export class ProfilBoutiqueComponent implements OnInit {
         description: this.boutique()?.description,
         email: this.boutique()?.email,
         reseau: this.boutique()?.reseau,
-        horaire_ouvert: this.boutique()?.horaire_ouvert,
         type_boutique: this.boutique()?.type_boutique
       });
       this.isEditing.set(true);
@@ -148,5 +183,91 @@ export class ProfilBoutiqueComponent implements OnInit {
   cancelEdit() {
     this.isEditing.set(false);
     this.editData.set({});
+  }
+
+  // Horaire methods
+  openHoraireModal(horaire?: HoraireDB) {
+    if (horaire) {
+      this.editingHoraire.set(horaire);
+      this.horaireForm.set({
+        label: horaire.label,
+        horaire_ouverture: horaire.horaire_ouverture,
+        horaire_fermeture: horaire.horaire_fermeture
+      });
+    } else {
+      this.editingHoraire.set(null);
+      this.horaireForm.set({
+        label: '',
+        horaire_ouverture: '',
+        horaire_fermeture: ''
+      });
+    }
+    this.showHoraireModal.set(true);
+  }
+
+  closeHoraireModal() {
+    this.showHoraireModal.set(false);
+    this.editingHoraire.set(null);
+    this.horaireForm.set({
+      label: '',
+      horaire_ouverture: '',
+      horaire_fermeture: ''
+    });
+  }
+
+  updateHoraireField(field: string, value: string) {
+    this.horaireForm.update(data => ({ ...data, [field]: value }));
+  }
+
+  saveHoraire() {
+    const form = this.horaireForm();
+    if (!form.label || !form.horaire_ouverture || !form.horaire_fermeture) {
+      return;
+    }
+
+    const horaireData = {
+      ...form,
+      id_boutique: this.boutique()?._id
+    };
+
+    if (this.editingHoraire()) {
+      // Update
+      this.horaireService.updateHoraire(this.editingHoraire()!._id, horaireData).subscribe({
+        next: () => {
+          console.log('Horaire updated');
+          this.loadHoraires(this.boutique()!._id);
+          this.closeHoraireModal();
+        },
+        error: (err) => {
+          console.error('Error updating horaire:', err);
+        }
+      });
+    } else {
+      // Create
+      this.horaireService.addHoraire(horaireData).subscribe({
+        next: () => {
+          console.log('Horaire created');
+          this.loadHoraires(this.boutique()!._id);
+          this.closeHoraireModal();
+        },
+        error: (err) => {
+          console.error('Error creating horaire:', err);
+        }
+      });
+    }
+  }
+
+  deleteHoraire(horaire: HoraireDB) {
+    if (confirm(`Supprimer l'horaire "${horaire.label}" ?`)) {
+      this.horaireService.deleteHoraire(horaire._id).subscribe({
+        next: () => {
+          console.log('Horaire deleted');
+          this.loadHoraires(this.boutique()!._id);
+        },
+        error: (err) => {
+          console.error('Error deleting horaire:', err);
+        }
+      });
+    }
   }
 }

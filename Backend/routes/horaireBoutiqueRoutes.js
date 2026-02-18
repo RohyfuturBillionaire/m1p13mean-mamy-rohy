@@ -25,6 +25,14 @@ router.get('/', async (req, res) => {
  res.status(500).json({ message: error.message });
  }
 });
+router.get('/:boutiqueId', async (req, res) => {
+    try {
+        const horaires = await HoraireBoutique.find({ id_boutique: req.params.boutiqueId });
+        res.json(horaires);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 router.put('/:id', async (req, res) => {
  try {
