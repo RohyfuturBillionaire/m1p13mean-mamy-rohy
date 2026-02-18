@@ -47,7 +47,7 @@ export class BoutiqueApiService {
     return this.http.post<BoutiqueApi>(this.apiUrl, formData);
   }
 
-  update(id: string, formData: FormData): Observable<BoutiqueApi> {
+  update(id: string, formData: any): Observable<BoutiqueApi> {
     return this.http.put<BoutiqueApi>(`${this.apiUrl}/${id}`, formData);
   }
 

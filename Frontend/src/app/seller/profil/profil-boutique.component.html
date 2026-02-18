@@ -7,38 +7,49 @@
         {{ isEditing() ? 'Annuler' : 'Modifier' }}
       </button>
       @if (isEditing()) {
-        <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
-          @if (isSaving()) { <span class="loader-sm"></span> }
+        <button class="btn btn-primary" (click)="saveChanges()">
           <span class="material-icons">save</span> Enregistrer
         </button>
       }
     </div>
   </div>
 
-  @if (boutique()) {
+  @if (isLoading()) {
+    <div class="loading">
+      <span class="material-icons spinning">sync</span>
+      <p>Chargement...</p>
+    </div>
+  } @else if (boutique()) {
     <div class="profil-content">
       <!-- Header Card -->
       <div class="header-card">
         <div class="boutique-cover">
-          <img [src]="boutique()!.image || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200'" alt="Cover">
+          <img [src]="'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200'" alt="Cover">
         </div>
         <div class="boutique-header">
           <div class="boutique-logo">
             @if (boutique()!.logo) {
-              <img [src]="boutique()!.logo" [alt]="boutique()!.nom">
+              <img [src]="getLogoUrl()" [alt]="boutique()!.nom">
             } @else {
               <span>{{ boutique()!.nom.charAt(0) }}</span>
             }
           </div>
           <div class="boutique-info">
             <h2>{{ boutique()!.nom }}</h2>
-            <span class="boutique-type">{{ getTypeLabel(boutique()!.type) }} • Étage {{ boutique()!.etage }}</span>
+            <span class="boutique-type">
+              @if (boutique()!.id_categorie) {
+                {{ boutique()!.id_categorie!.icone }} {{ boutique()!.id_categorie!.nom }}
+              }
+              @if (boutique()!.local_boutique) {
+                • Étage {{ boutique()!.local_boutique!.etage }}
+              }
+            </span>
           </div>
           <div class="boutique-status">
-            <span class="status-indicator" [class.open]="boutique()!.estOuvert"></span>
-            <span>{{ boutique()!.estOuvert ? 'Ouvert' : 'Fermé' }}</span>
+            <span class="status-indicator" [class.open]="boutique()!.status"></span>
+            <span>{{ boutique()!.status ? 'Ouvert' : 'Fermé' }}</span>
             <button class="toggle-btn" (click)="toggleStatus()">
-              <span class="material-icons">{{ boutique()!.estOuvert ? 'toggle_on' : 'toggle_off' }}</span>
+              <span class="material-icons">{{ boutique()!.status ? 'toggle_on' : 'toggle_off' }}</span>
             </button>
           </div>
         </div>
@@ -58,8 +69,18 @@
                 <label>Description</label>
                 <textarea rows="3" [value]="editData().description" (input)="updateField('description', $any($event.target).value)"></textarea>
               </div>
+              <div class="form-group">
+                <label>Type de boutique</label>
+                <input type="text" [value]="editData().type_boutique" (input)="updateField('type_boutique', $any($event.target).value)">
+              </div>
             } @else {
-              <p class="description">{{ boutique()!.description }}</p>
+              <p class="description">{{ boutique()!.description || 'Aucune description' }}</p>
+              @if (boutique()!.type_boutique) {
+                <div class="info-item">
+                  <span class="material-icons">category</span>
+                  <span>{{ boutique()!.type_boutique }}</span>
+                </div>
+              }
             }
           </div>
         </div>
@@ -70,17 +91,28 @@
           <div class="card-body">
             @if (isEditing()) {
               <div class="form-group">
-                <label>Téléphone</label>
-                <input type="tel" [value]="editData().telephone" (input)="updateField('telephone', $any($event.target).value)">
-              </div>
-              <div class="form-group">
                 <label>Email</label>
                 <input type="email" [value]="editData().email" (input)="updateField('email', $any($event.target).value)">
               </div>
+              <div class="form-group">
+                <label>Réseaux sociaux</label>
+                <input type="text" [value]="editData().reseau" (input)="updateField('reseau', $any($event.target).value)">
+              </div>
             } @else {
-              <div class="info-item"><span class="material-icons">phone</span><span>{{ boutique()!.telephone }}</span></div>
-              <div class="info-item"><span class="material-icons">email</span><span>{{ boutique()!.email }}</span></div>
-              <div class="info-item"><span class="material-icons">location_on</span><span>Étage {{ boutique()!.etage }}, Local {{ boutique()!.numeroBoutique }}</span></div>
+              <div class="info-item">
+                <span class="material-icons">email</span>
+                <span>{{ boutique()!.email || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="material-icons">share</span>
+                <span>{{ boutique()!.reseau || 'Non renseigné' }}</span>
+              </div>
+              @if (boutique()!.local_boutique) {
+                <div class="info-item">
+                  <span class="material-icons">location_on</span>
+                  <span>Étage {{ boutique()!.local_boutique!.etage }}, Local {{ boutique()!.local_boutique!.numero }}</span>
+                </div>
+              }
             }
           </div>
         </div>
@@ -90,43 +122,98 @@
           <div class="card-header"><h3>Horaires d'ouverture</h3></div>
           <div class="card-body">
             @if (isEditing()) {
-              <div class="horaires-grid">
-                <div class="form-group">
-                  <label>Lundi</label>
-                  <input type="text" [value]="editData().horaires?.lundi" (input)="updateHoraire('lundi', $any($event.target).value)" placeholder="09:00 - 19:00">
-                </div>
-                <div class="form-group">
-                  <label>Samedi</label>
-                  <input type="text" [value]="editData().horaires?.samedi" (input)="updateHoraire('samedi', $any($event.target).value)" placeholder="09:00 - 18:00">
-                </div>
-                <div class="form-group">
-                  <label>Dimanche</label>
-                  <input type="text" [value]="editData().horaires?.dimanche" (input)="updateHoraire('dimanche', $any($event.target).value)" placeholder="Fermé">
-                </div>
+              <div class="form-group">
+                <label>Horaires</label>
+                <input type="text" [value]="editData().horaire_ouvert" (input)="updateField('horaire_ouvert', $any($event.target).value)" placeholder="Ex: 08:00 - 20:00">
               </div>
             } @else {
-              <div class="horaires-list">
-                <div class="horaire-item"><span>Lundi</span><span>{{ boutique()!.horaires.lundi }}</span></div>
-                <div class="horaire-item"><span>Samedi</span><span>{{ boutique()!.horaires.samedi }}</span></div>
-                <div class="horaire-item"><span>Dimanche</span><span>{{ boutique()!.horaires.dimanche }}</span></div>
+              <div class="info-item">
+                <span class="material-icons">schedule</span>
+                <span>{{ boutique()!.horaire_ouvert || 'Non renseigné' }}</span>
               </div>
             }
           </div>
         </div>
 
-        <!-- Stats -->
+        <!-- Localisation -->
         <div class="card">
-          <div class="card-header"><h3>Statistiques</h3></div>
+          <div class="card-header"><h3>Localisation</h3></div>
           <div class="card-body">
-            <div class="stats-grid">
-              <div class="stat"><span class="stat-value">{{ boutique()!.superficie }}</span><span class="stat-label">m² de surface</span></div>
-              <div class="stat"><span class="stat-value">{{ boutique()!.tags.length }}</span><span class="stat-label">Tags</span></div>
-              <div class="stat"><span class="stat-value">{{ boutique()!.note }}/5</span><span class="stat-label">Note moyenne</span></div>
-              <div class="stat"><span class="stat-value">{{ boutique()!.avis }}</span><span class="stat-label">Avis clients</span></div>
-            </div>
+            @if (boutique()!.local_boutique) {
+              <div class="stats-grid">
+                <div class="stat">
+                  <span class="stat-value">{{ boutique()!.local_boutique!.numero }}</span>
+                  <span class="stat-label">Numéro local</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value">{{ boutique()!.local_boutique!.etage }}</span>
+                  <span class="stat-label">Étage</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value">{{ boutique()!.local_boutique!.loyer | number }}</span>
+                  <span class="stat-label">Ar/mois</span>
+                </div>
+              </div>
+            } @else {
+              <div class="info-item">
+                <span class="material-icons">location_off</span>
+                <span>Aucun local attribué</span>
+              </div>
+              @if (boutique()!.loyer) {
+                <div class="info-item">
+                  <span class="material-icons">payments</span>
+                  <span>{{ boutique()!.loyer | number }} Ar/mois</span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Catégorie -->
+        <div class="card">
+          <div class="card-header"><h3>Catégorie</h3></div>
+          <div class="card-body">
+            @if (boutique()!.id_categorie) {
+              <div class="category-display">
+                <span class="category-icon">{{ boutique()!.id_categorie!.icone }}</span>
+                <div>
+                  <strong>{{ boutique()!.id_categorie!.nom }}</strong>
+                  <p>{{ boutique()!.id_categorie!.description }}</p>
+                </div>
+              </div>
+            } @else {
+              <div class="info-item">
+                <span class="material-icons">category</span>
+                <span>Non renseignée</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Propriétaire -->
+        <div class="card">
+          <div class="card-header"><h3>Propriétaire</h3></div>
+          <div class="card-body">
+            @if (boutique()!.user_proprietaire) {
+              <div class="info-item">
+                <span class="material-icons">person</span>
+                <span>{{ boutique()!.user_proprietaire!.email }}</span>
+              </div>
+            } @else {
+              <div class="info-item">
+                <span class="material-icons">person_off</span>
+                <span>Non attribué</span>
+              </div>
+            }
           </div>
         </div>
       </div>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <span class="material-icons">store</span>
+      <h2>Aucune boutique</h2>
+      <p>Vous n'avez pas encore de boutique associée à votre compte.</p>
     </div>
   }
 </div>
