@@ -11,7 +11,8 @@ const faqSchema = new mongoose.Schema({
     },
     id_boutique: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'Boutique',
+        required: true
     },
     id_categorie: {
         type: mongoose.Schema.Types.ObjectId,

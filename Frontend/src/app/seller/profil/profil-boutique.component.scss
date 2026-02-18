@@ -36,5 +36,11 @@ $primary: #6366F1; $primary-dark: #4F46E5; $dark: #0F172A; $success: #10B981; $l
 .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 .stat { text-align: center; padding: 1rem; background: $light; border-radius: 12px; .stat-value { display: block; font-size: 1.5rem; font-weight: 700; color: $primary; } .stat-label { font-size: 0.8rem; color: #64748B; } }
 
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; }
+.modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height:auto; max-width: 550px; background: white; border-radius: 20px; box-shadow: 0 25px 80px rgba(0,0,0,0.2); z-index: 1001; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #E2E8F0; h2 { font-size: 1.25rem; font-weight: 600; color: $dark; } .close-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: $light; border: none; border-radius: 10px; cursor: pointer; &:hover { background: #E2E8F0; } .material-icons { font-size: 1.25rem; color: #64748B; } } }
+.modal-body { padding: 1.5rem; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; }
+
 .loader-sm { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
