@@ -40,8 +40,11 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
-    this.authService.login(this.username, this.password).subscribe(u => {
+  
+
+      this.authService.login(this.username, this.password).subscribe(u => {
       console.log('Login response:', u);
+      
       if ( u.user.role === null ) {
         console.log('Logged in as admin:', u.user.role);
         localStorage.setItem('user', JSON.stringify(u));
@@ -63,7 +66,16 @@ export class LoginComponent {
       else {
           this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
         }
-    });
+    },
+    error => {
+      console.error('Login error:', error);
+      this.error.set('Identifiants incorrects.');
+      this.isLoading.set(false);
+    }
+  );
+      
+   
+    
     // this.authService.login(this.username, this.password)
     // Check for boutique credentials first
   //   this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {
