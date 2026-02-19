@@ -25,8 +25,19 @@ router.get('/', async (req, res) => {
  res.status(500).json({ message: error.message });
  }
 });
-
-router.get('/:boutiqueId', async (req, res) => {
+router.get('/:id', async (req, res) => {
+    try {
+        const faq = await Faq.findById(req.params.id);
+        if (!faq) {
+            return res.status(404).json({ message: "Faq non trouvé" });
+        }
+        res.json(faq);
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+router.get('/boutique/:boutiqueId', async (req, res) => {
     try {
         const faqs = await Faq.find({ id_boutique: req.params.boutiqueId });
         res.json(faqs);
