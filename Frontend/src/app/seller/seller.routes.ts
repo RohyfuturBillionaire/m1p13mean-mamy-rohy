@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 import { SellerLayoutComponent } from './layout/seller-layout.component';
+import { sellerGuard } from '../auth/guards/seller.guard';
 
 export const SELLER_ROUTES: Routes = [
   {
     path: '',
     component: SellerLayoutComponent,
+    canActivate: [sellerGuard],
     children: [
       {
         path: '',
@@ -18,6 +20,10 @@ export const SELLER_ROUTES: Routes = [
       {
         path: 'produits',
         loadComponent: () => import('./produits/produits.component').then(m => m.ProduitsComponent)
+      },
+      {
+        path: 'categories',
+        loadComponent: () => import('./categories/categories.component').then(m => m.CategoriesComponent)
       },
       {
         path: 'stocks',

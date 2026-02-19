@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 export interface BoutiqueApi {
@@ -17,6 +17,18 @@ export interface BoutiqueApi {
   description?: string;
   createdAt?: string;
   updatedAt?: string;
+  articles?: ArticleApi[];
+}
+
+export interface ArticleApi {
+  _id: string;
+  nom: string;
+  description?: string;
+  id_categorie_article?: any;
+  prix: number;
+  id_boutique?: string;
+  actif: boolean;
+  images?: string[];
 }
 
 export interface CategoryApi {
@@ -33,14 +45,30 @@ export class BoutiqueApiService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<BoutiqueApi[]> {
-    return this.http.get<{ data: BoutiqueApi[] }>(this.apiUrl).pipe(
+  getAll(params?: { status?: boolean }): Observable<BoutiqueApi[]> {
+    let url = this.apiUrl;
+    const queryParams: string[] = [];
+    if (params?.status !== undefined) queryParams.push(`status=${params.status}`);
+    if (queryParams.length) url += '?' + queryParams.join('&');
+    return this.http.get<{ data: BoutiqueApi[] }>(url).pipe(
       map(res => res.data)
     );
   }
 
   getById(id: string): Observable<BoutiqueApi> {
     return this.http.get<BoutiqueApi>(`${this.apiUrl}/${id}`);
+  }
+
+  getMyBoutique(): Observable<BoutiqueApi> {
+    const token = this.getToken();
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.get<BoutiqueApi>(`${this.apiUrl}/my-boutique`, { headers });
+  }
+
+  assignUser(boutiqueId: string, userId: string | null): Observable<BoutiqueApi> {
+    const token = this.getToken();
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.put<BoutiqueApi>(`${this.apiUrl}/${boutiqueId}/assign-user`, { userId }, { headers });
   }
 
   create(formData: FormData): Observable<BoutiqueApi> {
@@ -71,5 +99,14 @@ export class BoutiqueApiService {
 
   createCategory(data: { nom: string; description?: string }): Observable<CategoryApi> {
     return this.http.post<CategoryApi>(this.categoriesUrl, data);
+  }
+
+  private getToken(): string {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      return userData?.accessToken || '';
+    } catch {
+      return '';
+    }
   }
 }

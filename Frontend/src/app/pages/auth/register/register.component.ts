@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +13,7 @@ import { SellerService } from '../../../core/services/seller.service';
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   nom = '';
   prenom = '';
   email = '';
@@ -33,7 +33,7 @@ export class RegisterComponent {
     password: '',
     id_role: ''
   };
-  // sellerService: any;
+
 
   togglePassword() {
     this.showPassword.update(v => !v);
@@ -49,11 +49,16 @@ export class RegisterComponent {
     private sellerService: SellerService
   ) {}
 
+
   ngOnInit() {
-    // Load roles
-    this.roleService.getRoles().subscribe(roles => {
-      this.roles = roles;
-      console.log('Available roles:', roles);
+    this.roleService.getRoles().subscribe({
+      next: (roles: any[]) => {
+        this.roles = roles;
+        console.log('Available roles:', roles);
+      },
+      error: (err: any) => {
+        console.error('Error loading roles:', err);
+      }
     });
   }
 
@@ -75,33 +80,28 @@ export class RegisterComponent {
       return;
     }
 
-    // if (!this.acceptTerms) {
-    //   this.error.set('Veuillez accepter les conditions d\'utilisation');
-    //   return;
-    // }
-
     this.isLoading.set(true);
-    this.user= {
+    this.user = {
       username: this.prenom + ' ' + this.nom,
       email: this.email,
       password: this.password,
       id_role: this.selectedRole
     };
     this.authService.register(this.user).subscribe({
-      next: (userConnected) => {
+      next: (userConnected: any) => {
         console.log('Registered user:', userConnected);
-        localStorage.setItem('user', JSON.stringify(userConnected.user));
+        localStorage.setItem('user', JSON.stringify(userConnected));
         this.isLoading.set(false);
-        if (userConnected.user.role === 'boutique') {
-          console.log('Registered as boutique:', userConnected);
-          this.sellerService.login("boutique", "boutique");
+        const roleName = (userConnected.user?.role || '').toLowerCase();
+        if (roleName === 'boutique') {
           this.router.navigate(['/seller/dashboard']);
+        } else if (!roleName) {
+          this.router.navigate(['/admin/dashboard']);
         } else {
           this.router.navigate(['/']);
         }
-        // this.router.navigate(['/']);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isLoading.set(false);
         this.error.set(err.error?.message || 'Erreur lors de l\'inscription');
       }

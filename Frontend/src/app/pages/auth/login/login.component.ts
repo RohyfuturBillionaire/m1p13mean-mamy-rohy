@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
-import { SellerService } from '../../../core/services/seller.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { CartService } from '../../../core/services/cart.service';
+import { SellerService } from '../../../core/services/seller.service';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,7 @@ import { AuthService } from '../../../auth/services/auth.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  username = '';
+  email = '';
   password = '';
   showPassword = signal(false);
   isLoading = signal(false);
@@ -24,6 +25,7 @@ export class LoginComponent {
     private router: Router,
     private adminService: AdminService,
     private authService: AuthService,
+    private cartService: CartService,
     private sellerService: SellerService
   ) {}
 
@@ -34,48 +36,39 @@ export class LoginComponent {
   onSubmit() {
     this.error.set('');
 
-    if (!this.username || !this.password) {
+    if (!this.email || !this.password) {
       this.error.set('Veuillez remplir tous les champs');
       return;
     }
 
     this.isLoading.set(true);
-  
+    this.authService.login(this.email, this.password).subscribe({
+      next: (u) => {
+        console.log('Login response:', u);
+        localStorage.setItem('user', JSON.stringify(u));
+        const roleName = (u.user?.role || '').toLowerCase();
 
-      this.authService.login(this.username, this.password).subscribe(u => {
-      console.log('Login response:', u);
-      
-      if ( u.user.role === null ) {
-        console.log('Logged in as admin:', u.user.role);
-        localStorage.setItem('user', JSON.stringify(u));
-        this.isLoading.set(false);
-        this.router.navigate(['/admin/dashboard']);
-      } else if (u.user.role === 'boutique') {
-        this.isLoading.set(false);
-        console.log('Logged in as boutique:', u);
-        localStorage.setItem('user', JSON.stringify(u));
-        this.sellerService.getBoutiqueInfo(u.user.id).subscribe(boutiqueInfo => {
-          console.log('Boutique info:', boutiqueInfo);
-          localStorage.setItem('boutiqueInfo', JSON.stringify(boutiqueInfo));
+        // Sync cart from localStorage to API, then navigate
+        this.cartService.syncOnLogin().then(() => {
+          this.isLoading.set(false);
+          if (!roleName) {
+            this.router.navigate(['/admin/dashboard']);
+          } else if (roleName === 'boutique') {
+            if (u.user?.hasBoutique === false) {
+              this.router.navigate(['/boutique-pending']);
+            } else {
+              this.router.navigate(['/seller/dashboard']);
+            }
+          } else {
+            this.router.navigate(['/']);
+          }
         });
-        this.sellerService.login("boutique", "boutique");
-  //     }
-        this.router.navigate(['/seller/dashboard']);
-        return;
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.error.set(err.error?.message || 'Email ou mot de passe incorrect');
       }
-      else {
-          this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
-        }
-    },
-    error => {
-      console.error('Login error:', error);
-      this.error.set('Identifiants incorrects.');
-      this.isLoading.set(false);
-    }
-  );
-      
-   
-    
+    });
     // this.authService.login(this.username, this.password)
     // Check for boutique credentials first
   //   this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {

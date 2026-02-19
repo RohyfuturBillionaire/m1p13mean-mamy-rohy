@@ -35,6 +35,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/auth/register/register.component').then(m => m.RegisterComponent)
   },
   {
+    path: 'boutique-pending',
+    loadComponent: () => import('./pages/boutique-pending/boutique-pending.component').then(m => m.BoutiquePendingComponent)
+  },
+  {
+    path: 'mes-favoris',
+    loadComponent: () => import('./pages/mes-favoris/mes-favoris.component').then(m => m.MesFavorisComponent)
+  },
+  {
     path: 'checkout',
     loadComponent: () => import('./pages/checkout/checkout.component').then(m => m.CheckoutComponent)
   },

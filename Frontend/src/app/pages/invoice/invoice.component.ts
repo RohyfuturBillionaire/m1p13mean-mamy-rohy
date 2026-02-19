@@ -25,12 +25,23 @@ export class InvoiceComponent implements OnInit {
     const orderData = sessionStorage.getItem('currentOrder');
     if (orderData) {
       const order: Commande = JSON.parse(orderData);
-      // Convert date string back to Date object
       order.date = new Date(order.date);
-      const invoice = this.cartService.createInvoice(order);
+      const invoice: Facture = {
+        id: `f-${Date.now()}`,
+        numeroFacture: `FC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        dateEmission: new Date(),
+        commande: order,
+        entreprise: {
+          nom: 'Tana Center',
+          adresse: 'Analakely, Antananarivo 101, Madagascar',
+          telephone: '+261 20 22 123 45',
+          email: 'contact@tanacenter.mg',
+          nif: '1234567890',
+          stat: '12345 67 890 0 00012'
+        }
+      };
       this.facture.set(invoice);
     } else {
-      // No order found, redirect to home
       this.router.navigate(['/']);
     }
   }

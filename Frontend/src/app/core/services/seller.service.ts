@@ -1,5 +1,5 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { Observable, of, map, catchError } from 'rxjs';
 import {
   SellerUser,
   SellerBoutique,
@@ -20,21 +20,20 @@ import {
   MOCK_SELLER_BOUTIQUE,
   MOCK_SELLER_PRODUITS,
   MOCK_STOCK_MOVEMENTS,
-  MOCK_SELLER_COMMANDES,
   MOCK_SELLER_LIVRAISONS,
   MOCK_SELLER_PROMOTIONS,
   MOCK_SELLER_FAQ,
   MOCK_SELLER_CONVERSATIONS,
   MOCK_SELLER_MESSAGES,
   MOCK_SELLER_NOTIFICATIONS,
-  MOCK_SELLER_KPIS,
-  MOCK_VENTES_MENSUELLES,
-  MOCK_BEST_SELLERS,
   MOCK_COMMANDES_VS_LIVRAISONS,
   MOCK_STOCK_STATUS
 } from '../data/seller-mock-data';
 import { environment } from '../../../environments/environments';
 import { HttpClient } from '@angular/common/http';
+import { BoutiqueApiService } from './boutique-api.service';
+import { OrderApiService } from './order-api.service';
+import { CommandeApi } from '../models/cart.model';
 
 @Injectable({
   providedIn: 'root'
@@ -80,7 +79,10 @@ export class SellerService {
     this.commandes().filter(c => c.statut === 'en_attente' || c.statut === 'payee')
   );
 
-  constructor(private http: HttpClient) {
+
+  private orderApi = inject(OrderApiService);
+
+  constructor(private http: HttpClient,private boutiqueApi: BoutiqueApiService) {
     this.loadInitialData();
   }
 
@@ -88,7 +90,6 @@ export class SellerService {
   private loadInitialData(): void {
     this.produits.set([...MOCK_SELLER_PRODUITS]);
     this.stockMovements.set([...MOCK_STOCK_MOVEMENTS]);
-    this.commandes.set([...MOCK_SELLER_COMMANDES]);
     this.livraisons.set([...MOCK_SELLER_LIVRAISONS]);
     this.promotions.set([...MOCK_SELLER_PROMOTIONS]);
     this.faqs.set([...MOCK_SELLER_FAQ]);
@@ -98,16 +99,71 @@ export class SellerService {
   }
 
   // =============================================
-  // AUTHENTICATION
+  // STATUS MAPPING (backend uppercase ↔ frontend lowercase)
   // =============================================
-  login(username: string, password: string): Observable<boolean> {
-    if (username === 'boutique' && password === 'boutique') {
-      this.isAuthenticated.set(true);
-      this.currentUser.set(MOCK_SELLER_USER);
-      this.boutique.set(MOCK_SELLER_BOUTIQUE);
-      return of(true).pipe(delay(500));
+  private statusToFrontend(status: string): SellerCommande['statut'] {
+    const mapping: Record<string, SellerCommande['statut']> = {
+      'EN_ATTENTE': 'en_attente',
+      'VALIDEE': 'payee',
+      'EN_PREPARATION': 'en_preparation',
+      'EXPEDIEE': 'expediee',
+      'LIVREE': 'livree',
+      'ANNULEE': 'annulee'
+    };
+    return mapping[status] || 'en_attente';
+  }
+
+  private statusToBackend(statut: SellerCommande['statut']): string {
+    const mapping: Record<string, string> = {
+      'en_attente': 'EN_ATTENTE',
+      'payee': 'VALIDEE',
+      'en_preparation': 'EN_PREPARATION',
+      'expediee': 'EXPEDIEE',
+      'livree': 'LIVREE',
+      'annulee': 'ANNULEE'
+    };
+    return mapping[statut] || 'EN_ATTENTE';
+  }
+
+  private mapApiToSellerCommande(c: CommandeApi): SellerCommande {
+    return {
+      id: c._id,
+      numeroCommande: c.numero_commande,
+      boutiqueId: typeof c.id_boutique === 'object' ? c.id_boutique._id : c.id_boutique,
+      clientId: typeof c.id_client === 'object' ? c.id_client._id : c.id_client,
+      clientNom: c.client_nom,
+      clientEmail: c.client_email,
+      clientTelephone: c.client_telephone,
+      clientAdresse: c.client_adresse,
+      items: (c.articles || []).map(a => ({
+        produitId: a.id_article,
+        produitNom: a.nom,
+        produitImage: '',
+        quantite: a.quantite,
+        prixUnitaire: a.prix,
+        total: a.prix * a.quantite
+      })),
+      sousTotal: c.total / 1.2,
+      tva: c.total - c.total / 1.2,
+      fraisLivraison: 0,
+      total: c.total,
+      statut: this.statusToFrontend(c.status),
+      methodePaiement: c.methode_paiement,
+      dateCommande: new Date(c.date_commande)
+    };
+  }
+
+  // =============================================
+  // AUTHENTICATION (uses localStorage from real login)
+  // =============================================
+  isLoggedIn(): boolean {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const role = (userData?.user?.role || '').toLowerCase();
+      return role === 'boutique';
+    } catch {
+      return false;
     }
-    return of(false).pipe(delay(500));
   }
   getBoutiqueInfo(idUser: any): Observable<any> {
     return this.http.get(`${this.API_URL}/${idUser}`);
@@ -117,20 +173,44 @@ export class SellerService {
     this.isAuthenticated.set(false);
     this.currentUser.set(null);
     this.boutique.set(null);
-  }
-
-  isLoggedIn(): boolean {
-    return this.isAuthenticated();
+    localStorage.removeItem('user');
   }
 
   getCurrentUser(): SellerUser | null {
     return this.currentUser();
   }
 
+  getBoutiqueId(): string | null {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      return userData?.user?.boutiqueId || null;
+    } catch {
+      return null;
+    }
+  }
+
   // =============================================
-  // BOUTIQUE
+  // BOUTIQUE (real API for fetch, mock for rest)
   // =============================================
   getBoutique(): Observable<SellerBoutique | null> {
+    const boutiqueId = this.getBoutiqueId();
+    if (boutiqueId) {
+      return this.boutiqueApi.getMyBoutique().pipe(
+        map(b => {
+          // Map API response to SellerBoutique shape for compatibility
+          const sellerBoutique: SellerBoutique = {
+            ...MOCK_SELLER_BOUTIQUE,
+            id: b._id,
+            nom: b.nom,
+            description: b.description || MOCK_SELLER_BOUTIQUE.description,
+            email: b.email || MOCK_SELLER_BOUTIQUE.email,
+            logo: b.logo ? (b.logo.startsWith('http') ? b.logo : 'http://localhost:5000' + b.logo) : MOCK_SELLER_BOUTIQUE.logo,
+          };
+          this.boutique.set(sellerBoutique);
+          return sellerBoutique;
+        })
+      );
+    }
     return of(this.boutique());
   }
 
@@ -240,36 +320,39 @@ export class SellerService {
   }
 
   // =============================================
-  // ORDERS
+  // ORDERS (real API)
   // =============================================
   getCommandes(): Observable<SellerCommande[]> {
-    return of(this.commandes());
+    return this.orderApi.getBoutiqueOrders({ limit: 100 }).pipe(
+      map(res => {
+        const mapped = res.data.map(c => this.mapApiToSellerCommande(c));
+        this.commandes.set(mapped);
+        return mapped;
+      }),
+      catchError(() => of(this.commandes()))
+    );
   }
 
   getCommandeById(id: string): Observable<SellerCommande | undefined> {
-    return of(this.commandes().find(c => c.id === id));
+    return this.orderApi.getOrder(id).pipe(
+      map(c => this.mapApiToSellerCommande(c)),
+      catchError(() => of(undefined))
+    );
   }
 
   updateCommandeStatut(id: string, statut: SellerCommande['statut']): Observable<SellerCommande | undefined> {
-    const index = this.commandes().findIndex(c => c.id === id);
-    if (index >= 0) {
-      const updated = { ...this.commandes()[index], statut };
-
-      // Add dates based on status
-      if (statut === 'expediee') {
-        updated.dateExpedition = new Date();
-      } else if (statut === 'livree') {
-        updated.dateLivraison = new Date();
-      }
-
-      this.commandes.update(commandes => {
-        const newCommandes = [...commandes];
-        newCommandes[index] = updated;
-        return newCommandes;
-      });
-      return of(updated);
-    }
-    return of(undefined);
+    const backendStatus = this.statusToBackend(statut);
+    return this.orderApi.updateOrderStatus(id, backendStatus).pipe(
+      map(c => {
+        const mapped = this.mapApiToSellerCommande(c);
+        // Update local signal
+        this.commandes.update(commandes =>
+          commandes.map(cmd => cmd.id === id ? mapped : cmd)
+        );
+        return mapped;
+      }),
+      catchError(() => of(undefined))
+    );
   }
 
   // =============================================
@@ -520,18 +603,91 @@ export class SellerService {
   }
 
   // =============================================
-  // DASHBOARD DATA
+  // DASHBOARD DATA (real API for KPIs/charts, mock for the rest)
   // =============================================
   getKPIs(): Observable<SellerKPI[]> {
-    return of(MOCK_SELLER_KPIS);
+    return this.orderApi.getBoutiqueStats().pipe(
+      map(stats => {
+        const kpis: SellerKPI[] = [
+          {
+            id: 'revenu',
+            label: 'Revenu total',
+            valeur: stats.totalRevenu,
+            unite: 'Ar',
+            evolution: 0,
+            icon: 'payments',
+            couleur: '#10B981'
+          },
+          {
+            id: 'commandes',
+            label: 'Commandes',
+            valeur: stats.nbCommandes,
+            unite: '',
+            evolution: 0,
+            icon: 'shopping_cart',
+            couleur: '#3B82F6'
+          },
+          {
+            id: 'articles',
+            label: 'Articles vendus',
+            valeur: stats.totalArticlesVendus,
+            unite: '',
+            evolution: 0,
+            icon: 'inventory_2',
+            couleur: '#8B5CF6'
+          },
+          {
+            id: 'panier_moyen',
+            label: 'Panier moyen',
+            valeur: stats.nbCommandes > 0 ? Math.round(stats.totalRevenu / stats.nbCommandes) : 0,
+            unite: 'Ar',
+            evolution: 0,
+            icon: 'shopping_basket',
+            couleur: '#F59E0B'
+          }
+        ];
+        return kpis;
+      }),
+      catchError(() => of([]))
+    );
   }
 
   getVentesMensuelles(): Observable<SellerChartData> {
-    return of(MOCK_VENTES_MENSUELLES);
+    return this.orderApi.getBoutiqueStats().pipe(
+      map(stats => {
+        const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+        const sorted = [...(stats.monthly || [])].sort((a, b) =>
+          a.year !== b.year ? a.year - b.year : a.month - b.month
+        );
+        return {
+          labels: sorted.map(m => `${monthNames[m.month - 1]} ${m.year}`),
+          datasets: [{
+            label: 'Revenus',
+            data: sorted.map(m => m.revenu),
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)'
+          }]
+        };
+      }),
+      catchError(() => of({ labels: [], datasets: [] }))
+    );
   }
 
   getBestSellers(): Observable<SellerChartData> {
-    return of(MOCK_BEST_SELLERS);
+    return this.orderApi.getBoutiqueStats().pipe(
+      map(stats => {
+        const top = (stats.bestSellers || []).slice(0, 5);
+        return {
+          labels: top.map(b => b.nom),
+          datasets: [{
+            label: 'Vendus',
+            data: top.map(b => b.totalVendu),
+            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+          }]
+        };
+      }),
+      catchError(() => of({ labels: [], datasets: [] }))
+    );
   }
 
   getCommandesVsLivraisons(): Observable<SellerChartData> {

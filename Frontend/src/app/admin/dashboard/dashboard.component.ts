@@ -62,12 +62,12 @@ $index: any;
 
   getKPIIcon(icon: string): string {
     const icons: Record<string, string> = {
-      'store': '🏪',
-      'trending_up': '📈',
-      'people': '👥',
-      'visibility': '👁️'
+      'store': 'store',
+      'trending_up': 'trending_up',
+      'people': 'people',
+      'visibility': 'visibility'
     };
-    return icons[icon] || '📊';
+    return icons[icon] || 'bar_chart';
   }
 
   getMaxRevenue(): number {
@@ -115,12 +115,12 @@ $index: any;
 
   getNotificationIcon(type: string): string {
     const icons: Record<string, string> = {
-      'paiement': '💰',
-      'demande': '📋',
-      'alerte': '⚠️',
-      'info': 'ℹ️'
+      'paiement': 'payments',
+      'demande': 'assignment',
+      'alerte': 'warning',
+      'info': 'info'
     };
-    return icons[type] || '📌';
+    return icons[type] || 'push_pin';
   }
 
   getNotificationClass(type: string): string {

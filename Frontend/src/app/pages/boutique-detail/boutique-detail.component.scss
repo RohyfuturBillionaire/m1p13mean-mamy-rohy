@@ -366,6 +366,37 @@
     right: 0.75rem;
   }
 
+  .favorite-btn {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 3;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      background: white;
+      transform: scale(1.1);
+    }
+
+    &.is-favorite {
+      background: white;
+    }
+
+    svg {
+      transition: all 0.2s ease;
+    }
+  }
+
   .unavailable-overlay {
     position: absolute;
     inset: 0;

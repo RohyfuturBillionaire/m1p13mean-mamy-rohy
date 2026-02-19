@@ -7,16 +7,16 @@
     </div>
     <button class="btn btn-primary" (click)="saveParametres()" [disabled]="isSaving()">
       @if (isSaving()) {
-        ⏳ Enregistrement...
+        <span class="material-icons">hourglass_empty</span> Enregistrement...
       } @else {
-        💾 Enregistrer
+        <span class="material-icons">save</span> Enregistrer
       }
     </button>
   </div>
 
   @if (saveSuccess()) {
     <div class="alert success">
-      ✅ Paramètres enregistrés avec succès !
+      <span class="material-icons" style="vertical-align: middle; margin-right: 6px;">check_circle</span> Paramètres enregistrés avec succès !
     </div>
   }
 
@@ -30,7 +30,7 @@
             [class.active]="activeSection() === section.id"
             (click)="activeSection.set(section.id)"
           >
-            <span class="nav-icon">{{ section.icon }}</span>
+            <span class="nav-icon"><span class="material-icons">{{ section.icon }}</span></span>
             <span class="nav-label">{{ section.label }}</span>
           </button>
         }
@@ -225,7 +225,7 @@
                       class="toggle-btn"
                       (click)="toggleSliderImage(img.id)"
                     >
-                      {{ img.active ? '✅ Actif' : '❌ Inactif' }}
+                      <span class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">{{ img.active ? 'check_circle' : 'cancel' }}</span> {{ img.active ? 'Actif' : 'Inactif' }}
                     </button>
                   </div>
                 </div>
@@ -304,7 +304,7 @@
 
             @if (parametres()!.modeMaintenace) {
               <div class="alert warning">
-                ⚠️ Le mode maintenance est activé. Les visiteurs verront une page de maintenance.
+                <span class="material-icons" style="vertical-align: middle; margin-right: 6px;">warning</span> Le mode maintenance est activé. Les visiteurs verront une page de maintenance.
               </div>
             }
 

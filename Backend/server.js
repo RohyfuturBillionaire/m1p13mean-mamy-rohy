@@ -12,18 +12,21 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:4200', // Angular app URL
-  credentials: true // Allow cookies
+  origin: 'http://localhost:4200',
+  credentials: true
 }));
 app.use(express.json());
-app.use(cookieParser());
-
+app.use(require('cookie-parser')());
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connexion à MongoDB
 mongoose.connect(process.env.MONGO_URI, {}).then(() => console.log("MongoDB connecté")).catch(err => console.log(err));
+
+// Auth & roles
+app.use('/auth', require('./routes/authRoutes'));
+app.use('/roles', require('./routes/roleRoutes'));
 
 // Legacy routes
 // Public routes (no auth required)
@@ -50,6 +53,12 @@ app.use('/api/boutiques', require('./routes/boutiqueRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/promotions', require('./routes/promotionRoutes'));
+app.use('/api/locaux', require('./routes/localRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/bucket', require('./routes/bucketRoutes'));
+app.use('/api/commandes', require('./routes/commandeRoutes'));
+app.use('/api/favorites', require('./routes/favoriteRoutes'));
+app.use('/api/avis', require('./routes/avisRoutes'));
 
 // Cron jobs
 const cron = require('node-cron');

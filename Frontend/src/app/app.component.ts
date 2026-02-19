@@ -25,11 +25,13 @@ export class AppComponent implements OnInit, OnDestroy {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         // Masquer navbar/footer pour les routes admin
-        this.showNavbarFooter = !event.urlAfterRedirects.startsWith('/admin');
+        const url = event.urlAfterRedirects;
+        this.showNavbarFooter = !url.startsWith('/admin') && !url.startsWith('/seller');
       });
 
     // Vérifier la route initiale
-    this.showNavbarFooter = !this.router.url.startsWith('/admin');
+    const url = this.router.url;
+    this.showNavbarFooter = !url.startsWith('/admin') && !url.startsWith('/seller');
   }
 
   ngOnDestroy() {
