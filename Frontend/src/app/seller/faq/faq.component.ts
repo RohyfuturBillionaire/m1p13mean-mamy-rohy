@@ -60,6 +60,7 @@ export class FaqComponent implements OnInit {
   private loadBoutiqueId() {
     const boutiqueStr = localStorage.getItem('boutiqueInfo');
     if (boutiqueStr) {
+      console.log('Boutique info found in localStorage:', boutiqueStr);
       const boutique = JSON.parse(boutiqueStr);
       // Récupérer l'ID de la boutique associée à l'utilisateur
       this.boutiqueId = boutique._id || '';
@@ -67,20 +68,12 @@ export class FaqComponent implements OnInit {
   }
 
   loadFaqs() {
+    console.log('Loading FAQs for boutique ID:', this.boutiqueId);
     this.isLoading.set(true);
-    this.faqService.getFaqs().subscribe({
+    this.faqService.getFaqsByBoutiqueId(this.boutiqueId).subscribe({
       next: (data) => {
         console.log('FAQs loaded:', data);
-        // Filtrer les FAQs de la boutique si nécessaire
-        const filteredFaqs = this.boutiqueId 
-          ? data.filter((faq: FaqDB) => {
-              const boutiqueId = typeof faq.id_boutique === 'string' 
-                ? faq.id_boutique 
-                : faq.id_boutique?._id;
-              return boutiqueId === this.boutiqueId;
-            })
-          : data;
-        this.faqs.set(filteredFaqs);
+        this.faqs.set(data);
         this.isLoading.set(false);
       },
       error: (err) => {

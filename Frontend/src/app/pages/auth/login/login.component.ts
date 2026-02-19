@@ -56,7 +56,15 @@ export class LoginComponent {
           } else if (roleName === 'boutique') {
             if (u.user?.hasBoutique === false) {
               this.router.navigate(['/boutique-pending']);
+              
             } else {
+              console.log('Fetching boutique info for user ID:', u.user?.id);
+              this.sellerService.getBoutiqueInfo(u.user?.id).subscribe({
+                next: (boutiqueInfo) => {
+                  console.log('Boutique info:', boutiqueInfo);
+                  localStorage.setItem('boutiqueInfo', JSON.stringify(boutiqueInfo));
+                }
+              });
               this.router.navigate(['/seller/dashboard']);
             }
           } else {
