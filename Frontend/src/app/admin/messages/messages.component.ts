@@ -95,9 +95,9 @@ export class MessagesComponent implements OnInit {
   private loadUsers() {
     this.usersService.getUsers().subscribe({
       next: (users) => {
-        this.users.set(users);
+        this.users.set(users.data);
         // Filter boutique users for new conversation
-        const boutiques = users.filter((u: UserDB) => {
+        const boutiques = users.data.filter((u: UserDB) => {
           const roleName = typeof u.id_role === 'object' ? u.id_role.role_name : '';
           return roleName === 'boutique' && u._id !== this.currentUserId;
         });

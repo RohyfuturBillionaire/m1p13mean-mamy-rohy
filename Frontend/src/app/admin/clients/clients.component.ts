@@ -61,9 +61,11 @@ export class ClientsComponent implements OnInit {
 
   private loadUsers() {
     this.usersService.getUsers().subscribe(users => {
-      this.users.set(users);
+     
+
+      this.users.set(users.data);
       this.applyFilters();
-      console.log('Fetched users:', users);
+      console.log("class user",users);
     });
     // this.adminService.getUsers().subscribe(users => {
     //   this.users.set(users);
@@ -216,7 +218,7 @@ export class ClientsComponent implements OnInit {
     };
     return {
       total: users.length,
-      admins: users.filter(u => getRoleName(u) === 'admin').length,
+      admins: users.filter(u => getRoleName(u) === '').length,
       boutiques: users.filter(u => getRoleName(u) === 'boutique').length,
       clients: users.filter(u => getRoleName(u) === 'user').length,
       Nouveaux: users.filter(u => {

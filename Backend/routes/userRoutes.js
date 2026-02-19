@@ -6,7 +6,7 @@ const Boutique = require('../models/Boutique');
 const authenticateToken = require('../middleware/authMiddleware');
 
 // GET users (with filters: role, unassigned, search, pagination)
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { role, unassigned, search, page = 1, limit = 50 } = req.query;
     const filter = {};
@@ -58,6 +58,32 @@ router.get('/', authenticateToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+});
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password').populate('id_role');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const { username, password, id_role } = req.body;
+    if (!username || !password || !id_role) {
+      return res.status(400).json({ message: 'Username, password and role are required' });
+    } 
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username already exists' });
+    } 
+    const newUser = new User({ username, password, id_role });
+    await newUser.save();
+    res.status(201).json({ message: 'User created successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  } 
 });
 
 module.exports = router;
