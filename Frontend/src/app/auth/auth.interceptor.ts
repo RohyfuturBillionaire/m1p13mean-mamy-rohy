@@ -9,17 +9,29 @@ export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
+  // Routes to skip completely (no token, no refresh)
+  private skipRoutes = [
+    '/auth/',
+    '/inscription',
+    '/signup',
+    '/register',
+    '/login',
+    'roles'
+  ];
+
   constructor(private authService: AuthService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Skip interceptor for auth routes
-    if (req.url.includes('/auth/')) {
+    // Skip interceptor completely for certain routes
+    console.log("req.url",req.url);
+    if (this.shouldSkip(req.url)) {
       return next.handle(req);
     }
 
     const token = this.authService.getAccessToken();
 
     // If no token, try to refresh first
+    console.log("load");
     if (!token) {
       return this.handleTokenRefresh(req, next);
     }
@@ -35,6 +47,10 @@ export class AuthInterceptor implements HttpInterceptor {
         return throwError(() => error);
       })
     );
+  }
+
+  private shouldSkip(url: string): boolean {
+    return this.skipRoutes.some(route => url.includes(route));
   }
 
   private addToken(req: HttpRequest<any>, token: string): HttpRequest<any> {

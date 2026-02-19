@@ -32,7 +32,7 @@ app.use('/roles', require('./routes/roleRoutes'));
 // Public routes (no auth required)
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/roles', require('./routes/roleRoutes'));
-app.use('/users', require('./routes/userRoutes'));
+app.use('/users',authenticateToken, require('./routes/userRoutes'));
 app.use('/horaire', require('./routes/horaireBoutiqueRoutes'));
 app.use('/local', require('./routes/localRoutes'));
 // Protected routes (auth required)
