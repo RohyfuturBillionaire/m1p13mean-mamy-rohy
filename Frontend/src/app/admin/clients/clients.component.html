@@ -14,28 +14,28 @@
   <!-- Stats Cards -->
   <div class="stats-row">
     <div class="stat-card">
-      <span class="stat-icon">👥</span>
+      <span class="stat-icon"><span class="material-icons">group</span></span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().total }}</span>
         <span class="stat-label">Total Utilisateurs</span>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon">👤</span>
+      <span class="stat-icon"><span class="material-icons">person</span></span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().clients }}</span>
         <span class="stat-label">Clients</span>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon">🏪</span>
+      <span class="stat-icon"><span class="material-icons">store</span></span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().boutiques }}</span>
         <span class="stat-label">Boutiques</span>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon">✅</span>
+      <span class="stat-icon"><span class="material-icons">check_circle</span></span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().Nouveaux }}</span>
         <span class="stat-label">Nouveaux Inscrits</span>
@@ -46,7 +46,7 @@
   <!-- Filters -->
   <div class="filters-bar">
     <div class="search-box">
-      <span class="search-icon">🔍</span>
+      <span class="search-icon"><span class="material-icons">search</span></span>
       <input
         type="text"
         placeholder="Rechercher par nom, email..."
@@ -139,10 +139,10 @@
             <td>
               <div class="actions">
                 <button class="action-btn edit" title="Modifier" (click)="openEditModal(user)">
-                  ✏️
+                  <span class="material-icons">edit</span>
                 </button>
                 <button class="action-btn delete" title="Supprimer" (click)="confirmDelete(user)">
-                  🗑️
+                  <span class="material-icons">delete</span>
                 </button>
               </div>
             </td>
@@ -153,7 +153,7 @@
 
     @if (filteredUsers().length === 0) {
       <div class="empty-state">
-        <span>👤</span>
+        <span class="material-icons" style="font-size: 2.5rem; color: #CBD5E1;">person_off</span>
         <p>Aucun utilisateur trouvé</p>
       </div>
     }
@@ -166,7 +166,7 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editMode() ? 'Modifier' : 'Ajouter' }} un utilisateur</h2>
-        <button class="close-btn" (click)="closeModal()">✕</button>
+        <button class="close-btn" (click)="closeModal()"><span class="material-icons">close</span></button>
       </div>
       <div class="modal-body">
        <div class="form-row">
@@ -237,7 +237,7 @@
   <div class="modal-overlay" (click)="cancelDelete()">
     <div class="modal confirm-modal" (click)="$event.stopPropagation()">
       <div class="modal-body">
-        <span class="confirm-icon">⚠️</span>
+        <span class="confirm-icon"><span class="material-icons" style="font-size: 3rem; color: #F59E0B;">warning</span></span>
         <h3>Confirmer la suppression</h3>
         <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ userToDelete()?.username }} </strong> ?</p>
         <p class="warning-text">Cette action est irréversible.</p>

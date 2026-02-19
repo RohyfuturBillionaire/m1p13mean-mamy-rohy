@@ -4,13 +4,13 @@
     <aside class="conversations-panel">
       <div class="panel-header">
         <h2>Messages</h2>
-        <button class="icon-btn" title="Nouvelle conversation" (click)="openNewConversationModal()">
-          ➕
+        <button class="icon-btn" title="Nouvel email" (click)="openEmailModal()">
+          <span class="material-icons">mail</span>
         </button>
       </div>
 
       <div class="search-box">
-        <span>🔍</span>
+        <span class="material-icons">search</span>
         <input
           type="text"
           placeholder="Rechercher..."
@@ -19,9 +19,36 @@
       </div>
 
       <div class="conversations-list">
+        @for (conv of getFilteredConversations(); track conv.id) {
+          <button
+            class="conversation-item"
+            [class.active]="selectedConversation()?.id === conv.id"
+            [class.unread]="conv.nonLus > 0"
+            (click)="selectConversation(conv)"
+          >
+            <div class="conv-avatar">
+              @if (getOtherParticipant(conv)?.avatar) {
+                <img [src]="getOtherParticipant(conv)?.avatar" [alt]="getOtherParticipant(conv)?.nom">
+              } @else {
+                <span class="material-icons">{{ getRoleIcon(getOtherParticipant(conv)?.role || 'client') }}</span>
+              }
+            </div>
+            <div class="conv-content">
+              <div class="conv-header">
+                <span class="conv-name">{{ getOtherParticipant(conv)?.nom }}</span>
+                <span class="conv-time">{{ formatTime(conv.dateModification) }}</span>
+              </div>
+              <p class="conv-preview">{{ conv.dernierMessage }}</p>
+            </div>
+            @if (conv.nonLus > 0) {
+              <span class="unread-badge">{{ conv.nonLus }}</span>
+            }
+          </button>
+        }
+
         @if (getFilteredConversations().length === 0) {
           <div class="empty-conversations">
-            <span>💬</span>
+            <span class="material-icons" style="font-size: 2.5rem; color: #CBD5E1;">forum</span>
             <p>Aucune conversation</p>
             <button class="btn btn-primary" (click)="openNewConversationModal()">
               ➕ Nouvelle conversation
@@ -57,7 +84,11 @@
         <div class="chat-header">
           <div class="chat-user">
             <div class="chat-avatar">
-              <span>{{ getInitials(getOtherParticipant(selectedConversation()!)) }}</span>
+              @if (getOtherParticipant(selectedConversation()!)?.avatar) {
+                <img [src]="getOtherParticipant(selectedConversation()!)?.avatar" alt="">
+              } @else {
+                <span class="material-icons">{{ getRoleIcon(getOtherParticipant(selectedConversation()!)?.role || 'client') }}</span>
+              }
             </div>
             <div class="chat-info">
               <span class="chat-name">{{ getOtherParticipant(selectedConversation()!)?.username }}</span>
@@ -65,7 +96,9 @@
             </div>
           </div>
           <div class="chat-actions">
-            <button class="icon-btn" title="Plus">⋮</button>
+            <button class="icon-btn" title="Appeler"><span class="material-icons">phone</span></button>
+            <button class="icon-btn" title="Email" (click)="openEmailModal()"><span class="material-icons">mail</span></button>
+            <button class="icon-btn" title="Plus"><span class="material-icons">more_vert</span></button>
           </div>
         </div>
 
@@ -88,6 +121,7 @@
 
         <!-- Input -->
         <div class="chat-input">
+          <button class="attach-btn" title="Joindre un fichier"><span class="material-icons">attach_file</span></button>
           <input
             type="text"
             placeholder="Écrivez votre message..."
@@ -95,17 +129,17 @@
             (keyup.enter)="sendMessage()"
           >
           <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage()">
-            ➤
+            <span class="material-icons">send</span>
           </button>
         </div>
       } @else {
         <!-- No Conversation Selected -->
         <div class="no-conversation">
-          <span>💬</span>
+          <span class="material-icons" style="font-size: 3rem; color: #CBD5E1;">forum</span>
           <h3>Sélectionnez une conversation</h3>
-          <p>Choisissez une conversation dans la liste ou créez une nouvelle conversation</p>
-          <button class="btn btn-primary" (click)="openNewConversationModal()">
-            ➕ Nouvelle conversation
+          <p>Choisissez une conversation dans la liste ou envoyez un nouvel email</p>
+          <button class="btn btn-primary" (click)="openEmailModal()">
+            <span class="material-icons">mail</span> Envoyer un email
           </button>
         </div>
       }
@@ -118,8 +152,8 @@
   <div class="modal-overlay" (click)="closeNewConversationModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Nouvelle conversation</h2>
-        <button class="close-btn" (click)="closeNewConversationModal()">✕</button>
+        <h2>Envoyer un Email</h2>
+        <button class="close-btn" (click)="closeEmailModal()"><span class="material-icons">close</span></button>
       </div>
       <div class="modal-body">
         <p>Sélectionnez une boutique pour démarrer une conversation:</p>
@@ -144,7 +178,10 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" (click)="closeNewConversationModal()">Annuler</button>
+        <button class="btn btn-outline" (click)="closeEmailModal()">Annuler</button>
+        <button class="btn btn-primary" (click)="sendEmail()">
+          <span class="material-icons">send</span> Envoyer
+        </button>
       </div>
     </div>
   </div>

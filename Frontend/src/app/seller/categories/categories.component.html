@@ -1,0 +1,143 @@
+<div class="categories-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Catégories d'articles</h1>
+      <p>Gérez les catégories de votre boutique</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">
+      <span class="material-icons">add</span>
+      Nouvelle Catégorie
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon total">
+        <span class="material-icons">category</span>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ categories().length }}</span>
+        <span class="stat-label">Total Catégories</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories List -->
+  <div class="categories-list">
+    @if (categories().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons">category</span>
+        <h3>Aucune catégorie</h3>
+        <p>Créez votre première catégorie pour organiser vos produits</p>
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="material-icons">add</span>
+          Créer une catégorie
+        </button>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nom de la catégorie</th>
+              <th>Date de création</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cat of categories(); track cat._id) {
+              <tr>
+                <td>
+                  <div class="cat-name">
+                    <span class="material-icons cat-icon">label</span>
+                    {{ cat.categorie_article }}
+                  </div>
+                </td>
+                <td>{{ cat.createdAt | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <div class="actions">
+                    <button class="action-btn edit" title="Modifier" (click)="openEditModal(cat)">
+                      <span class="material-icons">edit</span>
+                    </button>
+                    <button class="action-btn delete" title="Supprimer" (click)="confirmDelete(cat)">
+                      <span class="material-icons">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>{{ editingCategory() ? 'Modifier la catégorie' : 'Nouvelle catégorie' }}</h2>
+      <button class="close-btn" (click)="closeModal()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <form (ngSubmit)="submitForm()" class="modal-body">
+      <div class="form-group">
+        <label>Nom de la catégorie *</label>
+        <input
+          type="text"
+          [value]="categoryName()"
+          (input)="categoryName.set($any($event.target).value)"
+          placeholder="Ex: Vêtements, Électronique, Alimentation..."
+          required
+          autofocus
+        >
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting() || !categoryName().trim()">
+          @if (isSubmitting()) {
+            <span class="loader-sm"></span>
+            Enregistrement...
+          } @else {
+            <span class="material-icons">save</span>
+            {{ editingCategory() ? 'Modifier' : 'Créer' }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Delete Confirmation -->
+@if (showDeleteModal()) {
+  <div class="modal-backdrop" (click)="cancelDelete()"></div>
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Confirmer la suppression</h2>
+      <button class="close-btn" (click)="cancelDelete()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-warning">
+        <span class="material-icons">warning</span>
+        <p>Supprimer la catégorie <strong>{{ deletingCategory()?.categorie_article }}</strong> ?</p>
+        <p class="warning-text">Les articles liés ne seront pas supprimés mais perdront leur catégorie.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="cancelDelete()">Annuler</button>
+      <button class="btn btn-danger" (click)="deleteCategory()">
+        <span class="material-icons">delete</span>
+        Supprimer
+      </button>
+    </div>
+  </div>
+}

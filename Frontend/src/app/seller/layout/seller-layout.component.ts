@@ -24,6 +24,7 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   menuItems = [
     { label: 'Dashboard', icon: 'dashboard', route: '/seller/dashboard' },
     { label: 'Produits', icon: 'inventory_2', route: '/seller/produits' },
+    { label: 'Catégories', icon: 'category', route: '/seller/categories' },
     { label: 'Stocks', icon: 'warehouse', route: '/seller/stocks' },
     { label: 'Commandes', icon: 'shopping_cart', route: '/seller/commandes' },
     { label: 'Livraisons', icon: 'local_shipping', route: '/seller/livraisons' },
@@ -51,10 +52,6 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    if (!this.sellerService.isLoggedIn()) {
-      this.router.navigate(['/connexion']);
-      return;
-    }
     this.loadData();
     this.checkScreenSize();
   }

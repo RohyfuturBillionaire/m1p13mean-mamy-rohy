@@ -51,3 +51,47 @@ export interface Facture {
     stat: string;
   };
 }
+
+// ===== API Models =====
+
+export interface CommandeArticleApi {
+  id_article: string;
+  nom: string;
+  prix: number;
+  quantite: number;
+}
+
+export interface CommandeApi {
+  _id: string;
+  articles: CommandeArticleApi[];
+  type_livraison: string;
+  status: 'EN_ATTENTE' | 'VALIDEE' | 'EN_PREPARATION' | 'EXPEDIEE' | 'LIVREE' | 'ANNULEE';
+  id_client: any;
+  total: number;
+  id_boutique: any;
+  date_commande: string;
+  numero_commande: string;
+  methode_paiement: string;
+  client_nom: string;
+  client_email: string;
+  client_telephone: string;
+  client_adresse: string;
+}
+
+export interface CheckoutPayload {
+  methodePaiement: string;
+  clientNom: string;
+  clientEmail: string;
+  clientTelephone: string;
+  clientAdresse: string;
+  typeLivraison?: string;
+  lieuLivraison?: string;
+}
+
+export interface BoutiqueStats {
+  totalRevenu: number;
+  totalArticlesVendus: number;
+  nbCommandes: number;
+  monthly: { year: number; month: number; revenu: number; nbCommandes: number }[];
+  bestSellers: { _id: string; nom: string; totalVendu: number; revenu: number }[];
+}

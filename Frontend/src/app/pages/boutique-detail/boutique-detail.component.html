@@ -7,7 +7,7 @@
   <!-- Hero -->
   <section class="boutique-hero">
     <div class="hero-background">
-      <img [src]="boutique()!.image" [alt]="boutique()!.nom">
+      <img [src]="getLogoUrl(boutique()!)" [alt]="boutique()!.nom">
     </div>
     <div class="hero-overlay"></div>
     <div class="container">
@@ -21,40 +21,27 @@
 
         <div class="boutique-header">
           <div class="boutique-info">
-            @if (boutique()!.nouveau) {
-              <span class="badge badge-gold">Nouveau</span>
-            }
             <span class="boutique-type">
-              {{ boutique()!.type === 'restaurant' ? 'Restaurant' : boutique()!.type === 'service' ? 'Service' : 'Boutique' }}
+              {{ boutique()!.type_boutique === 'restaurant' ? 'Restaurant' : boutique()!.type_boutique === 'service' ? 'Service' : 'Boutique' }}
             </span>
             <h1>{{ boutique()!.nom }}</h1>
             <p class="boutique-description">{{ boutique()!.description }}</p>
 
             <div class="boutique-meta">
-              <div class="meta-item rating">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-                <span>{{ boutique()!.note }}</span>
-                <span class="avis">({{ boutique()!.avis }} avis)</span>
-              </div>
-              <div class="meta-item location">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                <span>Étage {{ boutique()!.etage }}</span>
-              </div>
-              <div class="meta-item status" [class.open]="isOuvert()">
-                <span class="status-dot"></span>
-                <span>{{ isOuvert() ? 'Ouvert' : 'Fermé' }}</span>
-                <span class="hours">· {{ getHorairesAujourdhui() }}</span>
-              </div>
-            </div>
-
-            <div class="boutique-tags">
-              @for (tag of boutique()!.tags; track tag) {
-                <span class="tag">{{ tag }}</span>
+              @if (boutique()!.id_categorie?.nom) {
+                <div class="meta-item location">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>{{ boutique()!.id_categorie.nom }}</span>
+                </div>
+              }
+              @if (boutique()!.horaire_ouvert) {
+                <div class="meta-item status open">
+                  <span class="status-dot"></span>
+                  <span>Horaires : {{ boutique()!.horaire_ouvert }}</span>
+                </div>
               }
             </div>
           </div>
@@ -62,22 +49,6 @@
       </div>
     </div>
   </section>
-
-  <!-- Promotions Banner -->
-  @if (promotions().length > 0) {
-    <section class="promo-banner">
-      <div class="container">
-        <div class="promo-content">
-          <span class="promo-label">Offre en cours</span>
-          <h3>{{ promotions()[0].titre }}</h3>
-          <p>{{ promotions()[0].description }}</p>
-          @if (promotions()[0].code) {
-            <span class="promo-code">Code : {{ promotions()[0].code }}</span>
-          }
-        </div>
-      </div>
-    </section>
-  }
 
   <!-- Main Content -->
   <section class="boutique-main">
@@ -89,8 +60,8 @@
           [class.active]="activeTab() === 'produits'"
           (click)="setTab('produits')"
         >
-          {{ boutique()!.type === 'restaurant' ? 'Menu' : 'Produits' }}
-          <span class="count">{{ boutique()!.produits.length }}</span>
+          Articles
+          <span class="count">{{ articles().length }}</span>
         </button>
         <button
           class="tab"
@@ -107,9 +78,9 @@
         @if (activeTab() === 'produits') {
           <div class="produits-section">
             <!-- Categories Filter -->
-            @if (produitCategories.length > 2) {
+            @if (articleCategories.length > 2) {
               <div class="produit-categories">
-                @for (cat of produitCategories; track cat) {
+                @for (cat of articleCategories; track cat) {
                   <button
                     class="category-btn"
                     [class.active]="selectedCategorie() === cat"
@@ -123,48 +94,52 @@
 
             <!-- Products Grid -->
             <div class="produits-grid">
-              @for (produit of filteredProduits; track produit.id) {
+              @for (article of filteredArticles; track article._id) {
                 <article class="produit-card">
                   <div class="produit-image">
-                    <img [src]="produit.image" [alt]="produit.nom" loading="lazy">
-                    @if (produit.nouveau) {
-                      <span class="badge badge-gold">Nouveau</span>
-                    }
-                    @if (produit.prixPromo) {
-                      <span class="badge badge-promo">Promo</span>
-                    }
-                    @if (!produit.disponible) {
-                      <div class="unavailable-overlay">
-                        <span>Indisponible</span>
-                      </div>
-                    }
+                    <img [src]="getArticleImage(article)" [alt]="article.nom" loading="lazy">
+                    <button
+                      class="favorite-btn"
+                      [class.is-favorite]="isFavorite(article._id)"
+                      (click)="toggleFavorite(article._id); $event.stopPropagation()"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        [attr.fill]="isFavorite(article._id) ? '#EF4444' : 'none'"
+                        [attr.stroke]="isFavorite(article._id) ? '#EF4444' : 'currentColor'"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                    </button>
                   </div>
                   <div class="produit-content">
-                    <span class="produit-category">{{ produit.categorie }}</span>
-                    <h4>{{ produit.nom }}</h4>
-                    <p>{{ produit.description }}</p>
+                    @if (article.id_categorie_article?.nom) {
+                      <span class="produit-category">{{ article.id_categorie_article.nom }}</span>
+                    }
+                    <h4>{{ article.nom }}</h4>
+                    <app-star-rating
+                      [note]="getArticleRating(article._id).moyenne"
+                      [count]="getArticleRating(article._id).count"
+                      [interactive]="true"
+                      [size]="14"
+                      (rated)="rateArticle(article._id, $event)"
+                    ></app-star-rating>
+                    <p>{{ article.description }}</p>
                     <div class="produit-footer">
                       <div class="produit-prix">
-                        @if (produit.prixPromo) {
-                          <span class="prix-promo">{{ formatPrix(produit.prixPromo) }}</span>
-                          <span class="prix-original">{{ formatPrix(produit.prix) }}</span>
-                        } @else {
-                          <span class="prix">{{ formatPrix(produit.prix) }}</span>
-                        }
+                        <span class="prix">{{ formatPrix(article.prix) }}</span>
                       </div>
                       <button
                         class="add-to-cart-btn"
-                        [class.added]="addedToCart() === produit.id"
-                        [class.in-cart]="isInCart(produit.id)"
-                        [disabled]="!produit.disponible"
-                        (click)="addToCart(produit)"
+                        [class.added]="addedToCart() === article._id"
+                        [class.in-cart]="isInCart(article._id)"
+                        (click)="addToCart(article)"
                       >
-                        @if (addedToCart() === produit.id) {
+                        @if (addedToCart() === article._id) {
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                           </svg>
-                          Ajouté
-                        } @else if (isInCart(produit.id)) {
+                          Ajoute
+                        } @else if (isInCart(article._id)) {
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="9" cy="21" r="1"></circle>
                             <circle cx="20" cy="21" r="1"></circle>
@@ -185,6 +160,12 @@
                 </article>
               }
             </div>
+
+            @if (articles().length === 0) {
+              <div class="no-results">
+                <p>Aucun article disponible pour cette boutique.</p>
+              </div>
+            }
           </div>
         }
 
@@ -194,93 +175,51 @@
             <div class="infos-grid">
               <!-- Description -->
               <div class="info-card description-card">
-                <h3>À propos</h3>
-                <p>{{ boutique()!.descriptionLongue }}</p>
+                <h3>A propos</h3>
+                <p>{{ boutique()!.description }}</p>
               </div>
 
               <!-- Horaires -->
-              <div class="info-card">
-                <h3>Horaires d'ouverture</h3>
-                <ul class="horaires-list">
-                  <li [class.today]="getJourActuel() === 'lundi'">
-                    <span class="jour">Lundi</span>
-                    <span class="heures">{{ boutique()!.horaires.lundi }}</span>
-                  </li>
-                  <li [class.today]="getJourActuel() === 'mardi'">
-                    <span class="jour">Mardi</span>
-                    <span class="heures">{{ boutique()!.horaires.mardi }}</span>
-                  </li>
-                  <li [class.today]="getJourActuel() === 'mercredi'">
-                    <span class="jour">Mercredi</span>
-                    <span class="heures">{{ boutique()!.horaires.mercredi }}</span>
-                  </li>
-                  <li [class.today]="getJourActuel() === 'jeudi'">
-                    <span class="jour">Jeudi</span>
-                    <span class="heures">{{ boutique()!.horaires.jeudi }}</span>
-                  </li>
-                  <li [class.today]="getJourActuel() === 'vendredi'">
-                    <span class="jour">Vendredi</span>
-                    <span class="heures">{{ boutique()!.horaires.vendredi }}</span>
-                  </li>
-                  <li [class.today]="getJourActuel() === 'samedi'">
-                    <span class="jour">Samedi</span>
-                    <span class="heures">{{ boutique()!.horaires.samedi }}</span>
-                  </li>
-                  <li [class.today]="getJourActuel() === 'dimanche'">
-                    <span class="jour">Dimanche</span>
-                    <span class="heures">{{ boutique()!.horaires.dimanche }}</span>
-                  </li>
-                </ul>
-              </div>
+              @if (boutique()!.horaire_ouvert) {
+                <div class="info-card">
+                  <h3>Horaires d'ouverture</h3>
+                  <p>{{ boutique()!.horaire_ouvert }}</p>
+                </div>
+              }
 
               <!-- Contact -->
               <div class="info-card">
                 <h3>Contact</h3>
                 <ul class="contact-list">
-                  <li>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                    </svg>
-                    <a href="tel:{{ boutique()!.telephone }}">{{ boutique()!.telephone }}</a>
-                  </li>
-                  <li>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                      <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                    <a href="mailto:{{ boutique()!.email }}">{{ boutique()!.email }}</a>
-                  </li>
-                  @if (boutique()!.siteWeb) {
+                  @if (boutique()!.email) {
+                    <li>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <a href="mailto:{{ boutique()!.email }}">{{ boutique()!.email }}</a>
+                    </li>
+                  }
+                  @if (boutique()!.reseau) {
                     <li>
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="2" y1="12" x2="22" y2="12"></line>
                         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                       </svg>
-                      <a [href]="boutique()!.siteWeb" target="_blank">Visiter le site web</a>
+                      <span>{{ boutique()!.reseau }}</span>
                     </li>
                   }
                 </ul>
               </div>
 
-              <!-- Location -->
-              <div class="info-card">
-                <h3>Localisation</h3>
-                <div class="location-info">
-                  <div class="floor-badge">
-                    <span class="floor-number">{{ boutique()!.etage }}</span>
-                    <span class="floor-label">Étage</span>
-                  </div>
-                  <a routerLink="/map" [queryParams]="{boutique: boutique()!.id}" class="btn btn-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-                      <line x1="8" y1="2" x2="8" y2="18"></line>
-                      <line x1="16" y1="6" x2="16" y2="22"></line>
-                    </svg>
-                    Voir sur le plan
-                  </a>
+              <!-- Categorie -->
+              @if (boutique()!.id_categorie?.nom) {
+                <div class="info-card">
+                  <h3>Categorie</h3>
+                  <p>{{ boutique()!.id_categorie.nom }}</p>
                 </div>
-              </div>
+              }
             </div>
           </div>
         }
@@ -290,8 +229,8 @@
 } @else {
   <div class="not-found">
     <div class="container">
-      <h2>Boutique non trouvée</h2>
-      <p>La boutique que vous recherchez n'existe pas ou a été supprimée.</p>
+      <h2>Boutique non trouvee</h2>
+      <p>La boutique que vous recherchez n'existe pas ou a ete supprimee.</p>
       <a routerLink="/boutiques" class="btn btn-primary">Voir toutes les boutiques</a>
     </div>
   </div>

@@ -1,13 +1,21 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { Produit } from '../models/boutique.model';
-import { CartItem, Cart, ClientInfo, Commande, Facture } from '../models/cart.model';
+import { CartItem, Cart } from '../models/cart.model';
+import { AuthService } from '../../auth/services/auth.service';
+import { environment } from '../../../environments/environments';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
   private readonly CART_KEY = 'tana_center_cart';
-  private readonly TVA_RATE = 0.20; // 20% TVA
+  private readonly TVA_RATE = 0.20;
+  private readonly API_URL = `${environment.apiUrl}/api/bucket`;
+
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
   private cartItems = signal<CartItem[]>(this.loadFromStorage());
 
@@ -44,11 +52,18 @@ export class CartService {
 
   isEmpty = computed(() => this.cartItems().length === 0);
 
+  private isLoggedIn(): boolean {
+    return !!this.authService.getAccessToken();
+  }
+
   constructor() {
-    // Load cart from storage on initialization
     const savedCart = this.loadFromStorage();
     if (savedCart.length > 0) {
       this.cartItems.set(savedCart);
+    }
+    // If logged in at init, load from API
+    if (this.isLoggedIn()) {
+      this.loadCartFromApi();
     }
   }
 
@@ -60,17 +75,83 @@ export class CartService {
 
   private saveToStorage(): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(this.CART_KEY, JSON.stringify(this.cartItems()));
+    if (this.isLoggedIn()) {
+      // When logged in, don't persist to localStorage
+      localStorage.removeItem(this.CART_KEY);
+    } else {
+      localStorage.setItem(this.CART_KEY, JSON.stringify(this.cartItems()));
+    }
+  }
+
+  getLocalItems(): CartItem[] {
+    return this.loadFromStorage();
+  }
+
+  async loadCartFromApi(): Promise<void> {
+    if (!this.isLoggedIn()) return;
+    try {
+      const response = await firstValueFrom(this.http.get<any>(this.API_URL));
+      const items: CartItem[] = (response.items || [])
+        .filter((item: any) => item.id_article)
+        .map((item: any) => this.mapApiItemToCartItem(item));
+      this.cartItems.set(items);
+      localStorage.removeItem(this.CART_KEY);
+    } catch {
+      // Fallback: keep local state
+    }
+  }
+
+  async syncOnLogin(): Promise<void> {
+    const localItems = this.loadFromStorage();
+    if (localItems.length > 0) {
+      // Push local items to API
+      for (const item of localItems) {
+        try {
+          await firstValueFrom(this.http.post(`${this.API_URL}/add`, {
+            articleId: item.produit.id,
+            boutiqueId: item.boutiqueId,
+            quantite: item.quantite
+          }));
+        } catch {
+          // Skip items that fail (e.g., out of stock)
+        }
+      }
+      localStorage.removeItem(this.CART_KEY);
+    }
+    await this.loadCartFromApi();
+  }
+
+  private mapApiItemToCartItem(apiItem: any): CartItem {
+    const article = apiItem.id_article;
+    const boutique = apiItem.id_boutique;
+    return {
+      produit: {
+        id: article._id,
+        nom: article.nom || '',
+        description: article.description || '',
+        prix: apiItem.prix || article.prix,
+        prixPromo: undefined,
+        image: article.images?.[0]
+          ? `${environment.apiUrl}${article.images[0]}`
+          : '',
+        categorie: article.id_categorie_article?.categorie_article || '',
+        disponible: (article.stock || 0) > 0,
+        nouveau: false
+      },
+      boutiqueId: boutique?._id || '',
+      boutiqueNom: boutique?.nom || '',
+      quantite: apiItem.quantite
+    };
   }
 
   addItem(produit: Produit, boutiqueId: string, boutiqueNom: string, quantite: number = 1): void {
+    // Optimistic update
     const currentItems = this.cartItems();
     const existingIndex = currentItems.findIndex(
       item => item.produit.id === produit.id && item.boutiqueId === boutiqueId
     );
 
     if (existingIndex >= 0) {
-      // Update quantity
       const updatedItems = [...currentItems];
       updatedItems[existingIndex] = {
         ...updatedItems[existingIndex],
@@ -78,23 +159,42 @@ export class CartService {
       };
       this.cartItems.set(updatedItems);
     } else {
-      // Add new item
-      this.cartItems.set([...currentItems, {
-        produit,
-        boutiqueId,
-        boutiqueNom,
-        quantite
-      }]);
+      this.cartItems.set([...currentItems, { produit, boutiqueId, boutiqueNom, quantite }]);
     }
     this.saveToStorage();
+
+    // Sync with API if logged in
+    if (this.isLoggedIn()) {
+      this.http.post(`${this.API_URL}/add`, {
+        articleId: produit.id,
+        boutiqueId,
+        quantite
+      }).subscribe({
+        error: () => {
+          // Revert on failure
+          this.cartItems.set(currentItems);
+          this.saveToStorage();
+        }
+      });
+    }
   }
 
   removeItem(produitId: string, boutiqueId: string): void {
-    const updatedItems = this.cartItems().filter(
+    const currentItems = this.cartItems();
+    const updatedItems = currentItems.filter(
       item => !(item.produit.id === produitId && item.boutiqueId === boutiqueId)
     );
     this.cartItems.set(updatedItems);
     this.saveToStorage();
+
+    if (this.isLoggedIn()) {
+      this.http.delete(`${this.API_URL}/remove/${produitId}`).subscribe({
+        error: () => {
+          this.cartItems.set(currentItems);
+          this.saveToStorage();
+        }
+      });
+    }
   }
 
   updateQuantity(produitId: string, boutiqueId: string, quantite: number): void {
@@ -103,7 +203,8 @@ export class CartService {
       return;
     }
 
-    const updatedItems = this.cartItems().map(item => {
+    const currentItems = this.cartItems();
+    const updatedItems = currentItems.map(item => {
       if (item.produit.id === produitId && item.boutiqueId === boutiqueId) {
         return { ...item, quantite };
       }
@@ -111,11 +212,27 @@ export class CartService {
     });
     this.cartItems.set(updatedItems);
     this.saveToStorage();
+
+    if (this.isLoggedIn()) {
+      this.http.put(`${this.API_URL}/update`, {
+        articleId: produitId,
+        quantite
+      }).subscribe({
+        error: () => {
+          this.cartItems.set(currentItems);
+          this.saveToStorage();
+        }
+      });
+    }
   }
 
   clearCart(): void {
     this.cartItems.set([]);
     this.saveToStorage();
+
+    if (this.isLoggedIn()) {
+      this.http.delete(`${this.API_URL}/clear`).subscribe();
+    }
   }
 
   openCart(): void {
@@ -141,60 +258,5 @@ export class CartService {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(prix) + ' Ar';
-  }
-
-  // Generate unique order number
-  generateOrderNumber(): string {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `TC${year}${month}${day}-${random}`;
-  }
-
-  // Generate unique invoice number
-  generateInvoiceNumber(): string {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `FAC-${year}${month}-${random}`;
-  }
-
-  // Create order from cart
-  createOrder(client: ClientInfo, methodePaiement: string): Commande {
-    const commande: Commande = {
-      id: crypto.randomUUID(),
-      numeroCommande: this.generateOrderNumber(),
-      date: new Date(),
-      client,
-      items: [...this.cartItems()],
-      sousTotal: this.sousTotal(),
-      tva: this.tva(),
-      total: this.total(),
-      statut: 'payee',
-      methodePaiement
-    };
-    return commande;
-  }
-
-  // Create invoice from order
-  createInvoice(commande: Commande): Facture {
-    const facture: Facture = {
-      id: crypto.randomUUID(),
-      numeroFacture: this.generateInvoiceNumber(),
-      dateEmission: new Date(),
-      commande,
-      entreprise: {
-        nom: 'Tana Center',
-        adresse: 'Lot IVG 123, Analakely, Antananarivo 101',
-        telephone: '+261 34 00 000 00',
-        email: 'contact@tanacenter.mg',
-        nif: '1234567890',
-        stat: '12345-67-2024-0-00001'
-      }
-    };
-    return facture;
   }
 }

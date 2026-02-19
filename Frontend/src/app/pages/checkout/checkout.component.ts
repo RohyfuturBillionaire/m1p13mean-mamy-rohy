@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../core/services/cart.service';
-import { ClientInfo, Commande } from '../../core/models/cart.model';
+import { OrderApiService } from '../../core/services/order-api.service';
+import { AuthService } from '../../auth/services/auth.service';
+import { ClientInfo, CommandeApi, CheckoutPayload } from '../../core/models/cart.model';
 
 @Component({
   selector: 'app-checkout',
@@ -21,7 +23,8 @@ export class CheckoutComponent {
 
   isProcessing = signal(false);
   showSuccessModal = signal(false);
-  currentOrder = signal<Commande | null>(null);
+  errorMessage = signal('');
+  createdOrders = signal<CommandeApi[]>([]);
 
   clientInfo: ClientInfo = {
     nom: '',
@@ -44,6 +47,8 @@ export class CheckoutComponent {
 
   constructor(
     private cartService: CartService,
+    private orderApi: OrderApiService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -70,23 +75,44 @@ export class CheckoutComponent {
     );
   }
 
-  async processPayment(): Promise<void> {
+  processPayment(): void {
     if (!this.isFormValid() || this.isEmpty()) return;
 
+    // Check if user is logged in
+    if (!this.authService.getAccessToken()) {
+      this.router.navigate(['/connexion']);
+      return;
+    }
+
     this.isProcessing.set(true);
+    this.errorMessage.set('');
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const payload: CheckoutPayload = {
+      methodePaiement: this.selectedPaymentMethod,
+      clientNom: `${this.clientInfo.nom} ${this.clientInfo.prenom}`,
+      clientEmail: this.clientInfo.email,
+      clientTelephone: this.clientInfo.telephone,
+      clientAdresse: `${this.clientInfo.adresse}, ${this.clientInfo.ville} ${this.clientInfo.codePostal}`
+    };
 
-    // Create order
-    const order = this.cartService.createOrder(this.clientInfo, this.selectedPaymentMethod);
-    this.currentOrder.set(order);
-
-    // Clear cart
-    this.cartService.clearCart();
-
-    this.isProcessing.set(false);
-    this.showSuccessModal.set(true);
+    this.orderApi.checkout(payload).subscribe({
+      next: (response) => {
+        this.createdOrders.set(response.commandes);
+        this.cartService.clearCart();
+        this.isProcessing.set(false);
+        this.showSuccessModal.set(true);
+      },
+      error: (err) => {
+        this.isProcessing.set(false);
+        if (err.status === 409) {
+          this.errorMessage.set(err.error?.message || 'Stock insuffisant pour un ou plusieurs articles');
+        } else if (err.status === 400) {
+          this.errorMessage.set(err.error?.message || 'Panier vide');
+        } else {
+          this.errorMessage.set(err.error?.message || 'Erreur lors du paiement. Veuillez réessayer.');
+        }
+      }
+    });
   }
 
   closeModal(): void {
@@ -94,15 +120,18 @@ export class CheckoutComponent {
   }
 
   goToInvoice(): void {
-    const order = this.currentOrder();
-    if (order) {
-      // Store order in sessionStorage for invoice page
-      sessionStorage.setItem('currentOrder', JSON.stringify(order));
+    const orders = this.createdOrders();
+    if (orders.length > 0) {
+      sessionStorage.setItem('currentOrder', JSON.stringify(orders));
       this.router.navigate(['/facture']);
     }
   }
 
   goToHome(): void {
     this.router.navigate(['/']);
+  }
+
+  getOrderNumbers(): string {
+    return this.createdOrders().map(o => o.numero_commande).join(', ');
   }
 }
