@@ -2,7 +2,8 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/services/admin.service';
-import { ParametresSite } from '../../core/models/admin.model';
+import { ParametresCrm, ParametresSite } from '../../core/models/admin.model';
+import { AdminsService } from './services/admins.service';
 
 @Component({
   selector: 'app-parametres',
@@ -13,9 +14,20 @@ import { ParametresSite } from '../../core/models/admin.model';
 })
 export class ParametresComponent implements OnInit {
   parametres = signal<ParametresSite | null>(null);
+  parametresCrm = signal<ParametresCrm | null>(null);
   activeSection = signal('general');
   isSaving = signal(false);
   saveSuccess = signal(false);
+
+  parameCrm = {
+    nom_centre_commercial: 'test',
+    slogan: '',
+    email: '',
+    telephone: '',
+    adresse: '',
+    horaire_ouverture: '',
+    horaire_fermeture: ''
+  };
 
   sections = [
     { id: 'general', label: 'Général', icon: 'store' },
@@ -30,7 +42,7 @@ export class ParametresComponent implements OnInit {
     { id: 3, url: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=800', active: false }
   ];
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService,private adminsService: AdminsService) {}
 
   ngOnInit() {
     this.loadParametres();
@@ -40,14 +52,20 @@ export class ParametresComponent implements OnInit {
     this.adminService.getParametres().subscribe(p => {
       this.parametres.set(p);
     });
+    this.adminsService.getSiteCrms().subscribe((res: any) => {
+      if (res && res.length > 0) {
+        this.parametresCrm.set(res[0]);
+      }
+    });
   }
 
   saveParametres() {
     const params = this.parametres();
+    const paramsCrm = this.parametresCrm();
     if (!params) return;
-
+    console.log(paramsCrm);
     this.isSaving.set(true);
-    this.adminService.updateParametres(params).subscribe(() => {
+    this.adminsService.addSiteCrm(paramsCrm).subscribe(() => {
       this.isSaving.set(false);
       this.saveSuccess.set(true);
       setTimeout(() => this.saveSuccess.set(false), 3000);
@@ -55,11 +73,11 @@ export class ParametresComponent implements OnInit {
   }
 
   updateParametre(key: string, value: any) {
-    const params = this.parametres();
+    const params = this.parametresCrm();
     if (!params) return;
 
     const updated = { ...params, [key]: value };
-    this.parametres.set(updated);
+    this.parametresCrm.set(updated);
   }
 
   updateNestedParametre(parent: string, key: string, value: any) {

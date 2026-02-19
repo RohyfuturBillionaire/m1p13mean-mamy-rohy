@@ -4,6 +4,8 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RoleService } from '../../../core/services/role.service';
+import { RoleService } from '../../../core/role_user/services/role.service';
+import { SellerService } from '../../../core/services/seller.service';
 
 @Component({
   selector: 'app-register',
@@ -45,6 +47,20 @@ export class RegisterComponent implements OnInit {
 
   toggleConfirmPassword() {
     this.showConfirmPassword.update(v => !v);
+  }
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private roleService: RoleService,
+    private sellerService: SellerService
+  ) {}
+
+  ngOnInit() {
+    // Load roles
+    this.roleService.getRoles().subscribe(roles => {
+      this.roles = roles;
+      console.log('Available roles:', roles);
+    });
   }
 
   ngOnInit() {

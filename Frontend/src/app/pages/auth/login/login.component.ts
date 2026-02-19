@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
+import { SellerService } from '../../../core/services/seller.service';
 
 @Component({
   selector: 'app-login',
@@ -25,6 +26,7 @@ export class LoginComponent {
     private adminService: AdminService,
     private authService: AuthService,
     private cartService: CartService
+    private sellerService: SellerService
   ) {}
 
   togglePassword() {
@@ -67,5 +69,24 @@ export class LoginComponent {
         this.error.set(err.error?.message || 'Email ou mot de passe incorrect');
       }
     });
+    // this.authService.login(this.username, this.password)
+    // Check for boutique credentials first
+  //   this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {
+  //     if (sellerSuccess) {
+  //       this.isLoading.set(false);
+  //       this.router.navigate(['/seller/dashboard']);
+  //       return;
+  //     }
+
+  //     // If not boutique, check for admin credentials
+  //     this.adminService.login(this.username, this.password).subscribe(adminSuccess => {
+  //       this.isLoading.set(false);
+  //       if (adminSuccess) {
+  //         this.router.navigate(['/admin/dashboard']);
+  //       } else {
+  //         this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
+  //       }
+  //     });
+  //   });
   }
 }

@@ -1,3 +1,4 @@
+// routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -11,6 +12,7 @@ const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
 
+// Generate tokens
 const generateAccessToken = (user) => {
   return jwt.sign(
     { userId: user._id, email: user.email },
@@ -23,10 +25,12 @@ const generateRefreshToken = () => {
   return crypto.randomBytes(64).toString('hex');
 };
 
+// Reusable login function
 const loginUser = async (user, res) => {
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken();
 
+  // Save refresh token hash in DB
   const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
   await RefreshToken.create({
     user_id: user._id,
@@ -34,6 +38,7 @@ const loginUser = async (user, res) => {
     expires_at: new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
   });
 
+  // Send refresh token as HttpOnly cookie
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -73,6 +78,7 @@ router.post('/signup', async (req, res) => {
   try {
     const { username, email, password, id_role } = req.body;
 
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already in use' });
@@ -89,6 +95,7 @@ router.post('/signup', async (req, res) => {
     });
     await user.save();
 
+    // Auto login
     const response = await loginUser(user, res);
     res.status(201).json(response);
   } catch (error) {
@@ -154,6 +161,7 @@ router.post('/reset-password', async (req, res) => {
 router.post('/refresh', async (req, res) => {
   const { refreshToken } = req.cookies;
 
+  
   if (!refreshToken) {
     return res.status(401).json({ message: 'No refresh token' });
   }
@@ -183,6 +191,7 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', async (req, res) => {
   const { refreshToken } = req.cookies;
 
+  
   if (refreshToken) {
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     await RefreshToken.updateOne({ token_hash: tokenHash }, { revoked: true });

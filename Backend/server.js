@@ -1,10 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
+
+const authenticateToken = require('./middleware/authMiddleware');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 // Middleware
 app.use(cors({
   origin: 'http://localhost:4200',
@@ -24,7 +29,18 @@ app.use('/auth', require('./routes/authRoutes'));
 app.use('/roles', require('./routes/roleRoutes'));
 
 // Legacy routes
-app.use('/articles', require('./routes/articleRoutes'));
+// Public routes (no auth required)
+app.use('/auth', require('./routes/authRoutes'));
+app.use('/roles', require('./routes/roleRoutes'));
+app.use('/users', authenticateToken, require('./routes/userRoutes'));
+
+// Protected routes (auth required)
+app.use('/articles', authenticateToken, require('./routes/articleRoutes'));
+app.use('/sitecrm', require('./routes/siteCrmRoutes'));
+app.use('/sitecontenu', authenticateToken, require('./routes/siteContenuRoutes'));
+app.use('/imgslider', authenticateToken, require('./routes/imgSliderRoutes'));
+app.use('/conversations', authenticateToken, require('./routes/conversationRoute'));
+app.use('/messages', authenticateToken, require('./routes/MessageRoute'));
 
 // API routes
 app.use('/api/contracts', require('./routes/contractRoutes'));

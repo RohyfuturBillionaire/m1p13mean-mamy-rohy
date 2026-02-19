@@ -19,9 +19,9 @@ export class AuthInterceptor implements HttpInterceptor {
 
     const token = this.authService.getAccessToken();
 
-    // If no token, let the request pass without auth
+    // If no token, try to refresh first
     if (!token) {
-      return next.handle(req);
+      return this.handleTokenRefresh(req, next);
     }
 
     // Add token to request

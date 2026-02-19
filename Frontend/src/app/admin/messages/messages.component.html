@@ -50,7 +50,29 @@
           <div class="empty-conversations">
             <span class="material-icons" style="font-size: 2.5rem; color: #CBD5E1;">forum</span>
             <p>Aucune conversation</p>
+            <button class="btn btn-primary" (click)="openNewConversationModal()">
+              ➕ Nouvelle conversation
+            </button>
           </div>
+        } @else {
+          @for (conv of getFilteredConversations(); track conv._id) {
+            <button
+              class="conversation-item"
+              [class.active]="selectedConversation()?._id === conv._id"
+              (click)="selectConversation(conv)"
+            >
+              <div class="conv-avatar">
+                <span>{{ getInitials(getOtherParticipant(conv)) }}</span>
+              </div>
+              <div class="conv-content">
+                <div class="conv-header">
+                  <span class="conv-name">{{ getOtherParticipant(conv)?.username || 'Utilisateur' }}</span>
+                  <span class="conv-time">{{ formatTime(conv.updatedAt) }}</span>
+                </div>
+                <p class="conv-preview">{{ getLastMessage(conv._id) }}</p>
+              </div>
+            </button>
+          }
         }
       </div>
     </aside>
@@ -69,8 +91,8 @@
               }
             </div>
             <div class="chat-info">
-              <span class="chat-name">{{ getOtherParticipant(selectedConversation()!)?.nom }}</span>
-              <span class="chat-role">{{ getOtherParticipant(selectedConversation()!)?.role === 'boutique' ? 'Boutique' : 'Client' }}</span>
+              <span class="chat-name">{{ getOtherParticipant(selectedConversation()!)?.username }}</span>
+              <span class="chat-role">{{ getRoleName(getOtherParticipant(selectedConversation()!)) | titlecase }}</span>
             </div>
           </div>
           <div class="chat-actions">
@@ -82,12 +104,17 @@
 
         <!-- Messages -->
         <div class="messages-list">
-          @for (msg of messages(); track msg.id) {
+          @for (msg of messages(); track msg._id) {
             <div class="message" [class.own]="isOwnMessage(msg)">
               <div class="message-bubble">
-                <p>{{ msg.contenu }}</p>
-                <span class="message-time">{{ formatMessageTime(msg.dateEnvoi) }}</span>
+                <p>{{ msg.message }}</p>
+                <span class="message-time">{{ formatMessageTime(msg.date_envoie) }}</span>
               </div>
+            </div>
+          }
+          @if (messages().length === 0) {
+            <div class="empty-messages">
+              <p>Aucun message. Commencez la conversation!</p>
             </div>
           }
         </div>
@@ -120,43 +147,34 @@
   </div>
 </div>
 
-<!-- Email Modal -->
-@if (showEmailModal()) {
-  <div class="modal-overlay" (click)="closeEmailModal()">
+<!-- New Conversation Modal -->
+@if (showNewConversationModal()) {
+  <div class="modal-overlay" (click)="closeNewConversationModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>Envoyer un Email</h2>
         <button class="close-btn" (click)="closeEmailModal()"><span class="material-icons">close</span></button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label>Destinataire</label>
-          <select [(ngModel)]="emailData.destinataire">
-            <option value="">Sélectionner un destinataire</option>
-            @for (user of users(); track user.id) {
-              <option [value]="user.email">{{ user.prenom }} {{ user.nom }} ({{ user.email }})</option>
+        <p>Sélectionnez une boutique pour démarrer une conversation:</p>
+        <div class="user-list">
+          @if (boutiqueUsers().length === 0) {
+            <div class="empty-users">
+              <p>Aucune boutique disponible</p>
+            </div>
+          } @else {
+            @for (user of boutiqueUsers(); track user._id) {
+              <button class="user-item" (click)="startConversation(user)">
+                <div class="user-avatar">
+                  <span>{{ getInitials(user) }}</span>
+                </div>
+                <div class="user-info">
+                  <span class="user-name">{{ user.username }}</span>
+                  <span class="user-email">{{ user.email }}</span>
+                </div>
+              </button>
             }
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Template</label>
-          <select [(ngModel)]="emailData.template">
-            @for (template of emailTemplates; track template.id) {
-              <option [value]="template.id">{{ template.label }}</option>
-            }
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Sujet</label>
-          <input type="text" [(ngModel)]="emailData.sujet" placeholder="Objet de l'email">
-        </div>
-        <div class="form-group">
-          <label>Message</label>
-          <textarea
-            [(ngModel)]="emailData.message"
-            rows="6"
-            placeholder="Écrivez votre message..."
-          ></textarea>
+          }
         </div>
       </div>
       <div class="modal-footer">

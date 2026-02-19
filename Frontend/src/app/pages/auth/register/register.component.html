@@ -155,10 +155,10 @@
             <div class="radio-group">
               @for (role of roles; track role._id) {
                 <label class="radio-label">
-                  <input
-                    type="radio"
-                    name="role"
-                    [value]="role._id"
+                  <input 
+                    type="radio" 
+                    name="role" 
+                    [value]="role._id" 
                     [(ngModel)]="selectedRole"
                     class="radio-input"
                   >
