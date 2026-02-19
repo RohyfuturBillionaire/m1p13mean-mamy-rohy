@@ -70,20 +70,6 @@ router.put('/:id/link-user', async (req, res) => {
   }
 });
 
-// GET single boutique
-router.get('/:id', async (req, res) => {
-  try {
-    const boutique = await Boutique.findById(req.params.id)
-      .populate('user_proprietaire', 'nom prenom email')
-      .populate('id_categorie')
-      .populate('local_boutique');
-    if (!boutique) return res.status(404).json({ message: 'Boutique non trouvée' });
-    res.json(boutique);
-  } 
-  catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 // GET my boutique (authenticated user's linked boutique - secured)
 router.get('/my-boutique', authenticateToken, requireBoutique, async (req, res) => {
   try {
