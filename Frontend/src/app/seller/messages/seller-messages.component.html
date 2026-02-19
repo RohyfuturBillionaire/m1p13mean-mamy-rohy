@@ -1,96 +1,151 @@
 <div class="messages-page">
-  <div class="messages-layout">
+  <div class="messages-container">
     <!-- Conversations List -->
-    <div class="conversations-panel">
+    <aside class="conversations-panel">
       <div class="panel-header">
         <h2>Messages</h2>
-        @if (unreadTotal() > 0) {
-          <span class="unread-badge">{{ unreadTotal() }}</span>
-        }
+        <button class="icon-btn" title="Nouvelle conversation" (click)="openNewConversationModal()">
+          ➕
+        </button>
       </div>
-      <div class="conversations-list">
-        @for (conv of conversations(); track conv.id) {
-          <div
-            class="conversation-item"
-            [class.active]="selectedConversation()?.id === conv.id"
-            [class.unread]="conv.nonLus > 0"
-            (click)="selectConversation(conv)"
-          >
-            <div class="conv-avatar" [class]="conv.participantRole">
-              <span class="material-icons">{{ getParticipantIcon(conv.participantRole) }}</span>
-            </div>
-            <div class="conv-content">
-              <div class="conv-header">
-                <span class="conv-name">{{ conv.participantNom }}</span>
-                <span class="conv-time">{{ formatDate(conv.dateLastMessage) }}</span>
-              </div>
-              <div class="conv-preview">
-                <span class="conv-message">{{ conv.dernierMessage }}</span>
-                @if (conv.nonLus > 0) {
-                  <span class="conv-unread">{{ conv.nonLus }}</span>
-                }
-              </div>
-            </div>
-          </div>
-        }
-        @if (conversations().length === 0) {
-          <div class="empty-conversations">
-            <span class="material-icons">chat_bubble_outline</span>
-            <p>Aucune conversation</p>
-          </div>
-        }
-      </div>
-    </div>
 
-    <!-- Messages Panel -->
-    <div class="messages-panel">
+      <div class="search-box">
+        <span>🔍</span>
+        <input
+          type="text"
+          placeholder="Rechercher..."
+          [(ngModel)]="searchQuery"
+        >
+      </div>
+
+      <div class="conversations-list">
+        @if (getFilteredConversations().length === 0) {
+          <div class="empty-conversations">
+            <span>💬</span>
+            <p>Aucune conversation</p>
+            <button class="btn btn-primary" (click)="openNewConversationModal()">
+              ➕ Nouvelle conversation
+            </button>
+          </div>
+        } @else {
+          @for (conv of getFilteredConversations(); track conv._id) {
+            <button
+              class="conversation-item"
+              [class.active]="selectedConversation()?._id === conv._id"
+              (click)="selectConversation(conv)"
+            >
+              <div class="conv-avatar">
+                <span>{{ getInitials(getOtherParticipant(conv)) }}</span>
+              </div>
+              <div class="conv-content">
+                <div class="conv-header">
+                  <span class="conv-name">{{ getOtherParticipant(conv)?.username || 'Utilisateur' }}</span>
+                  <span class="conv-time">{{ formatTime(conv.updatedAt) }}</span>
+                </div>
+                <p class="conv-preview">{{ getLastMessage(conv._id) }}</p>
+              </div>
+            </button>
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- Chat Panel -->
+    <main class="chat-panel">
       @if (selectedConversation()) {
-        <div class="panel-header">
-          <div class="chat-info">
-            <div class="chat-avatar" [class]="selectedConversation()!.participantRole">
-              <span class="material-icons">{{ getParticipantIcon(selectedConversation()!.participantRole) }}</span>
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <div class="chat-user">
+            <div class="chat-avatar">
+              <span>{{ getInitials(getOtherParticipant(selectedConversation()!)) }}</span>
             </div>
-            <div>
-              <h3>{{ selectedConversation()!.participantNom }}</h3>
-              <span class="chat-type">{{ selectedConversation()!.participantRole === 'admin' ? 'Administration' : 'Client' }}</span>
+            <div class="chat-info">
+              <span class="chat-name">{{ getOtherParticipant(selectedConversation()!)?.username }}</span>
+              <span class="chat-role">{{ getRoleName(getOtherParticipant(selectedConversation()!)) | titlecase }}</span>
             </div>
+          </div>
+          <div class="chat-actions">
+            <button class="icon-btn" title="Plus">⋮</button>
           </div>
         </div>
 
-        <div class="messages-container" #messagesContainer>
-          @for (msg of messages(); track msg.id) {
+        <!-- Messages -->
+        <div class="messages-list">
+          @for (msg of messages(); track msg._id) {
             <div class="message" [class.own]="isOwnMessage(msg)">
-              <div class="message-content">
-                <p>{{ msg.contenu }}</p>
-                <span class="message-time">{{ formatFullDate(msg.date) }}</span>
+              <div class="message-bubble">
+                <p>{{ msg.message }}</p>
+                <span class="message-time">{{ formatMessageTime(msg.date_envoie) }}</span>
               </div>
+            </div>
+          }
+          @if (messages().length === 0) {
+            <div class="empty-messages">
+              <p>Aucun message. Commencez la conversation!</p>
             </div>
           }
         </div>
 
-        <div class="message-input">
+        <!-- Input -->
+        <div class="chat-input">
           <input
             type="text"
+            placeholder="Écrivez votre message..."
             [(ngModel)]="newMessage"
             (keyup.enter)="sendMessage()"
-            placeholder="Écrire un message..."
-            [disabled]="isSending()"
           >
-          <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage().trim() || isSending()">
-            @if (isSending()) {
-              <span class="loader-sm"></span>
-            } @else {
-              <span class="material-icons">send</span>
-            }
+          <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage()">
+            ➤
           </button>
         </div>
       } @else {
-        <div class="no-selection">
-          <span class="material-icons">chat</span>
+        <!-- No Conversation Selected -->
+        <div class="no-conversation">
+          <span>💬</span>
           <h3>Sélectionnez une conversation</h3>
-          <p>Choisissez une conversation dans la liste pour voir les messages</p>
+          <p>Choisissez une conversation dans la liste ou créez une nouvelle conversation</p>
+          <button class="btn btn-primary" (click)="openNewConversationModal()">
+            ➕ Nouvelle conversation
+          </button>
         </div>
       }
-    </div>
+    </main>
   </div>
 </div>
+
+<!-- New Conversation Modal -->
+@if (showNewConversationModal()) {
+  <div class="modal-overlay" (click)="closeNewConversationModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Nouvelle conversation</h2>
+        <button class="close-btn" (click)="closeNewConversationModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Sélectionnez une boutique pour démarrer une conversation:</p>
+        <div class="user-list">
+          @if (boutiqueUsers().length === 0) {
+            <div class="empty-users">
+              <p>Aucune boutique disponible</p>
+            </div>
+          } @else {
+            @for (user of boutiqueUsers(); track user._id) {
+              <button class="user-item" (click)="startConversation(user)">
+                <div class="user-avatar">
+                  <span>{{ getInitials(user) }}</span>
+                </div>
+                <div class="user-info">
+                  <span class="user-name">{{ user.username }}</span>
+                  <span class="user-email">{{ user.email }}</span>
+                </div>
+              </button>
+            }
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeNewConversationModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+}

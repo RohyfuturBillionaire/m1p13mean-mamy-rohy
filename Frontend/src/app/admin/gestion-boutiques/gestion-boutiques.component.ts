@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BoutiqueApiService, BoutiqueApi, CategoryApi } from '../../core/services/boutique-api.service';
 import { ContractService } from '../../core/services/contract.service';
+import { LocalService, Local } from '../../core/services/local.service';
 
 @Component({
   selector: 'app-gestion-boutiques',
@@ -15,6 +16,7 @@ import { ContractService } from '../../core/services/contract.service';
 export class GestionBoutiquesComponent implements OnInit {
   boutiques = signal<BoutiqueApi[]>([]);
   categories = signal<CategoryApi[]>([]);
+  availableLocals = signal<Local[]>([]);
 
   showModal = signal(false);
   editingBoutique = signal<BoutiqueApi | null>(null);
@@ -27,6 +29,7 @@ export class GestionBoutiquesComponent implements OnInit {
   constructor(
     private boutiqueService: BoutiqueApiService,
     private contractService: ContractService,
+    private localService: LocalService,
     private route: ActivatedRoute
   ) {}
 
@@ -57,6 +60,7 @@ export class GestionBoutiquesComponent implements OnInit {
       type_boutique: '',
       loyer: 0,
       id_categorie: '',
+      local_boutique: '',
       status: true
     };
   }
@@ -64,30 +68,49 @@ export class GestionBoutiquesComponent implements OnInit {
   private loadData() {
     this.boutiqueService.getAll().subscribe(b => this.boutiques.set(b));
     this.boutiqueService.getCategories().subscribe(c => this.categories.set(c));
+    this.localService.getAvailable().subscribe(l => this.availableLocals.set(l));
   }
 
   openModal(boutique?: BoutiqueApi) {
-    if (boutique) {
-      this.editingBoutique.set(boutique);
-      this.form = {
-        nom: boutique.nom,
-        email: boutique.email || '',
-        reseau: boutique.reseau || '',
-        horaire_ouvert: boutique.horaire_ouvert || '08:00 - 20:00',
-        description: boutique.description || '',
-        type_boutique: boutique.type_boutique || '',
-        loyer: boutique.loyer || 0,
-        id_categorie: boutique.id_categorie?._id || '',
-        status: boutique.status
-      };
-      this.logoPreview = boutique.logo ? 'http://localhost:5000' + boutique.logo : null;
-    } else {
-      this.editingBoutique.set(null);
-      this.form = this.getEmptyForm();
-      this.logoPreview = null;
-    }
-    this.selectedLogoFile = null;
-    this.showModal.set(true);
+    // Reload available locals
+    this.localService.getAvailable().subscribe(availables => {
+      let locals = [...availables];
+      
+      if (boutique) {
+        this.editingBoutique.set(boutique);
+        const currentLocal = (boutique as any).local_boutique;
+        
+        // Add current local to list if it exists and isn't already in availables
+        if (currentLocal && currentLocal._id) {
+          const exists = locals.some(l => l._id === currentLocal._id);
+          if (!exists) {
+            locals.unshift(currentLocal);
+          }
+        }
+        
+        this.form = {
+          nom: boutique.nom,
+          email: boutique.email || '',
+          reseau: boutique.reseau || '',
+          horaire_ouvert: boutique.horaire_ouvert || '08:00 - 20:00',
+          description: boutique.description || '',
+          type_boutique: boutique.type_boutique || '',
+          loyer: boutique.loyer || 0,
+          id_categorie: boutique.id_categorie?._id || '',
+          local_boutique: currentLocal?._id || '',
+          status: boutique.status
+        };
+        this.logoPreview = boutique.logo ? 'http://localhost:5000' + boutique.logo : null;
+      } else {
+        this.editingBoutique.set(null);
+        this.form = this.getEmptyForm();
+        this.logoPreview = null;
+      }
+      
+      this.availableLocals.set(locals);
+      this.selectedLogoFile = null;
+      this.showModal.set(true);
+    });
   }
 
   closeModal() {
@@ -121,6 +144,9 @@ export class GestionBoutiquesComponent implements OnInit {
     formData.append('status', String(this.form.status));
     if (this.form.id_categorie) {
       formData.append('id_categorie', this.form.id_categorie);
+    }
+    if (this.form.local_boutique) {
+      formData.append('local_boutique', this.form.local_boutique);
     }
     if (this.selectedLogoFile) {
       formData.append('logo', this.selectedLogoFile);

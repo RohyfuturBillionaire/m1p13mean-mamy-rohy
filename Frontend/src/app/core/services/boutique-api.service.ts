@@ -75,12 +75,22 @@ export class BoutiqueApiService {
     return this.http.post<BoutiqueApi>(this.apiUrl, formData);
   }
 
-  update(id: string, formData: FormData): Observable<BoutiqueApi> {
+  update(id: string, formData: any): Observable<BoutiqueApi> {
     return this.http.put<BoutiqueApi>(`${this.apiUrl}/${id}`, formData);
   }
 
   delete(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  getUnlinkedBoutiques(): Observable<BoutiqueApi[]> {
+    return this.http.get<{ data: BoutiqueApi[] }>(`${this.apiUrl}/unlinked`).pipe(
+      map(res => res.data)
+    );
+  }
+
+  linkBoutiqueToUser(boutiqueId: string, userId: string): Observable<BoutiqueApi> {
+    return this.http.put<BoutiqueApi>(`${this.apiUrl}/${boutiqueId}/link-user`, { userId });
   }
 
   getCategories(): Observable<CategoryApi[]> {

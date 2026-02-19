@@ -86,6 +86,7 @@
           <th>Inscription</th>
           <!-- <th>Statut</th> -->
           <th>Actions</th>
+          <th>liaison</th>
         </tr>
       </thead>
       <tbody>
@@ -145,6 +146,11 @@
                   <span class="material-icons">delete</span>
                 </button>
               </div>
+            </td>
+            <td>
+              <button class="action-btn link" *ngIf="isShop(user)" (click)="openLinkBoutiqueModal(user)" title="Lier à une boutique">
+                🔗
+              </button>
             </td>
           </tr>
         }
@@ -245,6 +251,71 @@
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="cancelDelete()">Annuler</button>
         <button class="btn btn-danger" (click)="deleteUser()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Link Boutique Modal -->
+@if (showLinkBoutiqueModal()) {
+  <div class="modal-overlay" (click)="closeLinkBoutiqueModal()">
+    <div class="modal link-boutique-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Lier une boutique</h2>
+        <button class="close-btn" (click)="closeLinkBoutiqueModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="link-info">
+          Lier l'utilisateur <strong>{{ selectedUserForLink()?.username }}</strong> à une boutique
+        </p>
+        
+        @if (unlinkedBoutiques().length === 0) {
+          <div class="empty-state">
+            <span>🏪</span>
+            <p>Aucune boutique disponible</p>
+            <p class="sub-text">Toutes les boutiques sont déjà liées à un utilisateur</p>
+          </div>
+        } @else {
+          <div class="boutiques-list">
+            @for (boutique of unlinkedBoutiques(); track boutique._id) {
+              <div 
+                class="boutique-item" 
+                [class.selected]="selectedBoutiqueId() === boutique._id"
+                (click)="selectedBoutiqueId.set(boutique._id)"
+              >
+                <div class="boutique-logo">
+                  @if (boutique.logo) {
+                    <img [src]="'http://localhost:5000' + boutique.logo" [alt]="boutique.nom">
+                  } @else {
+                    <span class="logo-placeholder">🏪</span>
+                  }
+                </div>
+                <div class="boutique-info">
+                  <span class="boutique-name">{{ boutique.nom }}</span>
+                  <span class="boutique-category">{{ boutique.id_categorie?.nom || 'Non catégorisé' }}</span>
+                  @if (boutique.description) {
+                    <span class="boutique-description">{{ boutique.description }}</span>
+                  }
+                </div>
+                <div class="boutique-check">
+                  @if (selectedBoutiqueId() === boutique._id) {
+                    <span>✓</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeLinkBoutiqueModal()">Annuler</button>
+        <button 
+          class="btn btn-primary" 
+          (click)="linkBoutique()" 
+          [disabled]="!selectedBoutiqueId()"
+        >
+          Lier la boutique
+        </button>
       </div>
     </div>
   </div>

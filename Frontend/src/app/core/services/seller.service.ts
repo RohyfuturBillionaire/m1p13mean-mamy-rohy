@@ -29,6 +29,8 @@ import {
   MOCK_COMMANDES_VS_LIVRAISONS,
   MOCK_STOCK_STATUS
 } from '../data/seller-mock-data';
+import { environment } from '../../../environments/environments';
+import { HttpClient } from '@angular/common/http';
 import { BoutiqueApiService } from './boutique-api.service';
 import { OrderApiService } from './order-api.service';
 import { CommandeApi } from '../models/cart.model';
@@ -40,6 +42,7 @@ export class SellerService {
   // =============================================
   // STATE
   // =============================================
+  private readonly API_URL = `${environment.apiUrl}/api/boutiques/user`; // Base URL for backend API
   private isAuthenticated = signal(false);
   private currentUser = signal<SellerUser | null>(null);
   private boutique = signal<SellerBoutique | null>(null);
@@ -76,11 +79,13 @@ export class SellerService {
     this.commandes().filter(c => c.statut === 'en_attente' || c.statut === 'payee')
   );
 
+
   private orderApi = inject(OrderApiService);
 
-  constructor(private boutiqueApi: BoutiqueApiService) {
+  constructor(private http: HttpClient,private boutiqueApi: BoutiqueApiService) {
     this.loadInitialData();
   }
+
 
   private loadInitialData(): void {
     this.produits.set([...MOCK_SELLER_PRODUITS]);
@@ -159,6 +164,9 @@ export class SellerService {
     } catch {
       return false;
     }
+  }
+  getBoutiqueInfo(idUser: any): Observable<any> {
+    return this.http.get(`${this.API_URL}/${idUser}`);
   }
 
   logout(): void {
