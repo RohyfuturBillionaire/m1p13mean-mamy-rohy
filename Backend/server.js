@@ -35,6 +35,10 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/promotions', require('./routes/promotionRoutes'));
 app.use('/api/locaux', require('./routes/localRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/bucket', require('./routes/bucketRoutes'));
+app.use('/api/commandes', require('./routes/commandeRoutes'));
+app.use('/api/favorites', require('./routes/favoriteRoutes'));
+app.use('/api/avis', require('./routes/avisRoutes'));
 
 // Cron jobs
 const cron = require('node-cron');

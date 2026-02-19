@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { CartService } from '../../../core/services/cart.service';
 
 @Component({
   selector: 'app-login',
@@ -22,7 +23,8 @@ export class LoginComponent {
   constructor(
     private router: Router,
     private adminService: AdminService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cartService: CartService
   ) {}
 
   togglePassword() {
@@ -42,20 +44,23 @@ export class LoginComponent {
       next: (u) => {
         console.log('Login response:', u);
         localStorage.setItem('user', JSON.stringify(u));
-        this.isLoading.set(false);
         const roleName = (u.user?.role || '').toLowerCase();
 
-        if (!roleName) {
-          this.router.navigate(['/admin/dashboard']);
-        } else if (roleName === 'boutique') {
-          if (u.user?.hasBoutique === false) {
-            this.router.navigate(['/boutique-pending']);
+        // Sync cart from localStorage to API, then navigate
+        this.cartService.syncOnLogin().then(() => {
+          this.isLoading.set(false);
+          if (!roleName) {
+            this.router.navigate(['/admin/dashboard']);
+          } else if (roleName === 'boutique') {
+            if (u.user?.hasBoutique === false) {
+              this.router.navigate(['/boutique-pending']);
+            } else {
+              this.router.navigate(['/seller/dashboard']);
+            }
           } else {
-            this.router.navigate(['/seller/dashboard']);
+            this.router.navigate(['/']);
           }
-        } else {
-          this.router.navigate(['/']);
-        }
+        });
       },
       error: (err) => {
         this.isLoading.set(false);

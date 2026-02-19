@@ -1,14 +1,18 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { BoutiqueApiService, BoutiqueApi, ArticleApi } from '../../core/services/boutique-api.service';
 import { CartService } from '../../core/services/cart.service';
+import { FavoriteApiService } from '../../core/services/favorite-api.service';
+import { RatingApiService } from '../../core/services/rating-api.service';
+import { AuthService } from '../../auth/services/auth.service';
+import { StarRatingComponent } from '../../shared/components/star-rating/star-rating.component';
 import { Produit } from '../../core/models/boutique.model';
 
 @Component({
   selector: 'app-boutique-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, StarRatingComponent],
   templateUrl: './boutique-detail.component.html',
   styleUrl: './boutique-detail.component.scss'
 })
@@ -19,6 +23,13 @@ export class BoutiqueDetailComponent implements OnInit {
   selectedCategorie = signal<string>('all');
   activeTab = signal<'produits' | 'infos'>('produits');
   addedToCart = signal<string | null>(null);
+  favoriteIds = signal<Set<string>>(new Set());
+  articleRatings = signal<Map<string, { moyenne: number; count: number; userNote: number | null }>>(new Map());
+
+  private favoriteApi = inject(FavoriteApiService);
+  private ratingApi = inject(RatingApiService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   constructor(
     private boutiqueApi: BoutiqueApiService,
@@ -33,6 +44,40 @@ export class BoutiqueDetailComponent implements OnInit {
         this.loadBoutique(id);
       }
     });
+    this.loadFavorites();
+  }
+
+  private loadFavorites(): void {
+    if (!this.authService.getAccessToken()) return;
+    this.favoriteApi.getFavorites().subscribe({
+      next: (favs) => {
+        const ids = new Set<string>(favs.map((f: any) => f._id || f.id));
+        this.favoriteIds.set(ids);
+      },
+      error: () => {}
+    });
+  }
+
+  isFavorite(articleId: string): boolean {
+    return this.favoriteIds().has(articleId);
+  }
+
+  toggleFavorite(articleId: string): void {
+    if (!this.authService.getAccessToken()) {
+      this.router.navigate(['/connexion']);
+      return;
+    }
+    if (this.isFavorite(articleId)) {
+      this.favoriteIds.update(ids => { const n = new Set(ids); n.delete(articleId); return n; });
+      this.favoriteApi.removeFavorite(articleId).subscribe({ error: () => {
+        this.favoriteIds.update(ids => { const n = new Set(ids); n.add(articleId); return n; });
+      }});
+    } else {
+      this.favoriteIds.update(ids => { const n = new Set(ids); n.add(articleId); return n; });
+      this.favoriteApi.addFavorite(articleId).subscribe({ error: () => {
+        this.favoriteIds.update(ids => { const n = new Set(ids); n.delete(articleId); return n; });
+      }});
+    }
   }
 
   private loadBoutique(id: string) {
@@ -42,10 +87,51 @@ export class BoutiqueDetailComponent implements OnInit {
         this.boutique.set(boutique);
         this.articles.set(boutique.articles || []);
         this.loading.set(false);
+        this.loadRatings(boutique.articles || []);
       },
       error: () => {
         this.boutique.set(null);
         this.loading.set(false);
+      }
+    });
+  }
+
+  private loadRatings(articles: ArticleApi[]): void {
+    for (const article of articles) {
+      this.ratingApi.getArticleRating(article._id).subscribe({
+        next: (rating) => {
+          this.articleRatings.update(map => {
+            const n = new Map(map);
+            n.set(article._id, rating);
+            return n;
+          });
+        },
+        error: () => {}
+      });
+    }
+  }
+
+  getArticleRating(articleId: string): { moyenne: number; count: number } {
+    const r = this.articleRatings().get(articleId);
+    return r ? { moyenne: r.moyenne, count: r.count } : { moyenne: 0, count: 0 };
+  }
+
+  rateArticle(articleId: string, note: number): void {
+    if (!this.authService.getAccessToken()) {
+      this.router.navigate(['/connexion']);
+      return;
+    }
+    this.ratingApi.rateArticle(articleId, note).subscribe({
+      next: () => {
+        this.ratingApi.getArticleRating(articleId).subscribe({
+          next: (rating) => {
+            this.articleRatings.update(map => {
+              const n = new Map(map);
+              n.set(articleId, rating);
+              return n;
+            });
+          }
+        });
       }
     });
   }
