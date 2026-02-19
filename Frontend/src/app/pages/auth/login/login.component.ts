@@ -25,7 +25,7 @@ export class LoginComponent {
     private router: Router,
     private adminService: AdminService,
     private authService: AuthService,
-    private cartService: CartService
+    private cartService: CartService,
     private sellerService: SellerService
   ) {}
 

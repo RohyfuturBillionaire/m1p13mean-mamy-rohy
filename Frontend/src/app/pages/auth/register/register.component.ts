@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../auth/services/auth.service';
-import { RoleService } from '../../../core/services/role.service';
 import { RoleService } from '../../../core/role_user/services/role.service';
 import { SellerService } from '../../../core/services/seller.service';
 
@@ -35,11 +34,6 @@ export class RegisterComponent implements OnInit {
     id_role: ''
   };
 
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private roleService: RoleService
-  ) {}
 
   togglePassword() {
     this.showPassword.update(v => !v);
@@ -55,13 +49,6 @@ export class RegisterComponent implements OnInit {
     private sellerService: SellerService
   ) {}
 
-  ngOnInit() {
-    // Load roles
-    this.roleService.getRoles().subscribe(roles => {
-      this.roles = roles;
-      console.log('Available roles:', roles);
-    });
-  }
 
   ngOnInit() {
     this.roleService.getRoles().subscribe({
