@@ -77,6 +77,13 @@ router.get('/:id', async (req, res) => {
       .populate('user_proprietaire', 'nom prenom email')
       .populate('id_categorie')
       .populate('local_boutique');
+    if (!boutique) return res.status(404).json({ message: 'Boutique non trouvée' });
+    res.json(boutique);
+  } 
+  catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 // GET my boutique (authenticated user's linked boutique - secured)
 router.get('/my-boutique', authenticateToken, requireBoutique, async (req, res) => {
   try {
@@ -201,7 +208,7 @@ router.put('/:id', upload.single('logo'), async (req, res) => {
     
     const boutique = await Boutique.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true })
       .populate('id_categorie')
-      .populate('local_boutique');
+      .populate('local_boutique')
       .populate('user_proprietaire', 'nom prenom username email')
       .populate('id_categorie');
     if (!boutique) return res.status(404).json({ message: 'Boutique non trouvée' });

@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Local = require('../models/Local');
+const Boutique = require('../models/Boutique');
 
 // Get available locals (status: true)
 router.get('/available', async (req, res) => {
   try {
     const locaux = await Local.find({ status: true });
-const Boutique = require('../models/Boutique');
-
+    res.json(locaux);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 // GET /api/locaux — list all (public, used by client map)
 router.get('/', async (req, res) => {
   try {
