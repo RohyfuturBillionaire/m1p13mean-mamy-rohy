@@ -27,5 +27,11 @@ export class FaqService {
 
  deleteFaq(id: string): Observable<any> {
  return this.http.delete(`${this.apiUrl}/${id}`);
+
+
+}
+///boutique/:boutiqueId
+getFaqsByBoutiqueId(boutiqueId: string): Observable<any> {
+  return this.http.get(`${this.apiUrl}/boutique/${boutiqueId}`);
 }
 }
