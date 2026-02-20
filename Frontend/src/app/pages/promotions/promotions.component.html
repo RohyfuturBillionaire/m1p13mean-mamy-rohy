@@ -14,6 +14,40 @@
 <!-- Promotions Section -->
 <section class="promotions-section">
   <div class="container">
+    <!-- Search & Filters -->
+    <div class="promo-filters">
+      <div class="filter-search">
+        <span class="material-icons">search</span>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Rechercher une promotion, boutique..."
+          class="filter-input"
+        >
+      </div>
+      <div class="filter-select-group">
+        <select [ngModel]="selectedBoutique()" (ngModelChange)="selectedBoutique.set($event)" class="filter-select">
+          <option value="">Toutes les boutiques</option>
+          @for (b of boutiques(); track b.id) {
+            <option [value]="b.id">{{ b.nom }}</option>
+          }
+        </select>
+        <select [ngModel]="minRemise()" (ngModelChange)="minRemise.set(+$event)" class="filter-select">
+          <option [ngValue]="0">Toutes les remises</option>
+          <option [ngValue]="10">≥ 10%</option>
+          <option [ngValue]="20">≥ 20%</option>
+          <option [ngValue]="30">≥ 30%</option>
+          <option [ngValue]="50">≥ 50%</option>
+        </select>
+      </div>
+      @if (hasFilters()) {
+        <button class="filter-clear-btn" (click)="clearFilters()">
+          <span class="material-icons">close</span> Effacer
+        </button>
+      }
+    </div>
+
     @if (loading()) {
       <div class="loading-state">
         <div class="loader"></div>
@@ -110,9 +144,15 @@
     } @else {
       <div class="no-promos">
         <span class="material-icons" style="font-size: 64px; color: #ccc">card_giftcard</span>
-        <h3>Aucune promotion disponible</h3>
-        <p>Revenez bientot pour decouvrir nos nouvelles offres exclusives !</p>
-        <a routerLink="/boutiques" class="btn btn-primary">Explorer les boutiques</a>
+        @if (hasFilters()) {
+          <h3>Aucun résultat</h3>
+          <p>Aucune promotion ne correspond à vos critères.</p>
+          <button class="btn btn-outline" (click)="clearFilters()">Effacer les filtres</button>
+        } @else {
+          <h3>Aucune promotion disponible</h3>
+          <p>Revenez bientot pour decouvrir nos nouvelles offres exclusives !</p>
+          <a routerLink="/boutiques" class="btn btn-primary">Explorer les boutiques</a>
+        }
       </div>
     }
   </div>

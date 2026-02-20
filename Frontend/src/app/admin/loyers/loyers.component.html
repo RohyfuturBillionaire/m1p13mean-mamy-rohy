@@ -10,10 +10,6 @@
         <span class="material-icons">update</span>
         Verifier retards
       </button>
-      <button class="btn btn-primary" (click)="generateCurrentMonth()">
-        <span class="material-icons">auto_fix_high</span>
-        Generer mois actuel
-      </button>
     </div>
   </div>
 
@@ -171,10 +167,7 @@
       <div class="empty-state">
         <span class="material-icons" style="font-size: 3rem; color: #ccc">receipt_long</span>
         <p>Aucun paiement pour cette periode</p>
-        <button class="btn btn-primary" (click)="generateCurrentMonth()">
-          <span class="material-icons">auto_fix_high</span>
-          Generer les paiements du mois
-        </button>
+        <p class="text-muted">Les loyers sont generes automatiquement depuis les contrats actifs.</p>
       </div>
     }
   </div>

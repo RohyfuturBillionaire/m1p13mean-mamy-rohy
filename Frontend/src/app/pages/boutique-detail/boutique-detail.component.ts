@@ -1,18 +1,20 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { BoutiqueApiService, BoutiqueApi, ArticleApi } from '../../core/services/boutique-api.service';
 import { CartService } from '../../core/services/cart.service';
 import { FavoriteApiService } from '../../core/services/favorite-api.service';
 import { RatingApiService } from '../../core/services/rating-api.service';
 import { AuthService } from '../../auth/services/auth.service';
+import { PromotionService } from '../../core/services/promotion.service';
 import { StarRatingComponent } from '../../shared/components/star-rating/star-rating.component';
 import { Produit } from '../../core/models/boutique.model';
 
 @Component({
   selector: 'app-boutique-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, StarRatingComponent],
+  imports: [CommonModule, RouterModule, FormsModule, StarRatingComponent],
   templateUrl: './boutique-detail.component.html',
   styleUrl: './boutique-detail.component.scss'
 })
@@ -21,15 +23,30 @@ export class BoutiqueDetailComponent implements OnInit {
   articles = signal<ArticleApi[]>([]);
   loading = signal(true);
   selectedCategorie = signal<string>('all');
+  articleSearch = signal('');
   activeTab = signal<'produits' | 'infos'>('produits');
   addedToCart = signal<string | null>(null);
   favoriteIds = signal<Set<string>>(new Set());
   articleRatings = signal<Map<string, { moyenne: number; count: number; userNote: number | null }>>(new Map());
 
+  // Active promotions for this boutique: articleId → remise%
+  private promoMap = signal<Map<string, number>>(new Map());
+
   private favoriteApi = inject(FavoriteApiService);
   private ratingApi = inject(RatingApiService);
   private authService = inject(AuthService);
+  private promotionService = inject(PromotionService);
   private router = inject(Router);
+
+  filteredArticles = computed(() => {
+    const q = this.articleSearch().toLowerCase().trim();
+    const cat = this.selectedCategorie();
+    return this.articles().filter(a => {
+      const matchCat = cat === 'all' || (a.id_categorie_article?.nom || 'Autre') === cat;
+      const matchQ = !q || a.nom.toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+  });
 
   constructor(
     private boutiqueApi: BoutiqueApiService,
@@ -42,6 +59,7 @@ export class BoutiqueDetailComponent implements OnInit {
       const id = params['id'];
       if (id) {
         this.loadBoutique(id);
+        this.loadBoutiquePromos(id);
       }
     });
     this.loadFavorites();
@@ -56,6 +74,37 @@ export class BoutiqueDetailComponent implements OnInit {
       },
       error: () => {}
     });
+  }
+
+  private loadBoutiquePromos(boutiqueId: string): void {
+    this.promotionService.getByBoutique(boutiqueId).subscribe({
+      next: (promos) => {
+        const now = new Date();
+        const map = new Map<string, number>();
+        promos
+          .filter(p =>
+            p.status === 'APPROVED' &&
+            new Date(p.date_debut) <= now &&
+            new Date(p.date_fin) >= now
+          )
+          .forEach(p => {
+            const articleId = typeof p.id_article === 'object' ? p.id_article._id : p.id_article;
+            if (articleId) map.set(articleId, p.remise);
+          });
+        this.promoMap.set(map);
+      },
+      error: () => {}
+    });
+  }
+
+  getPromoRemise(articleId: string): number {
+    return this.promoMap().get(articleId) || 0;
+  }
+
+  getPrixPromo(article: ArticleApi): number {
+    const remise = this.getPromoRemise(article._id);
+    if (!remise) return 0;
+    return Math.round(article.prix * (1 - remise / 100));
   }
 
   isFavorite(articleId: string): boolean {
@@ -156,12 +205,6 @@ export class BoutiqueDetailComponent implements OnInit {
     return ['all', ...Array.from(cats)];
   }
 
-  get filteredArticles(): ArticleApi[] {
-    const all = this.articles();
-    if (this.selectedCategorie() === 'all') return all;
-    return all.filter(a => (a.id_categorie_article?.nom || 'Autre') === this.selectedCategorie());
-  }
-
   setCategorie(categorie: string) {
     this.selectedCategorie.set(categorie);
   }
@@ -182,11 +225,14 @@ export class BoutiqueDetailComponent implements OnInit {
     const boutique = this.boutique();
     if (!boutique) return;
 
+    const prixPromo = this.getPrixPromo(article);
+
     const produit: Produit = {
       id: article._id,
       nom: article.nom,
       description: article.description || '',
       prix: article.prix,
+      prixPromo: prixPromo > 0 ? prixPromo : undefined,
       image: this.getArticleImage(article),
       categorie: article.id_categorie_article?.nom || '',
       disponible: true,

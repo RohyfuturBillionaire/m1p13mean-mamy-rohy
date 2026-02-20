@@ -50,6 +50,10 @@ export class PaymentService {
     return this.http.post(`${this.apiUrl}/generate-current-month`, {});
   }
 
+  autoGenerateAll(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auto-generate-all`, {});
+  }
+
   sendReminder(id: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/${id}/send-reminder`, {});
   }

@@ -10,7 +10,7 @@ export interface PromotionApi {
   date_debut: string;
   date_fin: string;
   remise: number;
-  id_article: { _id: string; title: string; content: string } | string;
+  id_article: { _id: string; nom?: string; prix?: number; images?: string[]; title?: string } | string;
   id_boutique: { _id: string; nom: string; logo: string; email: string } | string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   created_at: string;

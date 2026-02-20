@@ -23,17 +23,23 @@ export class AuthInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Skip interceptor completely for certain routes
-    console.log("req.url",req.url);
     if (this.shouldSkip(req.url)) {
       return next.handle(req);
     }
 
     const token = this.authService.getAccessToken();
 
-    // If no token, try to refresh first
-    console.log("load");
+    // If no token, send request without auth (public routes pass through;
+    // protected routes return 401 which triggers refresh below)
     if (!token) {
-      return this.handleTokenRefresh(req, next);
+      return next.handle(req).pipe(
+        catchError((error: HttpErrorResponse) => {
+          if (error.status === 401 || error.status === 403) {
+            return this.handleTokenRefresh(req, next);
+          }
+          return throwError(() => error);
+        })
+      );
     }
 
     // Add token to request

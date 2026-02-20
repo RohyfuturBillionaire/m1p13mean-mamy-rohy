@@ -1,8 +1,9 @@
 import { Component, HostListener, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../../core/services/cart.service';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -19,8 +20,14 @@ export class NavbarComponent {
   searchQuery = '';
 
   cartItemCount = computed(() => this.cartService.itemCount());
+  isLoggedIn = computed(() => this.authService.isAuthenticated());
+  userName = computed(() => this.authService.currentUser()?.username || '');
 
-  constructor(private cartService: CartService) {}
+  constructor(
+    private cartService: CartService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   @HostListener('window:scroll')
   onWindowScroll() {
@@ -56,12 +63,19 @@ export class NavbarComponent {
   onSearch() {
     if (this.searchQuery.trim()) {
       console.log('Recherche:', this.searchQuery);
-      // Navigation vers la page de recherche serait implémentée ici
     }
   }
 
   openCart() {
     this.closeMenus();
     this.cartService.openCart();
+  }
+
+  logout() {
+    this.authService.logout().subscribe({ error: () => {} });
+    localStorage.removeItem('user');
+    this.cartService.clearCart();
+    this.closeMenus();
+    this.router.navigate(['/']);
   }
 }

@@ -83,7 +83,7 @@ export class PromotionsAdminComponent implements OnInit {
   }
 
   getArticleName(promo: PromotionApi): string {
-    if (typeof promo.id_article === 'object') return promo.id_article.title;
+    if (typeof promo.id_article === 'object') return promo.id_article.nom || promo.id_article.title || '';
     return '';
   }
 

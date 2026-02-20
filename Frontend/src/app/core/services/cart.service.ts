@@ -130,7 +130,7 @@ export class CartService {
         nom: article.nom || '',
         description: article.description || '',
         prix: apiItem.prix || article.prix,
-        prixPromo: undefined,
+        prixPromo: apiItem.prix_promo || undefined,
         image: article.images?.[0]
           ? `${environment.apiUrl}${article.images[0]}`
           : '',
@@ -168,7 +168,8 @@ export class CartService {
       this.http.post(`${this.API_URL}/add`, {
         articleId: produit.id,
         boutiqueId,
-        quantite
+        quantite,
+        prixPromo: produit.prixPromo
       }).subscribe({
         error: () => {
           // Revert on failure

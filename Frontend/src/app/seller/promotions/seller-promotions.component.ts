@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PromotionService, PromotionApi, ArticleApi } from '../../core/services/promotion.service';
-import { BoutiqueApiService, BoutiqueApi } from '../../core/services/boutique-api.service';
+import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
+import { ArticleApiService } from '../../core/services/article-api.service';
+import { ArticleApi } from '../../core/services/boutique-api.service';
 
 @Component({
   selector: 'app-seller-promotions',
@@ -14,7 +15,6 @@ import { BoutiqueApiService, BoutiqueApi } from '../../core/services/boutique-ap
 export class SellerPromotionsComponent implements OnInit {
   promotions = signal<PromotionApi[]>([]);
   articles = signal<ArticleApi[]>([]);
-  boutiques = signal<BoutiqueApi[]>([]);
   showModal = signal(false);
   editingPromo = signal<PromotionApi | null>(null);
   isSubmitting = signal(false);
@@ -22,13 +22,43 @@ export class SellerPromotionsComponent implements OnInit {
   selectedImageFile: File | null = null;
   imagePreview: string | null = null;
 
+  // Live search for articles (signals for reactivity)
+  articleSearch = signal('');
+  showArticleDropdown = false;
+  selectedArticleId = signal('');
+
   form: any = this.getEmptyForm();
-  selectedBoutiqueId = '';
+
+  // Current boutique from localStorage
+  private currentBoutiqueId: string = '';
+
+  filteredArticles = computed(() => {
+    const search = this.articleSearch().toLowerCase();
+    const list = this.articles();
+    if (!search) return list;
+    return list.filter(a => a.nom.toLowerCase().includes(search));
+  });
+
+  selectedArticle = computed(() => {
+    const id = this.selectedArticleId();
+    if (!id) return null;
+    return this.articles().find(a => a._id === id) || null;
+  });
 
   constructor(
     private promotionService: PromotionService,
-    private boutiqueService: BoutiqueApiService
-  ) {}
+    private articleApiService: ArticleApiService
+  ) {
+    // Get boutiqueId from localStorage
+    try {
+      const boutiqueInfo = JSON.parse(localStorage.getItem('boutiqueInfo') || '{}');
+      this.currentBoutiqueId = boutiqueInfo?._id || boutiqueInfo?.boutiqueId || '';
+      if (!this.currentBoutiqueId) {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        this.currentBoutiqueId = userData?.user?.boutiqueId || '';
+      }
+    } catch {}
+  }
 
   ngOnInit() {
     this.loadData();
@@ -47,14 +77,18 @@ export class SellerPromotionsComponent implements OnInit {
   }
 
   private loadData() {
-    this.promotionService.getArticles().subscribe(a => this.articles.set(a));
-    this.boutiqueService.getAll().subscribe(b => this.boutiques.set(b));
+    // Load only articles of the current boutique
+    if (this.currentBoutiqueId) {
+      this.articleApiService.getArticles(this.currentBoutiqueId).subscribe(a => this.articles.set(a));
+    } else {
+      this.articleApiService.getArticles().subscribe(a => this.articles.set(a));
+    }
     this.loadPromotions();
   }
 
   loadPromotions() {
-    if (this.selectedBoutiqueId) {
-      this.promotionService.getByBoutique(this.selectedBoutiqueId).subscribe(p => this.promotions.set(p));
+    if (this.currentBoutiqueId) {
+      this.promotionService.getByBoutique(this.currentBoutiqueId).subscribe(p => this.promotions.set(p));
     } else {
       this.promotionService.getAll().subscribe(p => this.promotions.set(p));
     }
@@ -69,15 +103,26 @@ export class SellerPromotionsComponent implements OnInit {
         remise: promo.remise,
         date_debut: new Date(promo.date_debut).toISOString().split('T')[0],
         date_fin: new Date(promo.date_fin).toISOString().split('T')[0],
-        id_article: typeof promo.id_article === 'object' ? promo.id_article._id : promo.id_article,
-        id_boutique: typeof promo.id_boutique === 'object' ? promo.id_boutique._id : promo.id_boutique
+        id_article: typeof promo.id_article === 'object' ? (promo.id_article as any)._id : promo.id_article,
+        id_boutique: typeof promo.id_boutique === 'object' ? (promo.id_boutique as any)._id : promo.id_boutique
       };
       this.imagePreview = promo.image ? 'http://localhost:5000' + promo.image : null;
+      const artId = typeof promo.id_article === 'object' ? (promo.id_article as any)._id : promo.id_article;
+      this.selectedArticleId.set(artId || '');
+      const artName = typeof promo.id_article === 'object' ? ((promo.id_article as any).nom || '') : '';
+      this.articleSearch.set(artName);
     } else {
       this.editingPromo.set(null);
       this.form = this.getEmptyForm();
+      // Pre-fill boutique with current seller's boutique
+      if (this.currentBoutiqueId) {
+        this.form.id_boutique = this.currentBoutiqueId;
+      }
       this.imagePreview = null;
+      this.selectedArticleId.set('');
+      this.articleSearch.set('');
     }
+    this.showArticleDropdown = false;
     this.selectedImageFile = null;
     this.showModal.set(true);
   }
@@ -87,6 +132,9 @@ export class SellerPromotionsComponent implements OnInit {
     this.editingPromo.set(null);
     this.selectedImageFile = null;
     this.imagePreview = null;
+    this.articleSearch.set('');
+    this.selectedArticleId.set('');
+    this.showArticleDropdown = false;
   }
 
   onImageSelected(event: Event) {
@@ -99,6 +147,29 @@ export class SellerPromotionsComponent implements OnInit {
       };
       reader.readAsDataURL(this.selectedImageFile);
     }
+  }
+
+  onArticleSearchFocus() {
+    this.showArticleDropdown = true;
+  }
+
+  onArticleSearchBlur() {
+    // Delay to allow click on dropdown item
+    setTimeout(() => { this.showArticleDropdown = false; }, 200);
+  }
+
+  selectArticle(article: ArticleApi) {
+    this.form.id_article = article._id;
+    this.selectedArticleId.set(article._id);
+    this.articleSearch.set(article.nom);
+    this.showArticleDropdown = false;
+  }
+
+  getArticleImageUrl(article: ArticleApi): string {
+    if (!article.images || article.images.length === 0) return '';
+    const img = article.images[0];
+    if (img.startsWith('http')) return img;
+    return 'http://localhost:5000' + img;
   }
 
   submitForm() {
@@ -152,12 +223,12 @@ export class SellerPromotionsComponent implements OnInit {
   }
 
   getBoutiqueName(promo: PromotionApi): string {
-    if (typeof promo.id_boutique === 'object') return promo.id_boutique.nom;
+    if (typeof promo.id_boutique === 'object') return (promo.id_boutique as any).nom;
     return '';
   }
 
   getArticleName(promo: PromotionApi): string {
-    if (typeof promo.id_article === 'object') return promo.id_article.title;
+    if (typeof promo.id_article === 'object') return (promo.id_article as any).nom || (promo.id_article as any).title || '';
     return '';
   }
 

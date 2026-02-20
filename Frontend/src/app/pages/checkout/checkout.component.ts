@@ -78,9 +78,9 @@ export class CheckoutComponent {
   processPayment(): void {
     if (!this.isFormValid() || this.isEmpty()) return;
 
-    // Check if user is logged in
+    // Check if user is logged in — preserve cart by passing returnUrl
     if (!this.authService.getAccessToken()) {
-      this.router.navigate(['/connexion']);
+      this.router.navigate(['/connexion'], { queryParams: { returnUrl: '/checkout' } });
       return;
     }
 
@@ -123,6 +123,8 @@ export class CheckoutComponent {
     const orders = this.createdOrders();
     if (orders.length > 0) {
       sessionStorage.setItem('currentOrder', JSON.stringify(orders));
+      sessionStorage.setItem('checkoutClientInfo', JSON.stringify(this.clientInfo));
+      sessionStorage.setItem('checkoutPaymentMethod', this.selectedPaymentMethod);
       this.router.navigate(['/facture']);
     }
   }

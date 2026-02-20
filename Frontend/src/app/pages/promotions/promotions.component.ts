@@ -1,18 +1,46 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
 
 @Component({
   selector: 'app-promotions',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './promotions.component.html',
   styleUrl: './promotions.component.scss'
 })
 export class PromotionsComponent implements OnInit {
-  promotions = signal<PromotionApi[]>([]);
+  private allPromotions = signal<PromotionApi[]>([]);
   loading = signal(true);
+
+  searchQuery = signal('');
+  selectedBoutique = signal('');
+  minRemise = signal(0);
+
+  boutiques = computed(() => {
+    const seen = new Set<string>();
+    return this.allPromotions()
+      .map(p => ({ id: this.getBoutiqueId(p), nom: this.getBoutiqueName(p) }))
+      .filter(b => b.id && b.nom && !seen.has(b.id) && seen.add(b.id));
+  });
+
+  promotions = computed(() => {
+    let list = this.allPromotions();
+    const q = this.searchQuery().toLowerCase().trim();
+    const boutique = this.selectedBoutique();
+    const remise = this.minRemise();
+    if (q) list = list.filter(p =>
+      p.titre.toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q) ||
+      this.getBoutiqueName(p).toLowerCase().includes(q) ||
+      this.getArticleName(p).toLowerCase().includes(q)
+    );
+    if (boutique) list = list.filter(p => this.getBoutiqueId(p) === boutique);
+    if (remise > 0) list = list.filter(p => p.remise >= remise);
+    return list;
+  });
 
   constructor(private promotionService: PromotionService) {}
 
@@ -23,11 +51,21 @@ export class PromotionsComponent implements OnInit {
   private loadPromotions() {
     this.promotionService.getActive().subscribe({
       next: promos => {
-        this.promotions.set(promos);
+        this.allPromotions.set(promos);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
     });
+  }
+
+  clearFilters() {
+    this.searchQuery.set('');
+    this.selectedBoutique.set('');
+    this.minRemise.set(0);
+  }
+
+  hasFilters(): boolean {
+    return !!this.searchQuery() || !!this.selectedBoutique() || this.minRemise() > 0;
   }
 
   formatDate(date: string): string {
@@ -63,7 +101,7 @@ export class PromotionsComponent implements OnInit {
   }
 
   getArticleName(promo: PromotionApi): string {
-    if (typeof promo.id_article === 'object') return promo.id_article.title;
+    if (typeof promo.id_article === 'object') return promo.id_article.nom || promo.id_article.title || '';
     return '';
   }
 
