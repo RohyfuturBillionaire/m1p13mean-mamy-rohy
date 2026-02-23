@@ -37,26 +37,26 @@
         <h2>Stock par Produit</h2>
       </div>
       <div class="stock-list">
-        @for (produit of produits(); track produit.id) {
-          <div class="stock-item" [class]="getStockClass(produit)">
+        @for (stock of stocks(); track stock.id) {
+          <div class="stock-item" [class]="getStockClass(stock)">
             <div class="stock-product">
-              <img [src]="produit.image" [alt]="produit.nom">
+              <img [src]="stock.img_url" [alt]="stock.nom">
               <div class="product-info">
-                <span class="product-name">{{ produit.nom }}</span>
-                <span class="product-category">{{ produit.categorie }}</span>
+                <span class="product-name">{{ stock.nom }}</span>
+                <!-- <span class="product-category">{{ stock. }}</span> -->
               </div>
             </div>
             <div class="stock-data">
-              <div class="stock-value" [class]="getStockClass(produit)">
-                <span class="value">{{ produit.stock }}</span>
+              <div class="stock-value" [class]="getStockClass(stock)">
+                <span class="value">{{ stock.stock_restant }}</span>
                 <span class="label">en stock</span>
               </div>
               <div class="stock-alert">
                 <span class="material-icons">notifications</span>
-                Alerte: {{ produit.stockAlerte }}
+                Alerte: {{ stock.seuil_alerte }} unités
               </div>
             </div>
-            <button class="btn btn-outline btn-sm" (click)="openModal(produit)">
+            <button class="btn btn-outline btn-sm" (click)="openModal(stock)">
               <span class="material-icons">edit</span>
               Modifier
             </button>
@@ -71,30 +71,30 @@
         <h2>Mouvements Récents</h2>
       </div>
       <div class="movements-list">
-        @for (mouvement of mouvements(); track mouvement.id) {
-          <div class="movement-item" [class]="mouvement.type">
+        @for (mouvement of mouvements(); track mouvement._id) {
+          <div class="movement-item" [class]="getMovementClass(mouvement.type_mouvement)">
             <div class="movement-icon">
-              @if (mouvement.type === 'entree') {
+              @if (mouvement.type_mouvement === 1) {
                 <span class="material-icons">add_circle</span>
-              } @else if (mouvement.type === 'sortie') {
+              } @else if (mouvement.type_mouvement === 2) {
                 <span class="material-icons">remove_circle</span>
               } @else {
                 <span class="material-icons">sync</span>
               }
             </div>
             <div class="movement-info">
-              <span class="movement-product">{{ mouvement.produitNom }}</span>
-              <span class="movement-type">{{ getMovementLabel(mouvement.type) }}</span>
-              @if (mouvement.motif) {
-                <span class="movement-motif">{{ mouvement.motif }}</span>
+              <span class="movement-product">{{ mouvement.id_article.nom }}</span>
+              <span class="movement-type">{{ getMovementLabel(mouvement.type_mouvement) }}</span>
+              @if (mouvement.date_mouvement) {
+                <span class="movement-motif">{{ mouvement.date_mouvement }}</span>
               }
             </div>
             <div class="movement-data">
-              <span class="quantity" [class]="mouvement.type">
-                {{ mouvement.type === 'sortie' ? '-' : '+' }}{{ mouvement.quantite }}
+              <span class="quantity" [class]="getMovementClass(mouvement.type_mouvement)">
+                {{ mouvement.type_mouvement === 2 ? '-' : '+' }}{{ mouvement.quantity }}
               </span>
-              <span class="stock-change">{{ mouvement.stockAvant }} → {{ mouvement.stockApres }}</span>
-              <span class="movement-date">{{ formatDate(mouvement.date) }}</span>
+              <!-- <span class="stock-change">{{ mouvement.stockAvant }} → {{ mouvement.stockApres }}</span> -->
+              <span class="movement-date">{{ formatDate(mouvement.date_mouvement) }}</span>
             </div>
           </div>
         }
@@ -115,50 +115,50 @@
     </div>
     <div class="modal-body">
       <div class="selected-product">
-        <img [src]="selectedProduit()?.image" [alt]="selectedProduit()?.nom">
+        <!-- <img [src]="selectedProduit()?.image" [alt]="selectedProduit()?.nom"> -->
         <div>
-          <strong>{{ selectedProduit()?.nom }}</strong>
-          <span>Stock actuel: {{ selectedProduit()?.stock }} unités</span>
-        </div>
+         <strong>{{ selectedStock()?.nom }}</strong>
+          <span>Stock actuel: {{ selectedStock()?.stock_restant }} unités</span>
+      </div> 
       </div>
 
       <div class="form-group">
         <label>Type de mouvement</label>
         <div class="radio-group">
-          <label class="radio-item" [class.selected]="movementType() === 'entree'">
-            <input type="radio" name="type" value="entree" [checked]="movementType() === 'entree'" (change)="movementType.set('entree')">
+          <label class="radio-item" [class.selected]="movementType() === 1">
+            <input type="radio" name="type" value="entree" [checked]="movementType() === 1" (change)="movementType.set(1)">
             <span class="material-icons">add_circle</span>
             Entrée
           </label>
-          <label class="radio-item" [class.selected]="movementType() === 'sortie'">
-            <input type="radio" name="type" value="sortie" [checked]="movementType() === 'sortie'" (change)="movementType.set('sortie')">
+          <label class="radio-item" [class.selected]="movementType() === 2">
+            <input type="radio" name="type" value="sortie" [checked]="movementType() === 2" (change)="movementType.set(2)">
             <span class="material-icons">remove_circle</span>
             Sortie
           </label>
-          <label class="radio-item" [class.selected]="movementType() === 'ajustement'">
-            <input type="radio" name="type" value="ajustement" [checked]="movementType() === 'ajustement'" (change)="movementType.set('ajustement')">
+          <!-- <label class="radio-item" [class.selected]="movementType() === 3">
+            <input type="radio" name="type" value="ajustement" [checked]="movementType() === 3" (change)="movementType.set(3)">
             <span class="material-icons">sync</span>
             Ajustement
-          </label>
+          </label> -->
         </div>
       </div>
 
       <div class="form-group">
-        <label>{{ movementType() === 'ajustement' ? 'Nouveau stock' : 'Quantité' }}</label>
+        <label>{{ movementType() === 1 ? 'Quantité' : 'Nouveau stock' }}</label>
         <input type="number" [value]="quantity()" (input)="quantity.set(+$any($event.target).value)" min="0">
       </div>
 
-      <div class="form-group">
+      <!-- <div class="form-group">
         <label>Motif (optionnel)</label>
         <input type="text" [value]="motif()" (input)="motif.set($any($event.target).value)" placeholder="Raison du mouvement">
-      </div>
+      </div> -->
 
-      @if (movementType() !== 'ajustement') {
+      <!-- @if (movementType() !== 'ajustement') {
         <div class="preview">
           <span>Stock après mouvement:</span>
           <strong>{{ calcNewStock(movementType(), selectedProduit()?.stock || 0, quantity()) }} unités</strong>
         </div>
-      }
+      } -->
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" (click)="closeModal()">Annuler</button>
