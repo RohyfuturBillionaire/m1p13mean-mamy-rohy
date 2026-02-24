@@ -7,7 +7,12 @@ import { environment } from '../../../environments/environments';
 export class AuthService {
   private accessToken: string | null = null;
   private apiUrl = `${environment.apiUrl}/auth`;
-
+  IsLoggin (){
+    if (this.accessToken) {
+        return true;
+    }
+    return false;
+  }
   constructor(private http: HttpClient) {
     // Restore token from localStorage on app init (survives page refresh)
     try {
