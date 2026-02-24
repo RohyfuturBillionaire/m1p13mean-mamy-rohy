@@ -10,7 +10,6 @@ export const routes: Routes = [
   {
     path: 'boutiques',
     loadComponent: () => import('./pages/boutiques/boutiques.component').then(m => m.BoutiquesComponent),
-    canActivate:[sellerGuard]
   },
   {
     path: 'boutique/:id',
@@ -61,7 +60,8 @@ export const routes: Routes = [
   },
   {
     path: 'seller',
-    loadChildren: () => import('./seller/seller.routes').then(m => m.SELLER_ROUTES)
+    loadChildren: () => import('./seller/seller.routes').then(m => m.SELLER_ROUTES),
+    canActivate:[sellerGuard]
   },
   {
     path: '**',
