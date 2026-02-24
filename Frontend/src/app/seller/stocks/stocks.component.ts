@@ -1,8 +1,32 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SellerService } from '../../core/services/seller.service';
-import { SellerProduit, StockMovement } from '../../core/models/seller.model';
+import { MouvementStockService } from './services/mouvement-stock.service';
+import { environment } from '../../../environments/environments';
+
+export interface StockData {
+  id: string;
+  nom: string;
+  seuil_alerte: number;
+  stock_entree: number;
+  stock_sortie: number;
+  stock_restant: number;
+  img_url : string;
+}
+
+export interface MouvementStock {
+  _id: string;
+  id_article: {
+    _id: string;
+    nom: string;
+    prix?: number;
+  };
+  quantity: number;
+  type_mouvement: number; // 1 = entrée, 2 = sortie
+  date_mouvement: string;
+  seuil_alerte: number;
+  createdAt: string;
+}
 
 @Component({
   selector: 'app-stocks',
@@ -12,104 +36,145 @@ import { SellerProduit, StockMovement } from '../../core/models/seller.model';
   styleUrl: './stocks.component.scss'
 })
 export class StocksComponent implements OnInit {
-  produits = signal<SellerProduit[]>([]);
-  mouvements = signal<StockMovement[]>([]);
+  stocks = signal<StockData[]>([]);
+  mouvements = signal<MouvementStock[]>([]);
+  isLoading = signal(true);
+  urlServer =environment.apiUrl;
+  
+  // Modal
   showModal = signal(false);
-  selectedProduit = signal<SellerProduit | null>(null);
+  selectedStock = signal<StockData | null>(null);
   isSubmitting = signal(false);
-
-  movementType = signal<'entree' | 'sortie' | 'ajustement'>('entree');
+  
+  // Form
+  movementType = signal<1 | 2>(1); // 1 = entrée, 2 = sortie
   quantity = signal(0);
-  motif = signal('');
+  seuilAlerte = signal(5);
 
+  // Alerts
   alerts = computed(() => {
-    const prods = this.produits();
+    const stockList = this.stocks();
     return {
-      lowStock: prods.filter(p => p.stock > 0 && p.stock <= p.stockAlerte),
-      outOfStock: prods.filter(p => p.stock === 0)
+      lowStock: stockList.filter(s => s.stock_restant > 0 && s.stock_restant <= s.seuil_alerte),
+      outOfStock: stockList.filter(s => s.stock_restant <= 0)
     };
   });
 
-  constructor(private sellerService: SellerService) {}
+  constructor(private mouvementService: MouvementStockService) {}
 
   ngOnInit() {
     this.loadData();
   }
 
   loadData() {
-    this.sellerService.getProduits().subscribe(p => this.produits.set(p));
-    this.sellerService.getStockMovements().subscribe(m => this.mouvements.set(m));
+    this.isLoading.set(true);
+    
+    // Load current stocks
+    this.mouvementService.getCurrentStocks().subscribe({
+      next: (data) => {
+        console.log('Stocks loaded:', data);
+        this.stocks.set(data);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading stocks:', err);
+        this.isLoading.set(false);
+      }
+    });
+
+    // Load mouvements history
+    this.mouvementService.getMouvements().subscribe({
+      next: (data) => {
+        console.log('Mouvements loaded:', data);
+        this.mouvements.set(data);
+      },
+      error: (err) => {
+        console.error('Error loading mouvements:', err);
+      }
+    });
   }
 
-  openModal(produit: SellerProduit) {
-    this.selectedProduit.set(produit);
-    this.movementType.set('entree');
+  openModal(stock: StockData) {
+    this.selectedStock.set(stock);
+    this.movementType.set(1);
     this.quantity.set(0);
-    this.motif.set('');
+    this.seuilAlerte.set(stock.seuil_alerte);
     this.showModal.set(true);
   }
 
   closeModal() {
     this.showModal.set(false);
-    this.selectedProduit.set(null);
+    this.selectedStock.set(null);
   }
 
   submitMovement() {
-    const produit = this.selectedProduit();
-    if (!produit || this.quantity() <= 0) return;
+    const stock = this.selectedStock();
+    if (!stock || this.quantity() <= 0) return;
 
     this.isSubmitting.set(true);
-    const type = this.movementType();
-    let newStock = produit.stock;
 
-    if (type === 'entree') newStock += this.quantity();
-    else if (type === 'sortie') newStock = Math.max(0, newStock - this.quantity());
-    else newStock = this.quantity();
+    const mouvement = {
+      id_article: stock.id,
+      quantity: this.quantity(),
+      type_mouvement: this.movementType(),
+      seuil_alerte: this.seuilAlerte(),
+      date_mouvement: new Date()
+    };
 
-    this.sellerService.addStockMovement({
-      produitId: produit.id,
-      produitNom: produit.nom,
-      type,
-      quantite: this.quantity(),
-      stockAvant: produit.stock,
-      stockApres: newStock,
-      motif: this.motif() || ''
-    }).subscribe(() => {
-      this.isSubmitting.set(false);
-      this.closeModal();
-      this.loadData();
+    this.mouvementService.addMouvement(mouvement).subscribe({
+      next: () => {
+        console.log('Mouvement added');
+        this.isSubmitting.set(false);
+        this.closeModal();
+        this.loadData();
+      },
+      error: (err) => {
+        console.error('Error adding mouvement:', err);
+        this.isSubmitting.set(false);
+      }
     });
   }
 
-  formatPrix(prix: number): string {
-    return this.sellerService.formatPrix(prix);
-  }
-
-  formatDate(date: Date): string {
-    return this.sellerService.formatDateTime(date);
-  }
-
-  getMovementLabel(type: string): string {
-    const labels: Record<string, string> = { 'entree': 'Entrée', 'sortie': 'Sortie', 'ajustement': 'Ajustement' };
-    return labels[type] || type;
-  }
-
-  getStockClass(produit: SellerProduit): string {
-    if (produit.stock === 0) return 'out';
-    if (produit.stock <= produit.stockAlerte) return 'low';
+  getStockClass(stock: StockData): string {
+    if (stock.stock_restant <= 0) return 'out';
+    if (stock.stock_restant <= stock.seuil_alerte) return 'low';
     return 'normal';
   }
 
+  getMovementLabel(type: number): string {
+    return type === 1 ? 'Entrée' : 'Sortie';
+  }
+
+  getMovementClass(type: number): string {
+    return type === 1 ? 'entree' : 'sortie';
+  }
+
+  formatDate(date: string): string {
+    return new Date(date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  calcNewStock(): number {
+    const stock = this.selectedStock();
+    if (!stock) return 0;
+    
+    if (this.movementType() === 1) {
+      return stock.stock_restant + this.quantity();
+    } else {
+      return Math.max(0, stock.stock_restant - this.quantity());
+    }
+  }
+
   getOutOfStockNames(): string {
-    return this.alerts().outOfStock.map(p => p.nom).join(', ');
+    return this.alerts().outOfStock.map(s => s.nom).join(', ');
   }
 
   getLowStockNames(): string {
-    return this.alerts().lowStock.map(p => p.nom).join(', ');
-  }
-
-  calcNewStock(type: string, currentStock: number, qty: number): number {
-    if (type === 'entree') return currentStock + qty;
-    return Math.max(0, currentStock - qty);
+    return this.alerts().lowStock.map(s => s.nom).join(', ');
   }
 }
