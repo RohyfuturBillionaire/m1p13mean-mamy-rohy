@@ -25,7 +25,7 @@ async function enrichArticle(article) {
   return { ...art, stock, images: images.map(i => i.url_img) };
 }
 
-// GET /api/bucket — get current user's bucket (populated + enriched)
+// GET /api/bucket - get current user's bucket (populated + enriched)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     let bucket = await Bucket.findOne({ id_user: req.user.userId })
@@ -39,7 +39,6 @@ router.get('/', authenticateToken, async (req, res) => {
       return res.json({ items: [], total: 0, status: 'actif' });
     }
 
-    // Enrich each item's article with stock + images
     const enrichedItems = await Promise.all(bucket.items.map(async (item) => {
       const itemObj = typeof item.toObject === 'function' ? item.toObject() : { ...item };
       if (itemObj.id_article) {
@@ -62,27 +61,23 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/bucket/add — add item to bucket (or increment if exists)
+// POST /api/bucket/add - add item to bucket (or increment if exists)
 router.post('/add', authenticateToken, async (req, res) => {
   try {
-    const { articleId, boutiqueId, quantite = 1 } = req.body;
+    const { articleId, boutiqueId, quantite = 1, prixPromo } = req.body;
 
-    // Verify article exists and is active
     const article = await Article.findById(articleId);
     if (!article || !article.actif) {
-      return res.status(404).json({ message: 'Article non trouvé ou inactif' });
+      return res.status(404).json({ message: 'Article non trouve ou inactif' });
     }
 
-    // Get current stock
     const stock = await getCurrentStock(articleId);
 
-    // Find or create bucket
     let bucket = await Bucket.findOne({ id_user: req.user.userId });
     if (!bucket) {
       bucket = new Bucket({ id_user: req.user.userId, items: [], total: 0 });
     }
 
-    // Check if article already in bucket
     const existingIndex = bucket.items.findIndex(
       item => item.id_article.toString() === articleId
     );
@@ -92,37 +87,37 @@ router.post('/add', authenticateToken, async (req, res) => {
       newQuantite = bucket.items[existingIndex].quantite + quantite;
     }
 
-    // Verify stock availability
     if (stock < newQuantite) {
-      return res.status(409).json({
-        message: 'Stock insuffisant',
-        disponible: stock
-      });
+      return res.status(409).json({ message: 'Stock insuffisant', disponible: stock });
     }
+
+    // Only store prix_promo if it's a valid discount (less than full price)
+    const prixEffectif = (prixPromo && prixPromo > 0 && prixPromo < article.prix) ? Number(prixPromo) : null;
 
     if (existingIndex >= 0) {
       bucket.items[existingIndex].quantite = newQuantite;
       bucket.items[existingIndex].prix = article.prix;
+      bucket.items[existingIndex].prix_promo = prixEffectif;
     } else {
       bucket.items.push({
         id_article: articleId,
         id_boutique: boutiqueId || article.id_boutique,
         quantite: newQuantite,
-        prix: article.prix
+        prix: article.prix,
+        prix_promo: prixEffectif
       });
     }
 
-    // Recalculate total
-    bucket.total = bucket.items.reduce((sum, item) => sum + item.prix * item.quantite, 0);
+    bucket.total = bucket.items.reduce((sum, item) => sum + (item.prix_promo || item.prix) * item.quantite, 0);
     await bucket.save();
 
-    res.json({ message: 'Article ajouté au panier', total: bucket.total });
+    res.json({ message: 'Article ajoute au panier', total: bucket.total });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// PUT /api/bucket/update — update item quantity
+// PUT /api/bucket/update - update item quantity
 router.put('/update', authenticateToken, async (req, res) => {
   try {
     const { articleId, quantite } = req.body;
@@ -133,12 +128,11 @@ router.put('/update', authenticateToken, async (req, res) => {
     const itemIndex = bucket.items.findIndex(
       item => item.id_article.toString() === articleId
     );
-    if (itemIndex < 0) return res.status(404).json({ message: 'Article non trouvé dans le panier' });
+    if (itemIndex < 0) return res.status(404).json({ message: 'Article non trouve dans le panier' });
 
     if (quantite <= 0) {
       bucket.items.splice(itemIndex, 1);
     } else {
-      // Verify stock
       const stock = await getCurrentStock(articleId);
       if (stock < quantite) {
         return res.status(409).json({ message: 'Stock insuffisant', disponible: stock });
@@ -146,16 +140,16 @@ router.put('/update', authenticateToken, async (req, res) => {
       bucket.items[itemIndex].quantite = quantite;
     }
 
-    bucket.total = bucket.items.reduce((sum, item) => sum + item.prix * item.quantite, 0);
+    bucket.total = bucket.items.reduce((sum, item) => sum + (item.prix_promo || item.prix) * item.quantite, 0);
     await bucket.save();
 
-    res.json({ message: 'Panier mis à jour', total: bucket.total });
+    res.json({ message: 'Panier mis a jour', total: bucket.total });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// DELETE /api/bucket/remove/:articleId — remove item from bucket
+// DELETE /api/bucket/remove/:articleId - remove item from bucket
 router.delete('/remove/:articleId', authenticateToken, async (req, res) => {
   try {
     const bucket = await Bucket.findOne({ id_user: req.user.userId });
@@ -164,23 +158,23 @@ router.delete('/remove/:articleId', authenticateToken, async (req, res) => {
     bucket.items = bucket.items.filter(
       item => item.id_article.toString() !== req.params.articleId
     );
-    bucket.total = bucket.items.reduce((sum, item) => sum + item.prix * item.quantite, 0);
+    bucket.total = bucket.items.reduce((sum, item) => sum + (item.prix_promo || item.prix) * item.quantite, 0);
     await bucket.save();
 
-    res.json({ message: 'Article retiré du panier', total: bucket.total });
+    res.json({ message: 'Article retire du panier', total: bucket.total });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// DELETE /api/bucket/clear — clear the bucket
+// DELETE /api/bucket/clear - clear the bucket
 router.delete('/clear', authenticateToken, async (req, res) => {
   try {
     await Bucket.findOneAndUpdate(
       { id_user: req.user.userId },
       { items: [], total: 0 }
     );
-    res.json({ message: 'Panier vidé' });
+    res.json({ message: 'Panier vide' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

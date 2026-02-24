@@ -16,7 +16,6 @@ export class BoutiquesAdminComponent implements OnInit {
   contractTypes = signal<ContractType[]>([]);
 
   showContratModal = signal(false);
-  showPdfPreview = signal(false);
   editingContrat = signal<Contract | null>(null);
 
   newContrat: any = {
@@ -31,8 +30,6 @@ export class BoutiquesAdminComponent implements OnInit {
     numero: '',
     statut: 'actif'
   };
-
-  selectedContrat = signal<Contract | null>(null);
 
   constructor(
     public contractService: ContractService,
@@ -114,92 +111,7 @@ export class BoutiquesAdminComponent implements OnInit {
   }
 
   viewContratPdf(contrat: Contract) {
-    this.selectedContrat.set(contrat);
-    this.showPdfPreview.set(true);
-  }
-
-  closePdfPreview() {
-    this.showPdfPreview.set(false);
-    this.selectedContrat.set(null);
-  }
-
-  downloadPdf() {
-    const contrat = this.selectedContrat();
-    if (contrat) {
-      this.contractService.downloadPdf(contrat._id);
-    }
-  }
-
-  generateContratText(contrat: Contract): string {
-    return `
-═══════════════════════════════════════════════════════════════
-                    CONTRAT DE LOCATION
-                      TANA CENTER
-═══════════════════════════════════════════════════════════════
-
-ENTRE LES SOUSSIGNÉS :
-
-TANA CENTER SARL, société à responsabilité limitée au capital
-de 500.000.000 Ariary, dont le siège social est situé Avenue
-de l'Indépendance, Antananarivo 101, Madagascar, représentée
-par son Directeur Général,
-
-Ci-après dénommée "LE BAILLEUR"
-
-D'UNE PART,
-
-ET :
-
-${contrat.nom_entreprise}
-Représentée par : ${contrat.nom_client}
-
-Ci-après dénommée "LE LOCATAIRE"
-
-D'AUTRE PART,
-
-═══════════════════════════════════════════════════════════════
-                    ARTICLE 1 - OBJET
-═══════════════════════════════════════════════════════════════
-
-Le Bailleur donne en location au Locataire, qui accepte, un
-local commercial situé dans le centre commercial TANA CENTER.
-
-DÉSIGNATION DU LOCAL :
-- Numéro : ${contrat.numero}
-- Étage : ${contrat.etage}${contrat.etage === 1 ? 'er' : 'ème'} étage
-- Surface : ${contrat.surface} m²
-
-═══════════════════════════════════════════════════════════════
-                    ARTICLE 2 - DURÉE
-═══════════════════════════════════════════════════════════════
-
-Le présent contrat est conclu pour une durée de :
-- Date de début : ${this.formatDateFull(contrat.date_debut)}
-- Date de fin : ${this.formatDateFull(contrat.date_fin)}
-
-═══════════════════════════════════════════════════════════════
-                    ARTICLE 3 - LOYER
-═══════════════════════════════════════════════════════════════
-
-Le loyer mensuel est fixé à : ${this.formatMontant(contrat.loyer)} Ariary
-
-Ce loyer est payable d'avance, le premier jour de chaque mois.
-
-═══════════════════════════════════════════════════════════════
-                    SIGNATURES
-═══════════════════════════════════════════════════════════════
-
-Fait en deux exemplaires originaux,
-À Antananarivo, le ${this.formatDateFull(new Date().toISOString())}
-
-
-LE BAILLEUR                          LE LOCATAIRE
-
-
-
-_____________________               _____________________
-TANA CENTER SARL                    ${contrat.nom_entreprise}
-`;
+    this.contractService.downloadPdf(contrat._id);
   }
 
   formatMontant(montant: number): string {
@@ -225,8 +137,8 @@ TANA CENTER SARL                    ${contrat.nom_entreprise}
   getStatutLabel(statut: string): string {
     const labels: Record<string, string> = {
       'actif': 'Actif',
-      'expire': 'Expiré',
-      'resilie': 'Résilié'
+      'expire': 'Expire',
+      'resilie': 'Resilie'
     };
     return labels[statut] || statut;
   }
@@ -239,7 +151,7 @@ TANA CENTER SARL                    ${contrat.nom_entreprise}
   }
 
   getContractTypeName(contrat: Contract): string {
-    return contrat.contract_type?.contract_type_name || 'Non spécifié';
+    return contrat.contract_type?.contract_type_name || 'Non specifie';
   }
 
   getStats() {

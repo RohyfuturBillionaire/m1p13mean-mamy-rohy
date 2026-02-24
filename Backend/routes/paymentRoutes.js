@@ -103,6 +103,62 @@ router.post('/generate-current-month', async (req, res) => {
   }
 });
 
+// POST auto-generate all missing payments from contract start to current month
+router.post('/auto-generate-all', async (req, res) => {
+  try {
+    const contracts = await Contract.find({ statut: 'actif' }).populate('id_boutique');
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    let totalCreated = 0, totalSkipped = 0;
+
+    for (const contract of contracts) {
+      const boutiqueId = contract.id_boutique?._id || contract.id_boutique;
+      if (!boutiqueId) { totalSkipped++; continue; }
+
+      const debut = new Date(contract.date_debut);
+      const fin = new Date(contract.date_fin);
+
+      let y = debut.getFullYear();
+      let m = debut.getMonth() + 1;
+
+      while (y < currentYear || (y === currentYear && m <= currentMonth)) {
+        const dateEcheance = new Date(y, m - 1, 5);
+
+        if (dateEcheance >= debut && dateEcheance <= fin) {
+          try {
+            const existing = await Payment.findOne({ id_contract: contract._id, mois: m, annee: y });
+            if (!existing) {
+              const status = dateEcheance < now ? 'en_retard' : 'en_attente';
+              await Payment.create({
+                id_contract: contract._id,
+                id_boutique: boutiqueId,
+                mois: m,
+                annee: y,
+                montant: contract.loyer,
+                date_echeance: dateEcheance,
+                status
+              });
+              totalCreated++;
+            } else {
+              totalSkipped++;
+            }
+          } catch (err) {
+            if (err.code === 11000) { totalSkipped++; }
+          }
+        }
+
+        m++;
+        if (m > 12) { m = 1; y++; }
+      }
+    }
+
+    res.json({ created: totalCreated, skipped: totalSkipped });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // PUT mark payment as paid
 router.put('/:id/mark-paid', async (req, res) => {
   try {

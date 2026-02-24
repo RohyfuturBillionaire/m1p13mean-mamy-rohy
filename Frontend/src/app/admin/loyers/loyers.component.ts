@@ -34,7 +34,12 @@ export class LoyersComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadData();
+    // Auto-generate all missing loyers from contract start dates, then display
+    this.loading.set(true);
+    this.paymentService.autoGenerateAll().subscribe({
+      next: () => this.loadData(),
+      error: () => this.loadData()
+    });
   }
 
   loadData() {

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environments';
 
@@ -8,24 +8,21 @@ export class AuthService {
   private accessToken: string | null = null;
   private userRole:string| null = null;
   private apiUrl = `${environment.apiUrl}/auth`;
-  IsLoggin (){
-    if (this.accessToken) {
-        return true;
-    }
-    return false;
-  }
-  getUserRole(){
-    return this.userRole;
-  }
+
+  private userSignal = signal<any>(null);
+  isAuthenticated = computed(() => {
+    const user = this.userSignal();
+    return !!this.accessToken || !!user;
+  });
+  currentUser = computed(() => this.userSignal());
+
   constructor(private http: HttpClient) {
     // Restore token from localStorage on app init (survives page refresh)
     try {
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
       if (userData?.accessToken) {
         this.accessToken = userData.accessToken;
-        if (userData.user.role){
-          this.userRole = userData.user.role;
-        }
+        this.userSignal.set(userData?.user || null);
       }
     } catch {}
   }
@@ -34,12 +31,14 @@ export class AuthService {
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password }, { withCredentials: true })
       .pipe(tap(response => {
         this.accessToken = response.accessToken;
+        this.userSignal.set(response.user || null);
       }));
   }
 
   register(user: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/signup`, user, { withCredentials: true }).pipe(tap(response => {
       this.accessToken = response.accessToken;
+      this.userSignal.set(response.user || null);
     }));
   }
 
@@ -52,12 +51,15 @@ export class AuthService {
 
   logout(): Observable<any> {
     this.accessToken = null;
-    localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
+    this.userSignal.set(null);
     return this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true });
   }
 
   getAccessToken(): string | null {
     return this.accessToken;
+  }
+
+  getUserRole(): string {
+    return (this.userSignal()?.role || '').toLowerCase();
   }
 }

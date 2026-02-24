@@ -96,23 +96,62 @@
           <input type="date" [(ngModel)]="form.date_fin" name="date_fin" required>
         </div>
       </div>
-      <div class="form-group">
+      <div class="form-group article-select-group">
         <label>Article *</label>
-        <select [(ngModel)]="form.id_article" name="id_article" required>
-          <option value="">-- Choisir un article --</option>
-          @for (article of articles(); track article._id) {
-            <option [value]="article._id">{{ article.title }}</option>
-          }
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Boutique *</label>
-        <select [(ngModel)]="form.id_boutique" name="id_boutique" required>
-          <option value="">-- Choisir une boutique --</option>
-          @for (boutique of boutiques(); track boutique._id) {
-            <option [value]="boutique._id">{{ boutique.nom }}</option>
-          }
-        </select>
+        <!-- Selected article preview -->
+        @if (selectedArticle()) {
+          <div class="selected-article-preview">
+            @if (getArticleImageUrl(selectedArticle()!)) {
+              <img [src]="getArticleImageUrl(selectedArticle()!)" alt="article" class="article-thumb-selected">
+            }
+            <div class="article-preview-info">
+              <span class="article-preview-name">{{ selectedArticle()!.nom }}</span>
+              <span class="article-preview-price">{{ selectedArticle()!.prix | number }} Ar</span>
+            </div>
+            <button type="button" class="clear-article-btn" (click)="form.id_article = ''; selectedArticleId.set(''); articleSearch.set('')">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+        }
+        <!-- Live search input -->
+        <input
+          type="text"
+          [ngModel]="articleSearch()"
+          (ngModelChange)="articleSearch.set($event)"
+          name="articleSearch"
+          placeholder="Rechercher un article..."
+          class="article-search-input"
+          (focus)="onArticleSearchFocus()"
+          (blur)="onArticleSearchBlur()"
+          autocomplete="off"
+        >
+        <input type="hidden" [(ngModel)]="form.id_article" name="id_article">
+        <input type="hidden" [(ngModel)]="form.id_boutique" name="id_boutique">
+        <!-- Dropdown results -->
+        @if (showArticleDropdown && filteredArticles().length > 0) {
+          <div class="article-dropdown">
+            @for (article of filteredArticles(); track article._id) {
+              <div class="article-option" (mousedown)="selectArticle(article)">
+                @if (getArticleImageUrl(article)) {
+                  <img [src]="getArticleImageUrl(article)" alt="article" class="article-thumb">
+                } @else {
+                  <div class="article-thumb-placeholder">
+                    <span class="material-icons">image</span>
+                  </div>
+                }
+                <div class="article-option-info">
+                  <span class="article-option-name">{{ article.nom }}</span>
+                  <span class="article-option-price">{{ article.prix | number }} Ar</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (showArticleDropdown && filteredArticles().length === 0 && articleSearch()) {
+          <div class="article-dropdown">
+            <div class="article-option-empty">Aucun article trouvé</div>
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>

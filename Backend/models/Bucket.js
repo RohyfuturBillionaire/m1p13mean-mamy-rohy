@@ -4,7 +4,8 @@ const BucketItemSchema = new mongoose.Schema({
   id_article: { type: mongoose.Schema.Types.ObjectId, ref: 'Article', required: true },
   id_boutique: { type: mongoose.Schema.Types.ObjectId, ref: 'Boutique', required: true },
   quantite: { type: Number, required: true, min: 1 },
-  prix: { type: Number, required: true }
+  prix: { type: Number, required: true },
+  prix_promo: { type: Number, default: null }
 }, { _id: false });
 
 const BucketSchema = new mongoose.Schema({
