@@ -41,11 +41,16 @@ export class BoutiquesComponent implements OnInit {
     }
 
     if (categorie !== 'all') {
-      boutiques = boutiques.filter(b => b.id_categorie?._id === categorie);
+      boutiques = boutiques.filter(b => {
+        const catId = typeof b.id_categorie === 'object' ? b.id_categorie?._id : b.id_categorie;
+        return catId === categorie;
+      });
     }
 
     if (type !== 'all') {
-      boutiques = boutiques.filter(b => b.type_boutique === type);
+      boutiques = boutiques.filter(b =>
+        (b.type_boutique || '').toLowerCase() === type.toLowerCase()
+      );
     }
 
     return boutiques;

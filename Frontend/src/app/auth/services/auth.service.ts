@@ -9,7 +9,10 @@ export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
 
   private userSignal = signal<any>(null);
-  isAuthenticated = computed(() => !!this.accessToken || !!this.userSignal());
+  isAuthenticated = computed(() => {
+    const user = this.userSignal();
+    return !!this.accessToken || !!user;
+  });
   currentUser = computed(() => this.userSignal());
 
   constructor(private http: HttpClient) {

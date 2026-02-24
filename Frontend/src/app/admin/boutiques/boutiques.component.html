@@ -231,27 +231,3 @@
   </div>
 }
 
-<!-- PDF Preview Modal -->
-@if (showPdfPreview() && selectedContrat()) {
-  <div class="modal-overlay" (click)="closePdfPreview()">
-    <div class="modal modal-pdf" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Contrat - {{ selectedContrat()!.nom_entreprise }}</h2>
-        <div class="header-actions">
-          <button class="btn btn-primary" (click)="downloadPdf()">
-            <span class="material-icons">picture_as_pdf</span>
-            Telecharger PDF
-          </button>
-          <button class="close-btn" (click)="closePdfPreview()">
-            <span class="material-icons">close</span>
-          </button>
-        </div>
-      </div>
-      <div class="modal-body pdf-body">
-        <div class="pdf-preview">
-          <pre>{{ generateContratText(selectedContrat()!) }}</pre>
-        </div>
-      </div>
-    </div>
-  </div>
-}

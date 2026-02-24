@@ -84,7 +84,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     const filename = `Contrat_${(contract.nom_entreprise || 'export').replace(/\s/g, '_')}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     doc.pipe(res);
 
     // --- Header ---

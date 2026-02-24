@@ -92,7 +92,7 @@
                   class="article-search-input"
                 >
               </div>
-              @if (articleCategories.length > 2) {
+              @if (articleCategories.length >= 2) {
                 <div class="produit-categories">
                   @for (cat of articleCategories; track cat) {
                     <button

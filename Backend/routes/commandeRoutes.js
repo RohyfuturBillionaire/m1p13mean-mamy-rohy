@@ -79,7 +79,7 @@ router.post('/checkout', authenticateToken, async (req, res) => {
         return {
           id_article: item.id_article,
           nom: article ? article.nom : 'Article',
-          prix: item.prix,
+          prix: item.prix_promo || item.prix,
           quantite: item.quantite
         };
       });

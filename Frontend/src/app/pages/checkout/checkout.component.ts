@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +14,7 @@ import { ClientInfo, CommandeApi, CheckoutPayload } from '../../core/models/cart
   templateUrl: './checkout.component.html',
   styleUrl: './checkout.component.scss'
 })
-export class CheckoutComponent {
+export class CheckoutComponent implements OnInit {
   items = computed(() => this.cartService.items());
   sousTotal = computed(() => this.cartService.sousTotal());
   tva = computed(() => this.cartService.tva());
@@ -51,6 +51,37 @@ export class CheckoutComponent {
     private authService: AuthService,
     private router: Router
   ) {}
+
+  ngOnInit(): void {
+    this.prefillFromUserProfile();
+  }
+
+  private prefillFromUserProfile(): void {
+    const user = this.authService.currentUser();
+    if (!user) return;
+
+    if (user.email) {
+      this.clientInfo.email = user.email;
+    }
+
+    if (user.username) {
+      const parts = user.username.trim().split(' ');
+      if (parts.length >= 2) {
+        this.clientInfo.prenom = parts[0];
+        this.clientInfo.nom = parts.slice(1).join(' ');
+      } else {
+        this.clientInfo.nom = user.username;
+      }
+    }
+
+    if (user.telephone) {
+      this.clientInfo.telephone = user.telephone;
+    }
+
+    if (user.adresse) {
+      this.clientInfo.adresse = user.adresse;
+    }
+  }
 
   formatPrix(prix: number): string {
     return this.cartService.formatPrix(prix);

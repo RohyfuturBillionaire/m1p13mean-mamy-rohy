@@ -27,8 +27,7 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
     { label: 'Catégories', icon: 'category', route: '/seller/categories' },
     { label: 'Stocks', icon: 'warehouse', route: '/seller/stocks' },
     { label: 'Commandes', icon: 'shopping_cart', route: '/seller/commandes' },
-    { label: 'Livraisons', icon: 'local_shipping', route: '/seller/livraisons' },
-    { label: 'Promotions', icon: 'local_offer', route: '/seller/promotions' },
+{ label: 'Promotions', icon: 'local_offer', route: '/seller/promotions' },
     { label: 'Ma Boutique', icon: 'storefront', route: '/seller/profil' },
     { label: 'FAQ', icon: 'help_outline', route: '/seller/faq' },
     { label: 'Messages', icon: 'chat', route: '/seller/messages' }

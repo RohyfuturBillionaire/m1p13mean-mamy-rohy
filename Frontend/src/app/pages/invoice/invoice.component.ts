@@ -131,10 +131,6 @@ export class InvoiceComponent implements OnInit {
     return this.getItemPrice(item) * item.quantite;
   }
 
-  printInvoice(): void {
-    window.print();
-  }
-
   async downloadPDF(): Promise<void> {
     this.isPrinting.set(true);
     await new Promise(resolve => setTimeout(resolve, 500));

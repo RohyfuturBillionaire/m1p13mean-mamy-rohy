@@ -105,23 +105,25 @@
               </div>
             }
           }
-          <a routerLink="/connexion" class="user-dropdown-item" (click)="closeMenus()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-              <polyline points="10 17 15 12 10 7"></polyline>
-              <line x1="15" y1="12" x2="3" y2="12"></line>
-            </svg>
-            Se connecter
-          </a>
-          <a routerLink="/inscription" class="user-dropdown-item" (click)="closeMenus()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
-            S'inscrire
-          </a>
+          @if (!isLoggedIn()) {
+            <a routerLink="/connexion" class="user-dropdown-item" (click)="closeMenus()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+              </svg>
+              Se connecter
+            </a>
+            <a routerLink="/inscription" class="user-dropdown-item" (click)="closeMenus()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              S'inscrire
+            </a>
+          }
           @if (isLoggedIn()) {
             <button class="user-dropdown-item logout-item" (click)="logout()">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -208,8 +210,10 @@
         @if (isLoggedIn() && userName()) {
           <span class="mobile-username">Bonjour, {{ userName() }}</span>
         }
-        <a routerLink="/connexion" class="btn btn-secondary" (click)="closeMenus()">Se connecter</a>
-        <a routerLink="/inscription" class="btn btn-primary" (click)="closeMenus()">S'inscrire</a>
+        @if (!isLoggedIn()) {
+          <a routerLink="/connexion" class="btn btn-secondary" (click)="closeMenus()">Se connecter</a>
+          <a routerLink="/inscription" class="btn btn-primary" (click)="closeMenus()">S'inscrire</a>
+        }
         @if (isLoggedIn()) {
           <button class="btn btn-outline" (click)="logout()">Se déconnecter</button>
         }
