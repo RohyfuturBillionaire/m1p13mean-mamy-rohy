@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { SellerService } from '../../core/services/seller.service';
 import { SellerNotification, SellerBoutique } from '../../core/models/seller.model';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-seller-layout',
@@ -48,6 +49,7 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
 
   constructor(
     private sellerService: SellerService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -136,8 +138,9 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    this.sellerService.logout();
-    this.router.navigate(['/connexion']);
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/connexion']);
+    });
   }
 
   getNotificationIcon(type: string): string {
