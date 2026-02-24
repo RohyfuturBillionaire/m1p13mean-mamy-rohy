@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environments';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private accessToken: string | null = null;
+  private userRole:string| null = null;
   private apiUrl = `${environment.apiUrl}/auth`;
   IsLoggin (){
     if (this.accessToken) {
@@ -13,12 +14,18 @@ export class AuthService {
     }
     return false;
   }
+  getUserRole(){
+    return this.userRole;
+  }
   constructor(private http: HttpClient) {
     // Restore token from localStorage on app init (survives page refresh)
     try {
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
       if (userData?.accessToken) {
         this.accessToken = userData.accessToken;
+        if (userData.user.role){
+          this.userRole = userData.user.role;
+        }
       }
     } catch {}
   }
