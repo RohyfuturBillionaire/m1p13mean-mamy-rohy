@@ -4,16 +4,6 @@
       <h1>Tableau de Bord</h1>
       <p>Bienvenue dans l'administration de Tana Center</p>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-outline">
-        <span class="material-icons">calendar_today</span>
-        Février 2024
-      </button>
-      <button class="btn btn-primary">
-        <span class="material-icons">file_download</span>
-        Exporter
-      </button>
-    </div>
   </div>
 
   <!-- KPI Cards -->
@@ -26,11 +16,11 @@
         <div class="kpi-content">
           <span class="kpi-label">{{ kpi.label }}</span>
           <span class="kpi-value">{{ kpi.value }}</span>
-          @if (kpi.change) {
+          <!-- @if (kpi.change) {
             <span class="kpi-change" [class.positive]="kpi.change > 0" [class.negative]="kpi.change < 0">
               {{ kpi.change > 0 ? '↑' : '↓' }} {{ kpi.change }}%
             </span>
-          }
+          } -->
         </div>
       </div>
     }
@@ -42,7 +32,6 @@
     <div class="chart-card large">
       <div class="card-header">
         <h3>Revenus Mensuels</h3>
-        <span class="period">2024</span>
       </div>
       <div class="chart-container">
         <div class="bar-chart">
@@ -135,7 +124,7 @@
         <span class="badge">{{ recentNotifications().length }}</span>
       </div>
       <div class="notifications-list">
-        @for (notif of recentNotifications(); track notif.id) {
+        <!-- @for (notif of recentNotifications(); track notif.id) {
           <div class="notif-item" [class]="getNotificationClass(notif.type)">
             <span class="notif-icon"><span class="material-icons">{{ getNotificationIcon(notif.type) }}</span></span>
             <div class="notif-content">
@@ -144,7 +133,7 @@
             </div>
             <span class="notif-time">{{ formatDate(notif.date) }}</span>
           </div>
-        }
+        } -->
       </div>
     </div>
 
@@ -159,7 +148,7 @@
       @if (overduePayments().length > 0) {
         <div class="alert-section">
           <h4><span class="material-icons" style="vertical-align: middle; font-size: 1.1rem; margin-right: 4px;">warning</span> Retards de Paiement</h4>
-          @for (payment of overduePayments(); track payment.id) {
+          <!-- @for (payment of overduePayments(); track payment.id) {
             <div class="alert-item danger">
               <div class="alert-content">
                 <span class="alert-title">{{ payment.boutiqueNom }}</span>
@@ -167,7 +156,7 @@
               </div>
               <a routerLink="/admin/loyers" class="alert-action">Voir</a>
             </div>
-          }
+          } -->
         </div>
       }
 
@@ -175,7 +164,7 @@
       @if (pendingPromotions().length > 0) {
         <div class="alert-section">
           <h4><span class="material-icons" style="vertical-align: middle; font-size: 1.1rem; margin-right: 4px;">assignment</span> Demandes en Attente</h4>
-          @for (promo of pendingPromotions(); track promo.id) {
+          <!-- @for (promo of pendingPromotions(); track promo.id) {
             <div class="alert-item warning">
               <div class="alert-content">
                 <span class="alert-title">{{ promo.boutiqueNom }}</span>
@@ -183,7 +172,7 @@
               </div>
               <a routerLink="/admin/promotions" class="alert-action">Traiter</a>
             </div>
-          }
+          } -->
         </div>
       }
 

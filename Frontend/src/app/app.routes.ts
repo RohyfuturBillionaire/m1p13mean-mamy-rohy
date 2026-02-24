@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { sellerGuard } from './auth/guards/seller.guard';
+import { AuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -7,11 +9,13 @@ export const routes: Routes = [
   },
   {
     path: 'boutiques',
-    loadComponent: () => import('./pages/boutiques/boutiques.component').then(m => m.BoutiquesComponent)
+    loadComponent: () => import('./pages/boutiques/boutiques.component').then(m => m.BoutiquesComponent),
+    canActivate:[sellerGuard]
   },
   {
     path: 'boutique/:id',
     loadComponent: () => import('./pages/boutique-detail/boutique-detail.component').then(m => m.BoutiqueDetailComponent)
+    
   },
   {
     path: 'map',
@@ -52,7 +56,8 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
-    loadChildren: () => import('./admin/admin.routes').then(m => m.ADMIN_ROUTES)
+    loadChildren: () => import('./admin/admin.routes').then(m => m.ADMIN_ROUTES),
+    canActivate : [AuthGuard]
   },
   {
     path: 'seller',
