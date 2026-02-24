@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environments';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private accessToken: string | null = null;
+  private userRole:string| null = null;
   private apiUrl = `${environment.apiUrl}/auth`;
 
   private userSignal = signal<any>(null);
