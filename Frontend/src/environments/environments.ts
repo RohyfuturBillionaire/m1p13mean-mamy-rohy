@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl:'http://localhost:5000',
+    apiUrl:'https://m1p13mean-mamy-rohy.vercel.app',
 };
