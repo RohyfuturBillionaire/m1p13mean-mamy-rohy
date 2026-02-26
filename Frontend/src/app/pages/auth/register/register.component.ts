@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RoleService } from '../../../core/role_user/services/role.service';
 import { SellerService } from '../../../core/services/seller.service';
+import { environment } from '../../../../environments/environments';
 
 @Component({
   selector: 'app-register',
@@ -60,6 +61,7 @@ export class RegisterComponent implements OnInit {
         console.error('Error loading roles:', err);
       }
     });
+    console.log('env', environment.apiUrl);
   }
 
   onSubmit() {
