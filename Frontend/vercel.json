@@ -1,9 +1,11 @@
 {
-"$schema": "https://openapi.vercel.sh/vercel.json",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "ng build",
+  "outputDirectory": "dist/centre-commercial",
   "rewrites": [
-    {
-     "source": "/(.*)",
-     "destination": "src/index.html"
+  {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
