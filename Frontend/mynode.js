@@ -6,7 +6,7 @@ const dotenv = require('dotenv').config({path: 'src/.env'}); ;
 
 const envFile = `export const environment = {
     production: true,
-    apiUrl:'${process.env.API_URL || 'http://localhost:5000'}',
+    apiUrl:'${process.env.API_URL|| 'http://localhost:5000'}',
 };
 `;
 const targetPath = path.join(__dirname, './src/environments/environments.ts');
