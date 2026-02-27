@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FavoriteApiService } from '../../core/services/favorite-api.service';
+import { environment } from '../../../environments/environments';
 import { AuthService } from '../../auth/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
 import { Produit } from '../../core/models/boutique.model';
@@ -179,7 +180,7 @@ export class MesFavorisComponent implements OnInit {
   getImage(article: any): string {
     if (article.images && article.images.length > 0) {
       const img = article.images[0];
-      return img.startsWith('http') ? img : 'http://localhost:5000' + img;
+      return img.startsWith('http') ? img : environment.apiUrl + img;
     }
     return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400';
   }

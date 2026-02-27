@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BoutiqueApiService, BoutiqueApi, CategoryApi } from '../../core/services/boutique-api.service';
 import { ContractService } from '../../core/services/contract.service';
+import { environment } from '../../../environments/environments';
 import { LocalService, Local } from '../../core/services/local.service';
 
 @Component({
@@ -100,7 +101,7 @@ export class GestionBoutiquesComponent implements OnInit {
           local_boutique: currentLocal?._id || '',
           status: boutique.status
         };
-        this.logoPreview = boutique.logo ? 'http://localhost:5000' + boutique.logo : null;
+        this.logoPreview = boutique.logo ? environment.apiUrl + boutique.logo : null;
       } else {
         this.editingBoutique.set(null);
         this.form = this.getEmptyForm();
@@ -195,7 +196,7 @@ export class GestionBoutiquesComponent implements OnInit {
   getLogoUrl(boutique: BoutiqueApi): string {
     if (!boutique.logo) return '';
     if (boutique.logo.startsWith('http')) return boutique.logo;
-    return 'http://localhost:5000' + boutique.logo;
+    return environment.apiUrl + boutique.logo;
   }
 
   getCategoryName(boutique: BoutiqueApi): string {

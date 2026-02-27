@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environments';
 
 export interface PromotionApi {
   _id: string;
@@ -24,8 +25,8 @@ export interface ArticleApi {
 
 @Injectable({ providedIn: 'root' })
 export class PromotionService {
-  private apiUrl = 'http://localhost:5000/api/promotions';
-  private articlesUrl = 'http://localhost:5000/articles';
+  private apiUrl = `${environment.apiUrl}/api/promotions`;
+  private articlesUrl = `${environment.apiUrl}/articles`;
 
   constructor(private http: HttpClient) {}
 

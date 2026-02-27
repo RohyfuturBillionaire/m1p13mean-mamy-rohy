@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { environment } from '../../../environments/environments';
 
 export interface UserApi {
   _id: string;
@@ -20,7 +21,7 @@ export interface UserApiResponse {
 
 @Injectable({ providedIn: 'root' })
 export class UserApiService {
-  private apiUrl = 'http://localhost:5000/api/users';
+  private apiUrl = `${environment.apiUrl}/api/users`;
 
   constructor(private http: HttpClient) {}
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BoutiqueApiService, BoutiqueApi, CategoryApi } from '../../core/services/boutique-api.service';
+import { environment } from '../../../environments/environments';
 
 @Component({
   selector: 'app-boutiques',
@@ -88,7 +89,7 @@ export class BoutiquesComponent implements OnInit {
   getLogoUrl(boutique: BoutiqueApi): string {
     if (!boutique.logo) return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800';
     if (boutique.logo.startsWith('http')) return boutique.logo;
-    return 'http://localhost:5000' + boutique.logo;
+    return environment.apiUrl + boutique.logo;
   }
 
   onSearch(event: Event) {

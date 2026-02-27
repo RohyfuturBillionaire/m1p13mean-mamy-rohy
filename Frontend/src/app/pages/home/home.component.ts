@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { DataService } from '../../core/services/data.service';
 import { BoutiqueApiService, BoutiqueApi, CategoryApi } from '../../core/services/boutique-api.service';
 import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
+import { environment } from '../../../environments/environments';
 
 @Component({
   selector: 'app-home',
@@ -91,7 +92,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   getLogoUrl(boutique: BoutiqueApi): string {
     if (!boutique.logo) return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800';
     if (boutique.logo.startsWith('http')) return boutique.logo;
-    return 'http://localhost:5000' + boutique.logo;
+    return environment.apiUrl + boutique.logo;
   }
 
   formatPrix(prix: number): string {
@@ -115,7 +116,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (typeof promo.id_boutique === 'object' && promo.id_boutique.logo) {
       const logo = promo.id_boutique.logo;
       if (logo.startsWith('http')) return logo;
-      return 'http://localhost:5000' + logo;
+      return environment.apiUrl + logo;
     }
     return '';
   }
@@ -128,6 +129,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   getImageUrl(promo: PromotionApi): string {
     if (!promo.image) return '';
     if (promo.image.startsWith('http')) return promo.image;
-    return 'http://localhost:5000' + promo.image;
+    return environment.apiUrl + promo.image;
   }
 }

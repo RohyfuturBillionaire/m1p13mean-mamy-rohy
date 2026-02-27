@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
 import { ArticleApiService } from '../../core/services/article-api.service';
+import { environment } from '../../../environments/environments';
 import { ArticleApi } from '../../core/services/boutique-api.service';
 
 @Component({
@@ -106,7 +107,7 @@ export class SellerPromotionsComponent implements OnInit {
         id_article: typeof promo.id_article === 'object' ? (promo.id_article as any)._id : promo.id_article,
         id_boutique: typeof promo.id_boutique === 'object' ? (promo.id_boutique as any)._id : promo.id_boutique
       };
-      this.imagePreview = promo.image ? 'http://localhost:5000' + promo.image : null;
+      this.imagePreview = promo.image ? environment.apiUrl + promo.image : null;
       const artId = typeof promo.id_article === 'object' ? (promo.id_article as any)._id : promo.id_article;
       this.selectedArticleId.set(artId || '');
       const artName = typeof promo.id_article === 'object' ? ((promo.id_article as any).nom || '') : '';
@@ -169,7 +170,7 @@ export class SellerPromotionsComponent implements OnInit {
     if (!article.images || article.images.length === 0) return '';
     const img = article.images[0];
     if (img.startsWith('http')) return img;
-    return 'http://localhost:5000' + img;
+    return environment.apiUrl + img;
   }
 
   submitForm() {
@@ -235,6 +236,6 @@ export class SellerPromotionsComponent implements OnInit {
   getImageUrl(promo: PromotionApi): string {
     if (!promo.image) return '';
     if (promo.image.startsWith('http')) return promo.image;
-    return 'http://localhost:5000' + promo.image;
+    return environment.apiUrl + promo.image;
   }
 }

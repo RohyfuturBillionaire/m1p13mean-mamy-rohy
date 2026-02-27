@@ -204,7 +204,7 @@ export class SellerService {
             nom: b.nom,
             description: b.description || MOCK_SELLER_BOUTIQUE.description,
             email: b.email || MOCK_SELLER_BOUTIQUE.email,
-            logo: b.logo ? (b.logo.startsWith('http') ? b.logo : 'http://localhost:5000' + b.logo) : MOCK_SELLER_BOUTIQUE.logo,
+            logo: b.logo ? (b.logo.startsWith('http') ? b.logo : environment.apiUrl + b.logo) : MOCK_SELLER_BOUTIQUE.logo,
           };
           this.boutique.set(sellerBoutique);
           return sellerBoutique;
