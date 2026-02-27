@@ -1,8 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
+import { AuthService } from '../../../auth/services/auth.service';
+import { CartService } from '../../../core/services/cart.service';
 import { SellerService } from '../../../core/services/seller.service';
 
 @Component({
@@ -13,7 +15,7 @@ import { SellerService } from '../../../core/services/seller.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  username = '';
+  email = '';
   password = '';
   showPassword = signal(false);
   isLoading = signal(false);
@@ -21,7 +23,10 @@ export class LoginComponent {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private adminService: AdminService,
+    private authService: AuthService,
+    private cartService: CartService,
     private sellerService: SellerService
   ) {}
 
@@ -32,30 +37,48 @@ export class LoginComponent {
   onSubmit() {
     this.error.set('');
 
-    if (!this.username || !this.password) {
+    if (!this.email || !this.password) {
       this.error.set('Veuillez remplir tous les champs');
       return;
     }
 
     this.isLoading.set(true);
+    this.authService.login(this.email, this.password).subscribe({
+      next: (u) => {
+        localStorage.setItem('user', JSON.stringify(u));
+        const roleName = (u.user?.role || '').toLowerCase();
 
-    // Check for boutique credentials first
-    this.sellerService.login(this.username, this.password).subscribe(sellerSuccess => {
-      if (sellerSuccess) {
+        // Sync cart from localStorage to API, then navigate
+        this.cartService.syncOnLogin().then(() => {
+          this.isLoading.set(false);
+          if (!roleName) {
+            this.router.navigate(['/admin/dashboard']);
+          } else if (roleName === 'boutique') {
+            if (u.user?.hasBoutique === false) {
+              this.router.navigate(['/boutique-pending']);
+            } else {
+              this.sellerService.getBoutiqueInfo(u.user?.id).subscribe({
+                next: (boutiqueInfo) => {
+                  localStorage.setItem('boutiqueInfo', JSON.stringify(boutiqueInfo));
+                }
+              });
+              this.router.navigate(['/seller/dashboard']);
+            }
+          } else {
+            // Client: redirect to returnUrl if provided (preserve cart), otherwise home
+            const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+            if (returnUrl && returnUrl.startsWith('/')) {
+              this.router.navigateByUrl(returnUrl);
+            } else {
+              this.router.navigate(['/']);
+            }
+          }
+        });
+      },
+      error: (err) => {
         this.isLoading.set(false);
-        this.router.navigate(['/seller/dashboard']);
-        return;
+        this.error.set(err.error?.message || 'Email ou mot de passe incorrect');
       }
-
-      // If not boutique, check for admin credentials
-      this.adminService.login(this.username, this.password).subscribe(adminSuccess => {
-        this.isLoading.set(false);
-        if (adminSuccess) {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
-          this.error.set('Identifiants incorrects. Utilisez admin/admin ou boutique/boutique.');
-        }
-      });
     });
   }
 }

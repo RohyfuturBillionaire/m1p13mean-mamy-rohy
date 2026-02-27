@@ -1,0 +1,239 @@
+<div class="boutiques-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Gestion des Boutiques</h1>
+      <p>Boutiques du centre commercial TANA CENTER</p>
+    </div>
+    <button class="btn btn-primary" (click)="openModal()">
+      <span class="material-icons">add</span>
+      Nouvelle Boutique
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-icon material-icons">store</span>
+      <div class="stat-content">
+        <span class="stat-value">{{ getStats().total }}</span>
+        <span class="stat-label">Total Boutiques</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-icon material-icons" style="color: #4CAF50">check_circle</span>
+      <div class="stat-content">
+        <span class="stat-value">{{ getStats().actives }}</span>
+        <span class="stat-label">Actives</span>
+      </div>
+    </div>
+    <div class="stat-card warning">
+      <span class="stat-icon material-icons" style="color: #EF5350">cancel</span>
+      <div class="stat-content">
+        <span class="stat-value">{{ getStats().inactives }}</span>
+        <span class="stat-label">Inactives</span>
+      </div>
+    </div>
+    <div class="stat-card highlight">
+      <span class="stat-icon material-icons" style="color: #C9A962">payments</span>
+      <div class="stat-content">
+        <span class="stat-value">{{ formatMontant(getStats().totalLoyers) }} Ar</span>
+        <span class="stat-label">Loyers mensuels</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boutiques Table -->
+  <div class="table-card">
+    <div class="card-header">
+      <h2>Liste des Boutiques</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Logo</th>
+          <th>Nom</th>
+          <th>Type</th>
+          <th>Categorie</th>
+          <th>Email</th>
+          <th>Loyer</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (boutique of boutiques(); track boutique._id) {
+          <tr>
+            <td>
+              @if (boutique.logo) {
+                <img class="boutique-logo" [src]="getLogoUrl(boutique)" [alt]="boutique.nom">
+              } @else {
+                <div class="boutique-logo-placeholder">
+                  <span class="material-icons">store</span>
+                </div>
+              }
+            </td>
+            <td>
+              <div class="boutique-cell">
+                <span class="boutique-name">{{ boutique.nom }}</span>
+                @if (boutique.description) {
+                  <span class="boutique-desc">{{ boutique.description }}</span>
+                }
+              </div>
+            </td>
+            <td>
+              <span class="type-badge">{{ boutique.type_boutique || '—' }}</span>
+            </td>
+            <td>{{ getCategoryName(boutique) }}</td>
+            <td>{{ boutique.email || '—' }}</td>
+            <td>
+              <span class="amount">{{ formatMontant(boutique.loyer || 0) }} Ar</span>
+            </td>
+            <td>
+              <button class="status-toggle" [class.active]="boutique.status" (click)="toggleStatus(boutique)">
+                <span class="toggle-dot"></span>
+                {{ boutique.status ? 'Actif' : 'Inactif' }}
+              </button>
+            </td>
+            <td>
+              <div class="actions">
+                <button class="action-btn" title="Modifier" (click)="openModal(boutique)">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button class="action-btn delete" title="Desactiver" (click)="deleteBoutique(boutique)">
+                  <span class="material-icons">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (boutiques().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons" style="font-size: 3rem; color: #ccc">store</span>
+        <p>Aucune boutique enregistree</p>
+        <button class="btn btn-primary" (click)="openModal()">
+          Ajouter une boutique
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Create/Edit Boutique Modal -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingBoutique() ? 'Modifier la Boutique' : 'Nouvelle Boutique' }}</h2>
+        <button class="close-btn" (click)="closeModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-section">
+          <h3>Informations generales</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nom de la boutique</label>
+              <input type="text" [(ngModel)]="form.nom" placeholder="Nom de la boutique">
+            </div>
+            <div class="form-group">
+              <label>Type de boutique</label>
+              <input type="text" [(ngModel)]="form.type_boutique" placeholder="Ex: Pret-a-porter, Restaurant...">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Categorie</label>
+              <select [(ngModel)]="form.id_categorie">
+                <option value="">-- Selectionner --</option>
+                @for (cat of categories(); track cat._id) {
+                  <option [value]="cat._id">{{ cat.nom }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Loyer mensuel (Ariary)</label>
+              <input type="number" [(ngModel)]="form.loyer" min="0" step="100000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Local</label>
+              <select [(ngModel)]="form.local_boutique">
+                <option value="">-- Selectionner un local --</option>
+                @for (local of availableLocals(); track local._id) {
+                  <option [value]="local._id">
+                    {{ local.numero }} - Etage {{ local.etage === 0 ? 'RDC' : local.etage }} ({{ local.longueur }}m x {{ local.largeur }}m)
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Logo</h3>
+          <div class="logo-upload-area">
+            @if (logoPreview) {
+              <img class="logo-preview" [src]="logoPreview" alt="Logo preview">
+            } @else {
+              <div class="logo-placeholder">
+                <span class="material-icons">add_photo_alternate</span>
+                <span>Choisir un logo</span>
+              </div>
+            }
+            <input type="file" accept="image/*" (change)="onLogoSelected($event)" class="file-input">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Contact</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" [(ngModel)]="form.email" placeholder="contact@boutique.com">
+            </div>
+            <div class="form-group">
+              <label>Reseau social</label>
+              <input type="text" [(ngModel)]="form.reseau" placeholder="URL Facebook, Instagram...">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Details</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Horaires d'ouverture</label>
+              <input type="text" [(ngModel)]="form.horaire_ouvert" placeholder="08:00 - 20:00">
+            </div>
+            <div class="form-group toggle-group">
+              <label>Statut</label>
+              <div class="status-switch">
+                <button class="status-toggle" [class.active]="form.status" (click)="form.status = !form.status">
+                  <span class="toggle-dot"></span>
+                  {{ form.status ? 'Actif' : 'Inactif' }}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group full-width">
+            <label>Description</label>
+            <textarea [(ngModel)]="form.description" rows="3" placeholder="Description de la boutique..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeModal()">Annuler</button>
+        <button class="btn btn-primary" (click)="saveBoutique()">
+          <span class="material-icons">{{ editingBoutique() ? 'save' : 'add' }}</span>
+          {{ editingBoutique() ? 'Enregistrer' : 'Creer la boutique' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

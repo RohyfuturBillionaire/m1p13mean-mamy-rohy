@@ -3,32 +3,34 @@
   <div class="page-header">
     <div>
       <h1>Loyers & Factures</h1>
-      <p>Suivi des paiements et génération de factures</p>
+      <p>Suivi des paiements et generation de factures</p>
     </div>
-    <button class="btn btn-primary">
-      <span>🧾</span>
-      Nouvelle Facture
-    </button>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="checkOverdue()">
+        <span class="material-icons">update</span>
+        Verifier retards
+      </button>
+    </div>
   </div>
 
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card success">
-      <span class="stat-icon">✅</span>
+      <span class="stat-icon material-icons">check_circle</span>
       <div class="stat-content">
         <span class="stat-value">{{ formatMontant(getStats().totalPaye) }} Ar</span>
-        <span class="stat-label">Total encaissé</span>
+        <span class="stat-label">Total encaisse</span>
       </div>
     </div>
     <div class="stat-card warning">
-      <span class="stat-icon">⏳</span>
+      <span class="stat-icon material-icons">hourglass_empty</span>
       <div class="stat-content">
         <span class="stat-value">{{ formatMontant(getStats().totalEnAttente) }} Ar</span>
         <span class="stat-label">En attente</span>
       </div>
     </div>
     <div class="stat-card danger">
-      <span class="stat-icon">⚠️</span>
+      <span class="stat-icon material-icons">warning</span>
       <div class="stat-content">
         <span class="stat-value">{{ formatMontant(getStats().totalEnRetard) }} Ar</span>
         <span class="stat-label">En retard ({{ getStats().nbEnRetard }})</span>
@@ -36,232 +38,258 @@
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs-container">
-    <div class="tabs">
-      <button
-        class="tab"
-        [class.active]="activeTab() === 'paiements'"
-        (click)="activeTab.set('paiements')"
-      >
-        💰 Paiements
-      </button>
-      <button
-        class="tab"
-        [class.active]="activeTab() === 'factures'"
-        (click)="activeTab.set('factures')"
-      >
-        🧾 Factures
-      </button>
+  <!-- Filters -->
+  <div class="filters-row">
+    <div class="filter-group">
+      <label>Mois</label>
+      <select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="1">Janvier</option>
+        <option [ngValue]="2">Fevrier</option>
+        <option [ngValue]="3">Mars</option>
+        <option [ngValue]="4">Avril</option>
+        <option [ngValue]="5">Mai</option>
+        <option [ngValue]="6">Juin</option>
+        <option [ngValue]="7">Juillet</option>
+        <option [ngValue]="8">Aout</option>
+        <option [ngValue]="9">Septembre</option>
+        <option [ngValue]="10">Octobre</option>
+        <option [ngValue]="11">Novembre</option>
+        <option [ngValue]="12">Decembre</option>
+      </select>
     </div>
-
-    <div class="filter-tabs">
-      <button
-        class="filter-tab"
-        [class.active]="filterStatus() === 'all'"
-        (click)="filterStatus.set('all')"
-      >
-        Tous
+    <div class="filter-group">
+      <label>Annee</label>
+      <select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()">
+        @for (year of getAvailableYears(); track year) {
+          <option [ngValue]="year">{{ year }}</option>
+        }
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Statut</label>
+      <select [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()">
+        <option value="tous">Tous</option>
+        <option value="paye">Payes</option>
+        <option value="en_attente">En attente</option>
+        <option value="en_retard">En retard</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-outline btn-sm" (click)="loadAllPayments()">
+        <span class="material-icons">list</span>
+        Tout afficher
       </button>
-      @if (activeTab() === 'paiements') {
-        <button
-          class="filter-tab"
-          [class.active]="filterStatus() === 'paye'"
-          (click)="filterStatus.set('paye')"
-        >
-          ✅ Payés
-        </button>
-        <button
-          class="filter-tab"
-          [class.active]="filterStatus() === 'en_attente'"
-          (click)="filterStatus.set('en_attente')"
-        >
-          ⏳ En attente
-        </button>
-        <button
-          class="filter-tab"
-          [class.active]="filterStatus() === 'en_retard'"
-          (click)="filterStatus.set('en_retard')"
-        >
-          ⚠️ En retard
-        </button>
-      } @else {
-        <button
-          class="filter-tab"
-          [class.active]="filterStatus() === 'payee'"
-          (click)="filterStatus.set('payee')"
-        >
-          ✅ Payées
-        </button>
-        <button
-          class="filter-tab"
-          [class.active]="filterStatus() === 'en_attente'"
-          (click)="filterStatus.set('en_attente')"
-        >
-          ⏳ En attente
-        </button>
-        <button
-          class="filter-tab"
-          [class.active]="filterStatus() === 'en_retard'"
-          (click)="filterStatus.set('en_retard')"
-        >
-          ⚠️ En retard
-        </button>
-      }
     </div>
   </div>
 
-  <!-- Paiements Table -->
-  @if (activeTab() === 'paiements') {
-    <div class="table-card">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Boutique</th>
-            <th>Mois</th>
-            <th>Montant</th>
-            <th>Échéance</th>
-            <th>Date paiement</th>
-            <th>Statut</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (paiement of getFilteredPaiements(); track paiement.id) {
-            <tr [class]="paiement.statut === 'en_retard' ? 'row-danger' : ''">
-              <td>
-                <span class="boutique-name">{{ paiement.boutiqueNom }}</span>
-              </td>
-              <td>{{ paiement.mois }} {{ paiement.annee }}</td>
-              <td>
-                <span class="amount">{{ formatMontant(paiement.montant) }} Ar</span>
-              </td>
-              <td>{{ formatDate(paiement.dateEcheance) }}</td>
-              <td>
-                @if (paiement.statut === 'paye') {
-                  {{ formatDate(paiement.datePaiement) }}
-                } @else {
-                  -
+  <!-- Payments Table -->
+  <div class="table-card">
+    <div class="card-header">
+      <h2>{{ getMonthName(selectedMonth) }} {{ selectedYear }} — Paiements</h2>
+      <span class="total-badge">{{ getStats().total }} paiement(s)</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Facture</th>
+          <th>Boutique</th>
+          <th>Locataire</th>
+          <th>Periode</th>
+          <th>Montant</th>
+          <th>Echeance</th>
+          <th>Paiement</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (payment of payments(); track payment._id) {
+          <tr [class.row-danger]="payment.status === 'en_retard'">
+            <td>
+              <span class="facture-num">{{ payment.facture_numero }}</span>
+            </td>
+            <td>
+              <span class="boutique-name">{{ getBoutiqueName(payment) }}</span>
+            </td>
+            <td>{{ getClientName(payment) }}</td>
+            <td>
+              <span class="period-badge">{{ getMonthName(payment.mois) }} {{ payment.annee }}</span>
+            </td>
+            <td>
+              <span class="amount">{{ formatMontant(payment.montant) }} Ar</span>
+            </td>
+            <td>{{ formatDate(payment.date_echeance) }}</td>
+            <td>{{ payment.date_paiement ? formatDate(payment.date_paiement) : '—' }}</td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(payment.status)">
+                {{ getStatusLabel(payment.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="actions">
+                <!-- Payer -->
+                @if (payment.status !== 'paye') {
+                  <button class="action-btn pay" title="Marquer comme paye" (click)="markAsPaid(payment)">
+                    <span class="material-icons">paid</span>
+                  </button>
                 }
-              </td>
-              <td>
-                <span class="status-badge" [class]="getStatusClass(paiement.statut)">
-                  {{ getStatusIcon(paiement.statut) }} {{ getStatusLabel(paiement.statut) }}
-                </span>
-              </td>
-              <td>
-                <div class="actions">
-                  @if (paiement.statut !== 'paye') {
-                    <button
-                      class="action-btn success"
-                      title="Marquer comme payé"
-                      (click)="markAsPaid(paiement)"
-                    >
-                      ✅
-                    </button>
-                    <button class="action-btn" title="Envoyer rappel">
-                      ✉️
-                    </button>
-                  }
-                  <button class="action-btn" title="Voir">
-                    👁️
+                <!-- Voir facture -->
+                <button class="action-btn" title="Voir la facture" (click)="viewInvoice(payment)">
+                  <span class="material-icons">visibility</span>
+                </button>
+                <!-- Exporter PDF -->
+                <button class="action-btn" title="Exporter PDF" (click)="downloadPDF(payment)">
+                  <span class="material-icons">picture_as_pdf</span>
+                </button>
+                <!-- Envoyer email -->
+                @if (payment.status === 'paye') {
+                  <button class="action-btn email" title="Envoyer facture par email" (click)="openEmailConfirm(payment, 'facture')">
+                    <span class="material-icons">forward_to_inbox</span>
                   </button>
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-
-      @if (getFilteredPaiements().length === 0) {
-        <div class="empty-state">
-          <span>💰</span>
-          <p>Aucun paiement trouvé</p>
-        </div>
-      }
-    </div>
-  }
-
-  <!-- Factures Table -->
-  @if (activeTab() === 'factures') {
-    <div class="table-card">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>N° Facture</th>
-            <th>Boutique</th>
-            <th>Client</th>
-            <th>Montant HT</th>
-            <th>TVA</th>
-            <th>Total TTC</th>
-            <th>Statut</th>
-            <th>Actions</th>
+                }
+                @if (payment.status === 'en_retard') {
+                  <button class="action-btn reminder" title="Envoyer rappel de retard" (click)="openEmailConfirm(payment, 'rappel')">
+                    <span class="material-icons">notification_important</span>
+                  </button>
+                }
+                <!-- Supprimer -->
+                <button class="action-btn delete" title="Supprimer" (click)="deletePayment(payment)">
+                  <span class="material-icons">delete</span>
+                </button>
+              </div>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          @for (facture of getFilteredFactures(); track facture.id) {
-            <tr>
-              <td>
-                <span class="facture-num">{{ facture.numero }}</span>
-              </td>
-              <td>{{ facture.boutiqueNom }}</td>
-              <td>{{ facture.clientNom }}</td>
-              <td>{{ formatMontant(facture.montant) }} Ar</td>
-              <td>{{ formatMontant(facture.tva) }} Ar</td>
-              <td>
-                <span class="amount">{{ formatMontant(facture.total) }} Ar</span>
-              </td>
-              <td>
-                <span class="status-badge" [class]="getStatusClass(facture.statut)">
-                  {{ getStatusIcon(facture.statut) }} {{ getStatusLabel(facture.statut) }}
-                </span>
-              </td>
-              <td>
-                <div class="actions">
-                  <button
-                    class="action-btn"
-                    title="Voir la facture"
-                    (click)="viewFacture(facture)"
-                  >
-                    📄
-                  </button>
-                  <button class="action-btn" title="Télécharger">
-                    ⬇️
-                  </button>
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+        }
+      </tbody>
+    </table>
 
-      @if (getFilteredFactures().length === 0) {
-        <div class="empty-state">
-          <span>🧾</span>
-          <p>Aucune facture trouvée</p>
-        </div>
-      }
-    </div>
-  }
+    @if (payments().length === 0 && !loading()) {
+      <div class="empty-state">
+        <span class="material-icons" style="font-size: 3rem; color: #ccc">receipt_long</span>
+        <p>Aucun paiement pour cette periode</p>
+        <p class="text-muted">Les loyers sont generes automatiquement depuis les contrats actifs.</p>
+      </div>
+    }
+  </div>
 </div>
 
-<!-- Facture Modal -->
-@if (showFactureModal() && selectedFacture()) {
-  <div class="modal-overlay" (click)="closeFactureModal()">
+<!-- Invoice Preview Modal -->
+@if (showInvoiceModal() && selectedPayment()) {
+  <div class="modal-overlay" (click)="closeInvoiceModal()">
     <div class="modal modal-large" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Facture {{ selectedFacture()!.numero }}</h2>
+        <h2>Facture {{ selectedPayment()!.facture_numero }}</h2>
         <div class="header-actions">
-          <button class="btn btn-outline" (click)="downloadFacture()">
-            ⬇️ Télécharger
+          <button class="btn btn-outline btn-sm" (click)="downloadPDF(selectedPayment()!)">
+            <span class="material-icons">download</span>
+            Telecharger PDF
           </button>
-          <button class="close-btn" (click)="closeFactureModal()">✕</button>
+          <button class="btn btn-outline btn-sm" (click)="openEmailConfirm(selectedPayment()!, 'facture')">
+            <span class="material-icons">email</span>
+            Envoyer par email
+          </button>
+          <button class="close-btn" (click)="closeInvoiceModal()">
+            <span class="material-icons">close</span>
+          </button>
         </div>
       </div>
       <div class="modal-body">
-        <div class="facture-preview">
-          <pre>{{ generateFactureText(selectedFacture()!) }}</pre>
+        <div class="invoice-preview">
+          <div class="invoice-header-block">
+            <h3>TANA CENTER</h3>
+            <span class="invoice-label">FACTURE</span>
+          </div>
+          <div class="invoice-info-row">
+            <div class="invoice-col">
+              <strong>EMETTEUR</strong>
+              <p>TANA CENTER SARL</p>
+              <p>Avenue de l'Independance</p>
+              <p>Antananarivo 101, Madagascar</p>
+              <p>contact&#64;tanacenter.mg</p>
+            </div>
+            <div class="invoice-col">
+              <strong>DESTINATAIRE</strong>
+              <p>{{ getBoutiqueName(selectedPayment()!) }}</p>
+              <p>{{ getClientName(selectedPayment()!) }}</p>
+              <p>{{ getClientEmail(selectedPayment()!) }}</p>
+            </div>
+          </div>
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Designation</th>
+                <th>Periode</th>
+                <th>Echeance</th>
+                <th>Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Loyer mensuel</td>
+                <td>{{ getMonthName(selectedPayment()!.mois) }} {{ selectedPayment()!.annee }}</td>
+                <td>{{ formatDate(selectedPayment()!.date_echeance) }}</td>
+                <td class="amount">{{ formatMontant(selectedPayment()!.montant) }} Ar</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="invoice-total-row">
+            <span>TOTAL</span>
+            <span class="invoice-total-amount">{{ formatMontant(selectedPayment()!.montant) }} Ar</span>
+          </div>
+          @if (selectedPayment()!.status === 'paye') {
+            <div class="invoice-paid-badge">
+              <span class="material-icons">check_circle</span>
+              PAYE le {{ formatDate(selectedPayment()!.date_paiement!) }}
+            </div>
+          }
         </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Email Confirmation Modal -->
+@if (showEmailConfirmModal() && selectedPayment()) {
+  <div class="modal-overlay" (click)="closeEmailConfirm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Envoyer un email</h2>
+        <button class="close-btn" (click)="closeEmailConfirm()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="email-confirm-content">
+          <div class="email-icon">
+            <span class="material-icons">email</span>
+          </div>
+          <p class="email-action-label">{{ getEmailActionLabel() }}</p>
+          <div class="email-details">
+            <div class="email-detail-row">
+              <span class="label">Boutique :</span>
+              <span>{{ getBoutiqueName(selectedPayment()!) }}</span>
+            </div>
+            <div class="email-detail-row">
+              <span class="label">Destinataire :</span>
+              <span>{{ getClientEmail(selectedPayment()!) }}</span>
+            </div>
+            <div class="email-detail-row">
+              <span class="label">Facture :</span>
+              <span>{{ selectedPayment()!.facture_numero }}</span>
+            </div>
+            <div class="email-detail-row">
+              <span class="label">Montant :</span>
+              <span class="amount">{{ formatMontant(selectedPayment()!.montant) }} Ar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeEmailConfirm()">Annuler</button>
+        <button class="btn btn-primary" (click)="sendEmail()">
+          <span class="material-icons">send</span>
+          Envoyer
+        </button>
       </div>
     </div>
   </div>

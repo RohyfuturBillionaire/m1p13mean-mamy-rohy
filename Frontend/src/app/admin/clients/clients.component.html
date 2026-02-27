@@ -5,40 +5,40 @@
       <h1>Gestion des Clients</h1>
       <p>Gérez les utilisateurs et leurs rôles</p>
     </div>
-    <button class="btn btn-primary" (click)="openAddModal()">
+    <!-- <button class="btn btn-primary" (click)="openAddModal()">
       <span>+</span>
       Nouveau Client
-    </button>
+    </button> -->
   </div>
 
   <!-- Stats Cards -->
   <div class="stats-row">
     <div class="stat-card">
-      <span class="stat-icon">👥</span>
+      <span class="stat-icon"><span class="material-icons">group</span></span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().total }}</span>
         <span class="stat-label">Total Utilisateurs</span>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon">👤</span>
+      <span class="stat-icon"><span class="material-icons">person</span></span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().clients }}</span>
         <span class="stat-label">Clients</span>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon">🏪</span>
+      <span class="stat-icon"><span class="material-icons">store</span></span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().boutiques }}</span>
         <span class="stat-label">Boutiques</span>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon">✅</span>
+      <span class="stat-icon"><span class="material-icons">check_circle</span></span>
       <div class="stat-content">
-        <span class="stat-value">{{ getStats().actifs }}</span>
-        <span class="stat-label">Actifs</span>
+        <span class="stat-value">{{ getStats().Nouveaux }}</span>
+        <span class="stat-label">Nouveaux Inscrits</span>
       </div>
     </div>
   </div>
@@ -46,7 +46,7 @@
   <!-- Filters -->
   <div class="filters-bar">
     <div class="search-box">
-      <span class="search-icon">🔍</span>
+      <span class="search-icon"><span class="material-icons">search</span></span>
       <input
         type="text"
         placeholder="Rechercher par nom, email..."
@@ -62,27 +62,15 @@
       >
         Tous
       </button>
-      <button
-        class="filter-tab"
-        [class.active]="roleFilter() === 'client'"
-        (click)="onRoleFilterChange('client')"
-      >
-        Clients
-      </button>
-      <button
-        class="filter-tab"
-        [class.active]="roleFilter() === 'boutique'"
-        (click)="onRoleFilterChange('boutique')"
-      >
-        Boutiques
-      </button>
-      <button
-        class="filter-tab"
-        [class.active]="roleFilter() === 'admin'"
-        (click)="onRoleFilterChange('admin')"
-      >
-        Admins
-      </button>
+      @for (role of roles(); track role._id) {
+        <button
+          class="filter-tab"
+          [class.active]="roleFilter() === role.role_name"
+          (click)="onRoleFilterChange(role.role_name)"
+        >
+          {{ role.role_name | titlecase }}
+        </button>
+      }
     </div>
   </div>
 
@@ -93,46 +81,51 @@
         <tr>
           <th>Utilisateur</th>
           <th>Email</th>
-          <th>Téléphone</th>
+          <!-- <th>Téléphone</th> -->
           <th>Rôle</th>
           <th>Inscription</th>
-          <th>Statut</th>
+          <!-- <th>Statut</th> -->
           <th>Actions</th>
+          <th>liaison</th>
         </tr>
       </thead>
       <tbody>
-        @for (user of filteredUsers(); track user.id) {
+        @for (user of filteredUsers(); track user._id) {
           <tr>
             <td>
               <div class="user-cell">
-                <div class="user-avatar" [class.has-image]="user.avatar">
-                  @if (user.avatar) {
+                <!-- <div class="user-avatar" [class.has-image]="user.avatar"> -->
+                <div class="user-avatar" >
+
+                  <!-- @if (user.avatar) {
                     <img [src]="user.avatar" [alt]="user.nom">
-                  } @else {
-                    {{ user.prenom[0] }}{{ user.nom[0] }}
-                  }
+                  } @else { -->
+                    {{ user.username.split(' ')[0] === undefined ? '' : user.username.split(' ')[0].charAt(0) }}{{ user.username.split(' ')[1] === undefined ? '' : user.username.split(' ')[1].charAt(0) }}
+                  <!-- } -->
                 </div>
                 <div class="user-info">
-                  <span class="user-name">{{ user.prenom }} {{ user.nom }}</span>
+                  <!-- <span class="user-name">{{ user.username.split(' ')[0] }} {{ user.username.split(' ')[1] }}</span>4 -->
+                   <span class="user-name">{{ user.username}} </span>
                 </div>
               </div>
             </td>
             <td>{{ user.email }}</td>
-            <td>{{ user.telephone }}</td>
+            <!-- <td>{{ user.telephone }}</td> -->
             <td>
               <select
                 class="role-select"
-                [class]="getRoleClass(user.role)"
-                [value]="user.role"
-                (change)="changeUserRole(user, $any($event.target).value)"
+                [class]="getRoleClass(getRoleName(user))"
+                [ngModel]="getRoleName(user)"
+                (ngModelChange)="changeUserRole(user, $event)"
               >
-                <option value="client">Client</option>
-                <option value="boutique">Boutique</option>
-                <option value="admin">Admin</option>
+              <option [ngValue]="'admin'">Admin</option>
+                @for (role of roles(); track role._id) {
+                  <option [ngValue]="role.role_name">{{ role.role_name | titlecase }}</option>
+                }
               </select>
             </td>
-            <td>{{ formatDate(user.dateInscription) }}</td>
-            <td>
+            <td>{{ formatDate(user.createdAt!) }}</td>
+            <!-- <td>
               <button
                 class="status-toggle"
                 [class.active]="user.actif"
@@ -143,16 +136,21 @@
                 </span>
                 <span class="toggle-label">{{ user.actif ? 'Actif' : 'Inactif' }}</span>
               </button>
-            </td>
+            </td> -->
             <td>
               <div class="actions">
                 <button class="action-btn edit" title="Modifier" (click)="openEditModal(user)">
-                  ✏️
+                  <span class="material-icons">edit</span>
                 </button>
                 <button class="action-btn delete" title="Supprimer" (click)="confirmDelete(user)">
-                  🗑️
+                  <span class="material-icons">delete</span>
                 </button>
               </div>
+            </td>
+            <td>
+              <button class="action-btn link" *ngIf="isShop(user)" (click)="openLinkBoutiqueModal(user)" title="Lier à une boutique">
+                🔗
+              </button>
             </td>
           </tr>
         }
@@ -161,7 +159,7 @@
 
     @if (filteredUsers().length === 0) {
       <div class="empty-state">
-        <span>👤</span>
+        <span class="material-icons" style="font-size: 2.5rem; color: #CBD5E1;">person_off</span>
         <p>Aucun utilisateur trouvé</p>
       </div>
     }
@@ -174,10 +172,10 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ editMode() ? 'Modifier' : 'Ajouter' }} un utilisateur</h2>
-        <button class="close-btn" (click)="closeModal()">✕</button>
+        <button class="close-btn" (click)="closeModal()"><span class="material-icons">close</span></button>
       </div>
       <div class="modal-body">
-        <div class="form-row">
+       <div class="form-row">
           <div class="form-group">
             <label>Prénom</label>
             <input
@@ -195,6 +193,7 @@
             >
           </div>
         </div>
+
         <div class="form-group">
           <label>Email</label>
           <input
@@ -203,30 +202,30 @@
             placeholder="email@exemple.com"
           >
         </div>
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label>Téléphone</label>
           <input
             type="tel"
             [(ngModel)]="currentUser.telephone"
             placeholder="+261 xx xxx xx"
           >
-        </div>
+        </div> -->
         <div class="form-row">
           <div class="form-group">
             <label>Rôle</label>
-            <select [(ngModel)]="currentUser.role">
-              <option value="client">Client</option>
-              <option value="boutique">Boutique</option>
-              <option value="admin">Administrateur</option>
+            <select [(ngModel)]="currentUser.id_role">
+              @for (role of roles(); track role._id) {
+                <option [ngValue]="role._id">{{ role.role_name | titlecase }}</option>
+              }
             </select>
           </div>
-          <div class="form-group">
+          <!-- <div class="form-group">
             <label>Statut</label>
             <select [(ngModel)]="currentUser.actif">
               <option [ngValue]="true">Actif</option>
               <option [ngValue]="false">Inactif</option>
             </select>
-          </div>
+          </div> -->
         </div>
       </div>
       <div class="modal-footer">
@@ -244,14 +243,79 @@
   <div class="modal-overlay" (click)="cancelDelete()">
     <div class="modal confirm-modal" (click)="$event.stopPropagation()">
       <div class="modal-body">
-        <span class="confirm-icon">⚠️</span>
+        <span class="confirm-icon"><span class="material-icons" style="font-size: 3rem; color: #F59E0B;">warning</span></span>
         <h3>Confirmer la suppression</h3>
-        <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ userToDelete()?.prenom }} {{ userToDelete()?.nom }}</strong> ?</p>
+        <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ userToDelete()?.username }} </strong> ?</p>
         <p class="warning-text">Cette action est irréversible.</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="cancelDelete()">Annuler</button>
         <button class="btn btn-danger" (click)="deleteUser()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Link Boutique Modal -->
+@if (showLinkBoutiqueModal()) {
+  <div class="modal-overlay" (click)="closeLinkBoutiqueModal()">
+    <div class="modal link-boutique-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Lier une boutique</h2>
+        <button class="close-btn" (click)="closeLinkBoutiqueModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="link-info">
+          Lier l'utilisateur <strong>{{ selectedUserForLink()?.username }}</strong> à une boutique
+        </p>
+        
+        @if (unlinkedBoutiques().length === 0) {
+          <div class="empty-state">
+            <span>🏪</span>
+            <p>Aucune boutique disponible</p>
+            <p class="sub-text">Toutes les boutiques sont déjà liées à un utilisateur</p>
+          </div>
+        } @else {
+          <div class="boutiques-list">
+            @for (boutique of unlinkedBoutiques(); track boutique._id) {
+              <div 
+                class="boutique-item" 
+                [class.selected]="selectedBoutiqueId() === boutique._id"
+                (click)="selectedBoutiqueId.set(boutique._id)"
+              >
+                <div class="boutique-logo">
+                  @if (boutique.logo) {
+                    <img [src]="'http://localhost:5000' + boutique.logo" [alt]="boutique.nom">
+                  } @else {
+                    <span class="logo-placeholder">🏪</span>
+                  }
+                </div>
+                <div class="boutique-info">
+                  <span class="boutique-name">{{ boutique.nom }}</span>
+                  <span class="boutique-category">{{ boutique.id_categorie?.nom || 'Non catégorisé' }}</span>
+                  @if (boutique.description) {
+                    <span class="boutique-description">{{ boutique.description }}</span>
+                  }
+                </div>
+                <div class="boutique-check">
+                  @if (selectedBoutiqueId() === boutique._id) {
+                    <span>✓</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeLinkBoutiqueModal()">Annuler</button>
+        <button 
+          class="btn btn-primary" 
+          (click)="linkBoutique()" 
+          [disabled]="!selectedBoutiqueId()"
+        >
+          Lier la boutique
+        </button>
       </div>
     </div>
   </div>

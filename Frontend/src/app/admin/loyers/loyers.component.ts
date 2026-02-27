@@ -1,8 +1,9 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService } from '../../core/services/admin.service';
-import { Paiement, Facture } from '../../core/models/admin.model';
+import { PaymentService, Payment } from '../../core/services/payment.service';
+
+const MONTHS_FR = ['', 'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'];
 
 @Component({
   selector: 'app-loyers',
@@ -12,164 +13,231 @@ import { Paiement, Facture } from '../../core/models/admin.model';
   styleUrl: './loyers.component.scss'
 })
 export class LoyersComponent implements OnInit {
-  paiements = signal<Paiement[]>([]);
-  factures = signal<Facture[]>([]);
-  activeTab = signal<'paiements' | 'factures'>('paiements');
-  filterStatus = signal('all');
-  selectedFacture = signal<Facture | null>(null);
-  showFactureModal = signal(false);
+  payments = signal<Payment[]>([]);
+  loading = signal(false);
 
-  constructor(private adminService: AdminService) {}
+  // Filters
+  selectedStatus = 'tous';
+  selectedMonth: number;
+  selectedYear: number;
+
+  // Modals
+  showInvoiceModal = signal(false);
+  showEmailConfirmModal = signal(false);
+  selectedPayment = signal<Payment | null>(null);
+  emailAction = signal<'confirmation' | 'rappel' | 'facture'>('confirmation');
+
+  constructor(private paymentService: PaymentService) {
+    const now = new Date();
+    this.selectedMonth = now.getMonth() + 1;
+    this.selectedYear = now.getFullYear();
+  }
 
   ngOnInit() {
+    // Auto-generate all missing loyers from contract start dates, then display
+    this.loading.set(true);
+    this.paymentService.autoGenerateAll().subscribe({
+      next: () => this.loadData(),
+      error: () => this.loadData()
+    });
+  }
+
+  loadData() {
+    this.loading.set(true);
+    this.paymentService.getPaymentsByMonth(this.selectedMonth, this.selectedYear)
+      .subscribe({
+        next: p => {
+          if (this.selectedStatus !== 'tous') {
+            this.payments.set(p.filter(pay => pay.status === this.selectedStatus));
+          } else {
+            this.payments.set(p);
+          }
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false)
+      });
+  }
+
+  loadAllPayments() {
+    this.loading.set(true);
+    this.paymentService.getPayments().subscribe({
+      next: p => {
+        if (this.selectedStatus !== 'tous') {
+          this.payments.set(p.filter(pay => pay.status === this.selectedStatus));
+        } else {
+          this.payments.set(p);
+        }
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  onFilterChange() {
     this.loadData();
   }
 
-  private loadData() {
-    this.adminService.getPaiements().subscribe(p => this.paiements.set(p));
-    this.adminService.getFactures().subscribe(f => this.factures.set(f));
-  }
+  // === ACTIONS ===
 
-  getFilteredPaiements() {
-    if (this.filterStatus() === 'all') return this.paiements();
-    return this.paiements().filter(p => p.statut === this.filterStatus());
-  }
-
-  getFilteredFactures() {
-    if (this.filterStatus() === 'all') return this.factures();
-    return this.factures().filter(f => f.statut === this.filterStatus());
-  }
-
-  markAsPaid(paiement: Paiement) {
-    this.adminService.updatePaiementStatut(paiement.id, 'paye').subscribe(() => {
-      this.loadData();
+  generateCurrentMonth() {
+    this.paymentService.generateCurrentMonth().subscribe({
+      next: result => {
+        alert(`Generation terminee : ${result.created} paiement(s) cree(s), ${result.skipped} ignore(s)`);
+        this.loadData();
+      },
+      error: err => alert(err.error?.message || 'Erreur lors de la generation')
     });
   }
 
-  viewFacture(facture: Facture) {
-    this.selectedFacture.set(facture);
-    this.showFactureModal.set(true);
+  checkOverdue() {
+    this.paymentService.checkOverdue().subscribe({
+      next: result => {
+        alert(`Verification terminee : ${result.updated} paiement(s) marque(s) en retard`);
+        this.loadData();
+      },
+      error: err => alert(err.error?.message || 'Erreur')
+    });
   }
 
-  closeFactureModal() {
-    this.showFactureModal.set(false);
-    this.selectedFacture.set(null);
+  markAsPaid(payment: Payment) {
+    if (!confirm(`Confirmer le paiement de ${this.formatMontant(payment.montant)} Ar pour ${this.getBoutiqueName(payment)} ?`)) return;
+    this.paymentService.markAsPaid(payment._id).subscribe({
+      next: () => {
+        alert('Paiement enregistre avec succes !');
+        this.loadData();
+      },
+      error: err => alert(err.error?.message || 'Erreur')
+    });
   }
 
-  downloadFacture() {
-    const facture = this.selectedFacture();
-    if (facture) {
-      const content = this.generateFactureText(facture);
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${facture.numero}.txt`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+  // Invoice preview modal
+  viewInvoice(payment: Payment) {
+    this.selectedPayment.set(payment);
+    this.showInvoiceModal.set(true);
+  }
+
+  closeInvoiceModal() {
+    this.showInvoiceModal.set(false);
+    this.selectedPayment.set(null);
+  }
+
+  // Download PDF
+  downloadPDF(payment: Payment) {
+    this.paymentService.downloadInvoicePDF(payment._id);
+  }
+
+  // Email actions
+  openEmailConfirm(payment: Payment, action: 'confirmation' | 'rappel' | 'facture') {
+    this.selectedPayment.set(payment);
+    this.emailAction.set(action);
+    this.showEmailConfirmModal.set(true);
+  }
+
+  closeEmailConfirm() {
+    this.showEmailConfirmModal.set(false);
+    this.selectedPayment.set(null);
+  }
+
+  sendEmail() {
+    const payment = this.selectedPayment();
+    if (!payment) return;
+
+    const action = this.emailAction();
+    let obs;
+
+    if (action === 'rappel') {
+      obs = this.paymentService.sendReminder(payment._id);
+    } else {
+      obs = this.paymentService.sendInvoiceByEmail(payment._id);
     }
-  }
 
-  generateFactureText(facture: Facture): string {
-    return `
-╔══════════════════════════════════════════════════════════════╗
-║                        FACTURE                                ║
-║                      TANA CENTER                              ║
-╚══════════════════════════════════════════════════════════════╝
-
-Facture N° : ${facture.numero}
-Date d'émission : ${this.formatDateFull(facture.dateEmission)}
-Date d'échéance : ${this.formatDateFull(facture.dateEcheance)}
-
-────────────────────────────────────────────────────────────────
-ÉMETTEUR
-────────────────────────────────────────────────────────────────
-TANA CENTER SARL
-Avenue de l'Indépendance
-Antananarivo 101, Madagascar
-Email: contact@tanacenter.mg
-NIF: 12345678901
-
-────────────────────────────────────────────────────────────────
-CLIENT
-────────────────────────────────────────────────────────────────
-${facture.clientNom}
-${facture.boutiqueNom}
-
-────────────────────────────────────────────────────────────────
-DÉTAILS
-────────────────────────────────────────────────────────────────
-Description                              Montant (Ariary)
-────────────────────────────────────────────────────────────────
-Loyer mensuel                            ${this.formatMontant(facture.montant)}
-
-────────────────────────────────────────────────────────────────
-                                          SOUS-TOTAL HT : ${this.formatMontant(facture.montant)}
-                                          TVA (20%)     : ${this.formatMontant(facture.tva)}
-                                          ─────────────────────
-                                          TOTAL TTC     : ${this.formatMontant(facture.total)}
-────────────────────────────────────────────────────────────────
-
-Statut : ${facture.statut === 'payee' ? 'PAYÉE' : facture.statut === 'en_retard' ? 'EN RETARD' : 'EN ATTENTE'}
-
-Mode de paiement : Virement bancaire
-IBAN : MG46 0001 0000 0000 1234 5678
-
-Merci de votre confiance.
-`;
-  }
-
-  getStatusClass(statut: string): string {
-    return `status-${statut}`;
-  }
-
-  getStatusLabel(statut: string): string {
-    const labels: Record<string, string> = {
-      'paye': 'Payé',
-      'payee': 'Payée',
-      'en_attente': 'En attente',
-      'en_retard': 'En retard'
-    };
-    return labels[statut] || statut;
-  }
-
-  getStatusIcon(statut: string): string {
-    const icons: Record<string, string> = {
-      'paye': '✅',
-      'payee': '✅',
-      'en_attente': '⏳',
-      'en_retard': '⚠️'
-    };
-    return icons[statut] || '📋';
-  }
-
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('fr-FR');
-  }
-
-  formatDateFull(date: Date): string {
-    return new Date(date).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+    obs.subscribe({
+      next: (result: any) => {
+        if (result.success) {
+          alert('Email envoye avec succes !');
+        } else {
+          alert('Erreur : ' + (result.error || 'Echec de l\'envoi'));
+        }
+        this.closeEmailConfirm();
+        this.loadData();
+      },
+      error: err => {
+        alert(err.error?.message || 'Erreur d\'envoi');
+        this.closeEmailConfirm();
+      }
     });
+  }
+
+  deletePayment(payment: Payment) {
+    if (!confirm(`Supprimer le paiement ${payment.facture_numero} ?`)) return;
+    this.paymentService.deletePayment(payment._id).subscribe({
+      next: () => this.loadData(),
+      error: err => alert(err.error?.message || 'Erreur')
+    });
+  }
+
+  // === HELPERS ===
+
+  getMonthName(mois: number): string {
+    return MONTHS_FR[mois] || '';
+  }
+
+  getBoutiqueName(payment: Payment): string {
+    return payment.id_boutique?.nom || '—';
+  }
+
+  getClientName(payment: Payment): string {
+    return payment.id_contract?.nom_client || payment.id_contract?.id_client?.username || '—';
+  }
+
+  getClientEmail(payment: Payment): string {
+    return payment.id_contract?.id_client?.email || payment.id_boutique?.email || '—';
   }
 
   formatMontant(montant: number): string {
-    return montant.toLocaleString('fr-FR');
+    return (montant || 0).toLocaleString('fr-FR');
+  }
+
+  formatDate(date: string): string {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString('fr-FR');
+  }
+
+  getStatusClass(status: string): string {
+    return `status-${status}`;
+  }
+
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      'paye': 'Paye',
+      'en_attente': 'En attente',
+      'en_retard': 'En retard'
+    };
+    return labels[status] || status;
+  }
+
+  getAvailableYears(): number[] {
+    const current = new Date().getFullYear();
+    return [current - 1, current, current + 1];
+  }
+
+  getEmailActionLabel(): string {
+    const labels: Record<string, string> = {
+      'confirmation': 'Confirmation de paiement',
+      'rappel': 'Rappel de retard',
+      'facture': 'Facture PDF'
+    };
+    return labels[this.emailAction()] || '';
   }
 
   getStats() {
-    const paiements = this.paiements();
-    const totalPaye = paiements.filter(p => p.statut === 'paye').reduce((sum, p) => sum + p.montant, 0);
-    const totalEnAttente = paiements.filter(p => p.statut === 'en_attente').reduce((sum, p) => sum + p.montant, 0);
-    const totalEnRetard = paiements.filter(p => p.statut === 'en_retard').reduce((sum, p) => sum + p.montant, 0);
-
+    const list = this.payments();
     return {
-      totalPaye,
-      totalEnAttente,
-      totalEnRetard,
-      nbEnRetard: paiements.filter(p => p.statut === 'en_retard').length
+      total: list.length,
+      totalPaye: list.filter(p => p.status === 'paye').reduce((sum, p) => sum + p.montant, 0),
+      totalEnAttente: list.filter(p => p.status === 'en_attente').reduce((sum, p) => sum + p.montant, 0),
+      totalEnRetard: list.filter(p => p.status === 'en_retard').reduce((sum, p) => sum + p.montant, 0),
+      nbEnRetard: list.filter(p => p.status === 'en_retard').length
     };
   }
 }

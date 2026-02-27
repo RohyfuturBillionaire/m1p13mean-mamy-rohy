@@ -1,27 +1,55 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
-import { DataService } from '../../core/services/data.service';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { BoutiqueApiService, BoutiqueApi, ArticleApi } from '../../core/services/boutique-api.service';
 import { CartService } from '../../core/services/cart.service';
-import { Boutique, Produit, Promotion } from '../../core/models/boutique.model';
+import { FavoriteApiService } from '../../core/services/favorite-api.service';
+import { RatingApiService } from '../../core/services/rating-api.service';
+import { AuthService } from '../../auth/services/auth.service';
+import { PromotionService } from '../../core/services/promotion.service';
+import { StarRatingComponent } from '../../shared/components/star-rating/star-rating.component';
+import { Produit } from '../../core/models/boutique.model';
 
 @Component({
   selector: 'app-boutique-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule, StarRatingComponent],
   templateUrl: './boutique-detail.component.html',
   styleUrl: './boutique-detail.component.scss'
 })
 export class BoutiqueDetailComponent implements OnInit {
-  boutique = signal<Boutique | null>(null);
-  promotions = signal<Promotion[]>([]);
+  boutique = signal<BoutiqueApi | null>(null);
+  articles = signal<ArticleApi[]>([]);
   loading = signal(true);
   selectedCategorie = signal<string>('all');
+  articleSearch = signal('');
   activeTab = signal<'produits' | 'infos'>('produits');
   addedToCart = signal<string | null>(null);
+  favoriteIds = signal<Set<string>>(new Set());
+  articleRatings = signal<Map<string, { moyenne: number; count: number; userNote: number | null }>>(new Map());
+
+  // Active promotions for this boutique: articleId → remise%
+  private promoMap = signal<Map<string, number>>(new Map());
+
+  private favoriteApi = inject(FavoriteApiService);
+  private ratingApi = inject(RatingApiService);
+  private authService = inject(AuthService);
+  private promotionService = inject(PromotionService);
+  private router = inject(Router);
+
+  filteredArticles = computed(() => {
+    const q = this.articleSearch().toLowerCase().trim();
+    const cat = this.selectedCategorie();
+    return this.articles().filter(a => {
+      const matchCat = cat === 'all' || (a.id_categorie_article?.nom || 'Autre') === cat;
+      const matchQ = !q || a.nom.toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+  });
 
   constructor(
-    private dataService: DataService,
+    private boutiqueApi: BoutiqueApiService,
     private route: ActivatedRoute,
     private cartService: CartService
   ) {}
@@ -31,38 +59,150 @@ export class BoutiqueDetailComponent implements OnInit {
       const id = params['id'];
       if (id) {
         this.loadBoutique(id);
+        this.loadBoutiquePromos(id);
       }
     });
+    this.loadFavorites();
+  }
+
+  private loadFavorites(): void {
+    if (!this.authService.getAccessToken()) return;
+    this.favoriteApi.getFavorites().subscribe({
+      next: (favs) => {
+        const ids = new Set<string>(favs.map((f: any) => f._id || f.id));
+        this.favoriteIds.set(ids);
+      },
+      error: () => {}
+    });
+  }
+
+  private loadBoutiquePromos(boutiqueId: string): void {
+    this.promotionService.getByBoutique(boutiqueId).subscribe({
+      next: (promos) => {
+        const now = new Date();
+        const map = new Map<string, number>();
+        promos
+          .filter(p =>
+            p.status === 'APPROVED' &&
+            new Date(p.date_debut) <= now &&
+            new Date(p.date_fin) >= now
+          )
+          .forEach(p => {
+            const articleId = typeof p.id_article === 'object' ? p.id_article._id : p.id_article;
+            if (articleId) map.set(articleId, p.remise);
+          });
+        this.promoMap.set(map);
+      },
+      error: () => {}
+    });
+  }
+
+  getPromoRemise(articleId: string): number {
+    return this.promoMap().get(articleId) || 0;
+  }
+
+  getPrixPromo(article: ArticleApi): number {
+    const remise = this.getPromoRemise(article._id);
+    if (!remise) return 0;
+    return Math.round(article.prix * (1 - remise / 100));
+  }
+
+  isFavorite(articleId: string): boolean {
+    return this.favoriteIds().has(articleId);
+  }
+
+  toggleFavorite(articleId: string): void {
+    if (!this.authService.getAccessToken()) {
+      this.router.navigate(['/connexion']);
+      return;
+    }
+    if (this.isFavorite(articleId)) {
+      this.favoriteIds.update(ids => { const n = new Set(ids); n.delete(articleId); return n; });
+      this.favoriteApi.removeFavorite(articleId).subscribe({ error: () => {
+        this.favoriteIds.update(ids => { const n = new Set(ids); n.add(articleId); return n; });
+      }});
+    } else {
+      this.favoriteIds.update(ids => { const n = new Set(ids); n.add(articleId); return n; });
+      this.favoriteApi.addFavorite(articleId).subscribe({ error: () => {
+        this.favoriteIds.update(ids => { const n = new Set(ids); n.delete(articleId); return n; });
+      }});
+    }
   }
 
   private loadBoutique(id: string) {
     this.loading.set(true);
-    this.dataService.getBoutiqueById(id).subscribe(boutique => {
-      this.boutique.set(boutique || null);
-      this.loading.set(false);
-    });
-
-    this.dataService.getPromotionsByBoutique(id).subscribe(promos => {
-      this.promotions.set(promos);
+    this.boutiqueApi.getById(id).subscribe({
+      next: (boutique) => {
+        this.boutique.set(boutique);
+        this.articles.set(boutique.articles || []);
+        this.loading.set(false);
+        this.loadRatings(boutique.articles || []);
+      },
+      error: () => {
+        this.boutique.set(null);
+        this.loading.set(false);
+      }
     });
   }
 
-  get produitCategories(): string[] {
-    const boutique = this.boutique();
-    if (!boutique) return [];
-    const categories = new Set(boutique.produits.map(p => p.categorie));
-    return ['all', ...Array.from(categories)];
-  }
-
-  get filteredProduits(): Produit[] {
-    const boutique = this.boutique();
-    if (!boutique) return [];
-
-    if (this.selectedCategorie() === 'all') {
-      return boutique.produits;
+  private loadRatings(articles: ArticleApi[]): void {
+    for (const article of articles) {
+      this.ratingApi.getArticleRating(article._id).subscribe({
+        next: (rating) => {
+          this.articleRatings.update(map => {
+            const n = new Map(map);
+            n.set(article._id, rating);
+            return n;
+          });
+        },
+        error: () => {}
+      });
     }
+  }
 
-    return boutique.produits.filter(p => p.categorie === this.selectedCategorie());
+  getArticleRating(articleId: string): { moyenne: number; count: number } {
+    const r = this.articleRatings().get(articleId);
+    return r ? { moyenne: r.moyenne, count: r.count } : { moyenne: 0, count: 0 };
+  }
+
+  rateArticle(articleId: string, note: number): void {
+    if (!this.authService.getAccessToken()) {
+      this.router.navigate(['/connexion']);
+      return;
+    }
+    this.ratingApi.rateArticle(articleId, note).subscribe({
+      next: () => {
+        this.ratingApi.getArticleRating(articleId).subscribe({
+          next: (rating) => {
+            this.articleRatings.update(map => {
+              const n = new Map(map);
+              n.set(articleId, rating);
+              return n;
+            });
+          }
+        });
+      }
+    });
+  }
+
+  getLogoUrl(boutique: BoutiqueApi): string {
+    if (!boutique.logo) return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800';
+    if (boutique.logo.startsWith('http')) return boutique.logo;
+    return 'http://localhost:5000' + boutique.logo;
+  }
+
+  getArticleImage(article: ArticleApi): string {
+    if (article.images && article.images.length > 0) {
+      const img = article.images[0];
+      if (img.startsWith('http')) return img;
+      return 'http://localhost:5000' + img;
+    }
+    return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400';
+  }
+
+  get articleCategories(): string[] {
+    const cats = new Set(this.articles().map(a => a.id_categorie_article?.nom || 'Autre'));
+    return ['all', ...Array.from(cats)];
   }
 
   setCategorie(categorie: string) {
@@ -74,46 +214,41 @@ export class BoutiqueDetailComponent implements OnInit {
   }
 
   formatPrix(prix: number): string {
-    return this.dataService.formatPrix(prix);
+    return new Intl.NumberFormat('fr-MG', {
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(prix) + ' Ar';
   }
 
-  getJourActuel(): string {
-    const jours = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-    return jours[new Date().getDay()];
-  }
-
-  getHorairesAujourdhui(): string {
+  addToCart(article: ArticleApi): void {
     const boutique = this.boutique();
-    if (!boutique) return '';
-    const jour = this.getJourActuel() as keyof typeof boutique.horaires;
-    return boutique.horaires[jour];
+    if (!boutique) return;
+
+    const prixPromo = this.getPrixPromo(article);
+
+    const produit: Produit = {
+      id: article._id,
+      nom: article.nom,
+      description: article.description || '',
+      prix: article.prix,
+      prixPromo: prixPromo > 0 ? prixPromo : undefined,
+      image: this.getArticleImage(article),
+      categorie: article.id_categorie_article?.nom || '',
+      disponible: true,
+      nouveau: false
+    };
+
+    this.cartService.addItem(produit, boutique._id, boutique.nom);
+    this.addedToCart.set(article._id);
+    setTimeout(() => this.addedToCart.set(null), 2000);
   }
 
-  isOuvert(): boolean {
-    const horaires = this.getHorairesAujourdhui();
-    if (horaires === 'Fermé') return false;
-    // Simplification - en réalité il faudrait vérifier l'heure actuelle
-    return true;
-  }
-
-  addToCart(produit: Produit): void {
-    const boutique = this.boutique();
-    if (!boutique || !produit.disponible) return;
-
-    this.cartService.addItem(produit, boutique.id, boutique.nom);
-
-    // Show feedback
-    this.addedToCart.set(produit.id);
-    setTimeout(() => {
-      this.addedToCart.set(null);
-    }, 2000);
-  }
-
-  isInCart(produitId: string): boolean {
+  isInCart(articleId: string): boolean {
     const boutique = this.boutique();
     if (!boutique) return false;
     return this.cartService.items().some(
-      item => item.produit.id === produitId && item.boutiqueId === boutique.id
+      item => item.produit.id === articleId && item.boutiqueId === boutique._id
     );
   }
 }

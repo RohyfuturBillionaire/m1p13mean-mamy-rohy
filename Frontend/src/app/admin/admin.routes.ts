@@ -20,8 +20,20 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./clients/clients.component').then(m => m.ClientsComponent)
       },
       {
-        path: 'boutiques',
+        path: 'contrats',
         loadComponent: () => import('./boutiques/boutiques.component').then(m => m.BoutiquesAdminComponent)
+      },
+      {
+        path: 'types-contrat',
+        loadComponent: () => import('./types-contrat/types-contrat.component').then(m => m.TypesContratComponent)
+      },
+      {
+        path: 'gestion-boutiques',
+        loadComponent: () => import('./gestion-boutiques/gestion-boutiques.component').then(m => m.GestionBoutiquesComponent)
+      },
+      {
+        path: 'plan-centre',
+        loadComponent: () => import('./plan-centre/plan-centre.component').then(m => m.PlanCentreComponent)
       },
       {
         path: 'promotions',
@@ -34,6 +46,10 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'messages',
         loadComponent: () => import('./messages/messages.component').then(m => m.MessagesComponent)
+      },
+      {
+        path: 'association-boutiques',
+        loadComponent: () => import('./association-boutiques/association-boutiques.component').then(m => m.AssociationBoutiquesComponent)
       },
       {
         path: 'parametres',

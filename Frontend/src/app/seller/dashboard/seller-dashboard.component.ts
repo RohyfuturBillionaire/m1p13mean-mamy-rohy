@@ -29,6 +29,9 @@ export class SellerDashboardComponent implements OnInit {
   chartColors = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
   stockColors = ['#10B981', '#F59E0B', '#EF4444'];
 
+  currentPeriodLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  currentYear = new Date().getFullYear();
+
   constructor(private sellerService: SellerService) {}
 
   ngOnInit() {

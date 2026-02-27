@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SellerService } from '../../core/services/seller.service';
-import { SellerPromotion } from '../../core/models/seller.model';
+import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
+import { ArticleApiService } from '../../core/services/article-api.service';
+import { ArticleApi } from '../../core/services/boutique-api.service';
 
 @Component({
   selector: 'app-seller-promotions',
@@ -12,92 +13,228 @@ import { SellerPromotion } from '../../core/models/seller.model';
   styleUrl: './seller-promotions.component.scss'
 })
 export class SellerPromotionsComponent implements OnInit {
-  promotions = signal<SellerPromotion[]>([]);
+  promotions = signal<PromotionApi[]>([]);
+  articles = signal<ArticleApi[]>([]);
   showModal = signal(false);
-  editingPromo = signal<SellerPromotion | null>(null);
+  editingPromo = signal<PromotionApi | null>(null);
   isSubmitting = signal(false);
 
-  formData = signal({
-    titre: '', description: '', type: 'pourcentage' as 'pourcentage' | 'montant' | 'offre',
-    valeur: 0, dateDebut: '', dateFin: '', conditions: ''
+  selectedImageFile: File | null = null;
+  imagePreview: string | null = null;
+
+  // Live search for articles (signals for reactivity)
+  articleSearch = signal('');
+  showArticleDropdown = false;
+  selectedArticleId = signal('');
+
+  form: any = this.getEmptyForm();
+
+  // Current boutique from localStorage
+  private currentBoutiqueId: string = '';
+
+  filteredArticles = computed(() => {
+    const search = this.articleSearch().toLowerCase();
+    const list = this.articles();
+    if (!search) return list;
+    return list.filter(a => a.nom.toLowerCase().includes(search));
   });
 
-  constructor(private sellerService: SellerService) {}
+  selectedArticle = computed(() => {
+    const id = this.selectedArticleId();
+    if (!id) return null;
+    return this.articles().find(a => a._id === id) || null;
+  });
 
-  ngOnInit() { this.loadPromotions(); }
-
-  loadPromotions() {
-    this.sellerService.getPromotions().subscribe(p => this.promotions.set(p));
+  constructor(
+    private promotionService: PromotionService,
+    private articleApiService: ArticleApiService
+  ) {
+    // Get boutiqueId from localStorage
+    try {
+      const boutiqueInfo = JSON.parse(localStorage.getItem('boutiqueInfo') || '{}');
+      this.currentBoutiqueId = boutiqueInfo?._id || boutiqueInfo?.boutiqueId || '';
+      if (!this.currentBoutiqueId) {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        this.currentBoutiqueId = userData?.user?.boutiqueId || '';
+      }
+    } catch {}
   }
 
-  openModal(promo?: SellerPromotion) {
+  ngOnInit() {
+    this.loadData();
+  }
+
+  private getEmptyForm() {
+    return {
+      titre: '',
+      description: '',
+      remise: 0,
+      date_debut: '',
+      date_fin: '',
+      id_article: '',
+      id_boutique: ''
+    };
+  }
+
+  private loadData() {
+    // Load only articles of the current boutique
+    if (this.currentBoutiqueId) {
+      this.articleApiService.getArticles(this.currentBoutiqueId).subscribe(a => this.articles.set(a));
+    } else {
+      this.articleApiService.getArticles().subscribe(a => this.articles.set(a));
+    }
+    this.loadPromotions();
+  }
+
+  loadPromotions() {
+    if (this.currentBoutiqueId) {
+      this.promotionService.getByBoutique(this.currentBoutiqueId).subscribe(p => this.promotions.set(p));
+    } else {
+      this.promotionService.getAll().subscribe(p => this.promotions.set(p));
+    }
+  }
+
+  openModal(promo?: PromotionApi) {
     if (promo) {
       this.editingPromo.set(promo);
-      this.formData.set({
-        titre: promo.titre, description: promo.description, type: promo.type,
-        valeur: promo.valeur || 0,
-        dateDebut: new Date(promo.dateDebut).toISOString().split('T')[0],
-        dateFin: new Date(promo.dateFin).toISOString().split('T')[0],
-        conditions: promo.conditions || ''
-      });
+      this.form = {
+        titre: promo.titre,
+        description: promo.description || '',
+        remise: promo.remise,
+        date_debut: new Date(promo.date_debut).toISOString().split('T')[0],
+        date_fin: new Date(promo.date_fin).toISOString().split('T')[0],
+        id_article: typeof promo.id_article === 'object' ? (promo.id_article as any)._id : promo.id_article,
+        id_boutique: typeof promo.id_boutique === 'object' ? (promo.id_boutique as any)._id : promo.id_boutique
+      };
+      this.imagePreview = promo.image ? 'http://localhost:5000' + promo.image : null;
+      const artId = typeof promo.id_article === 'object' ? (promo.id_article as any)._id : promo.id_article;
+      this.selectedArticleId.set(artId || '');
+      const artName = typeof promo.id_article === 'object' ? ((promo.id_article as any).nom || '') : '';
+      this.articleSearch.set(artName);
     } else {
       this.editingPromo.set(null);
-      this.formData.set({ titre: '', description: '', type: 'pourcentage', valeur: 0, dateDebut: '', dateFin: '', conditions: '' });
+      this.form = this.getEmptyForm();
+      // Pre-fill boutique with current seller's boutique
+      if (this.currentBoutiqueId) {
+        this.form.id_boutique = this.currentBoutiqueId;
+      }
+      this.imagePreview = null;
+      this.selectedArticleId.set('');
+      this.articleSearch.set('');
     }
+    this.showArticleDropdown = false;
+    this.selectedImageFile = null;
     this.showModal.set(true);
   }
 
-  closeModal() { this.showModal.set(false); this.editingPromo.set(null); }
+  closeModal() {
+    this.showModal.set(false);
+    this.editingPromo.set(null);
+    this.selectedImageFile = null;
+    this.imagePreview = null;
+    this.articleSearch.set('');
+    this.selectedArticleId.set('');
+    this.showArticleDropdown = false;
+  }
 
-  updateField(field: string, value: any) {
-    this.formData.update(d => ({ ...d, [field]: value }));
+  onImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.selectedImageFile = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(this.selectedImageFile);
+    }
+  }
+
+  onArticleSearchFocus() {
+    this.showArticleDropdown = true;
+  }
+
+  onArticleSearchBlur() {
+    // Delay to allow click on dropdown item
+    setTimeout(() => { this.showArticleDropdown = false; }, 200);
+  }
+
+  selectArticle(article: ArticleApi) {
+    this.form.id_article = article._id;
+    this.selectedArticleId.set(article._id);
+    this.articleSearch.set(article.nom);
+    this.showArticleDropdown = false;
+  }
+
+  getArticleImageUrl(article: ArticleApi): string {
+    if (!article.images || article.images.length === 0) return '';
+    const img = article.images[0];
+    if (img.startsWith('http')) return img;
+    return 'http://localhost:5000' + img;
   }
 
   submitForm() {
-    const data = this.formData();
-    if (!data.titre || !data.dateDebut || !data.dateFin) return;
+    if (!this.form.titre || !this.form.date_debut || !this.form.date_fin || !this.form.id_article || !this.form.id_boutique) return;
     this.isSubmitting.set(true);
 
-    const promoData = {
-      ...data, boutiqueId: 'b1',
-      dateDebut: new Date(data.dateDebut), dateFin: new Date(data.dateFin),
-      statut: 'brouillon' as const
-    };
+    const formData = new FormData();
+    formData.append('titre', this.form.titre);
+    formData.append('description', this.form.description);
+    formData.append('remise', String(this.form.remise));
+    formData.append('date_debut', this.form.date_debut);
+    formData.append('date_fin', this.form.date_fin);
+    formData.append('id_article', this.form.id_article);
+    formData.append('id_boutique', this.form.id_boutique);
+    if (this.selectedImageFile) {
+      formData.append('image', this.selectedImageFile);
+    }
 
     const editing = this.editingPromo();
     if (editing) {
-      this.sellerService.updatePromotion(editing.id, promoData).subscribe(() => {
-        this.isSubmitting.set(false); this.closeModal(); this.loadPromotions();
+      this.promotionService.update(editing._id, formData).subscribe({
+        next: () => { this.isSubmitting.set(false); this.closeModal(); this.loadPromotions(); },
+        error: () => this.isSubmitting.set(false)
       });
     } else {
-      this.sellerService.addPromotion(promoData).subscribe(() => {
-        this.isSubmitting.set(false); this.closeModal(); this.loadPromotions();
+      this.promotionService.create(formData).subscribe({
+        next: () => { this.isSubmitting.set(false); this.closeModal(); this.loadPromotions(); },
+        error: () => this.isSubmitting.set(false)
       });
     }
   }
 
-  submitForApproval(promo: SellerPromotion) {
-    this.sellerService.submitPromotion(promo.id).subscribe(() => this.loadPromotions());
-  }
-
-  deletePromo(promo: SellerPromotion) {
+  deletePromo(promo: PromotionApi) {
     if (confirm('Supprimer cette promotion ?')) {
-      this.sellerService.deletePromotion(promo.id).subscribe(() => this.loadPromotions());
+      this.promotionService.delete(promo._id).subscribe(() => this.loadPromotions());
     }
   }
 
-  formatDate(date: Date): string { return this.sellerService.formatDate(date); }
-
-  getStatusLabel(statut: string): string {
-    const labels: Record<string, string> = {
-      'brouillon': 'Brouillon', 'en_attente': 'En attente', 'validee': 'Validée',
-      'refusee': 'Refusée', 'active': 'Active', 'expiree': 'Expirée'
-    };
-    return labels[statut] || statut;
+  formatDate(date: string): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  getTypeLabel(type: string): string {
-    const labels: Record<string, string> = { 'pourcentage': 'Réduction %', 'montant': 'Réduction fixe', 'offre': 'Offre spéciale' };
-    return labels[type] || type;
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      'PENDING': 'En attente',
+      'APPROVED': 'Validee',
+      'REJECTED': 'Refusee'
+    };
+    return labels[status] || status;
+  }
+
+  getBoutiqueName(promo: PromotionApi): string {
+    if (typeof promo.id_boutique === 'object') return (promo.id_boutique as any).nom;
+    return '';
+  }
+
+  getArticleName(promo: PromotionApi): string {
+    if (typeof promo.id_article === 'object') return (promo.id_article as any).nom || (promo.id_article as any).title || '';
+    return '';
+  }
+
+  getImageUrl(promo: PromotionApi): string {
+    if (!promo.image) return '';
+    if (promo.image.startsWith('http')) return promo.image;
+    return 'http://localhost:5000' + promo.image;
   }
 }

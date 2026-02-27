@@ -1,6 +1,6 @@
 <div class="promotions-page">
   <div class="page-header">
-    <div><h1>Mes Promotions</h1><p>Gérez vos offres promotionnelles</p></div>
+    <div><h1>Mes Promotions</h1><p>Gerez vos offres promotionnelles</p></div>
     <button class="btn btn-primary" (click)="openModal()">
       <span class="material-icons">add</span> Nouvelle Promotion
     </button>
@@ -8,39 +8,41 @@
 
   <div class="info-banner">
     <span class="material-icons">info</span>
-    <p>Les promotions doivent être validées par l'administration avant publication. Le délai de validation est généralement de 24-48h.</p>
+    <p>Les promotions doivent etre validees par l'administration avant publication. Le delai de validation est generalement de 24-48h.</p>
   </div>
 
   <div class="promotions-grid">
-    @for (promo of promotions(); track promo.id) {
-      <div class="promo-card" [class]="promo.statut">
+    @for (promo of promotions(); track promo._id) {
+      <div class="promo-card" [class]="promo.status">
         <div class="promo-header">
-          <span class="promo-type">{{ getTypeLabel(promo.type) }}</span>
-          <span class="promo-status" [class]="promo.statut">{{ getStatusLabel(promo.statut) }}</span>
+          @if (getImageUrl(promo)) {
+            <img [src]="getImageUrl(promo)" alt="Promo" class="promo-image">
+          }
+          <span class="promo-status" [class]="promo.status">{{ getStatusLabel(promo.status) }}</span>
         </div>
         <div class="promo-body">
           <h3>{{ promo.titre }}</h3>
           <p>{{ promo.description }}</p>
-          @if (promo.valeur) {
-            <div class="promo-value">
-              @if (promo.type === 'pourcentage') { -{{ promo.valeur }}% }
-              @else if (promo.type === 'montant') { -{{ promo.valeur }} Ar }
-            </div>
-          }
+          <div class="promo-value">-{{ promo.remise }}%</div>
+          <div class="promo-meta">
+            <span class="promo-article"><span class="material-icons">article</span> {{ getArticleName(promo) }}</span>
+            <span class="promo-boutique"><span class="material-icons">store</span> {{ getBoutiqueName(promo) }}</span>
+          </div>
           <div class="promo-dates">
             <span class="material-icons">event</span>
-            {{ formatDate(promo.dateDebut) }} - {{ formatDate(promo.dateFin) }}
+            {{ formatDate(promo.date_debut) }} - {{ formatDate(promo.date_fin) }}
           </div>
         </div>
         <div class="promo-footer">
-          @if (promo.statut === 'brouillon') {
+          @if (promo.status === 'PENDING') {
             <button class="btn btn-sm btn-outline" (click)="openModal(promo)"><span class="material-icons">edit</span></button>
-            <button class="btn btn-sm btn-primary" (click)="submitForApproval(promo)">Soumettre</button>
-            <button class="btn btn-sm btn-danger" (click)="deletePromo(promo)"><span class="material-icons">delete</span></button>
+            <span class="pending-label">En attente de validation</span>
           }
-          @if (promo.statut === 'refusee') {
-            <span class="refus-motif">Motif: {{ promo.motifRefus || 'Non spécifié' }}</span>
+          @if (promo.status === 'REJECTED') {
+            <button class="btn btn-sm btn-outline" (click)="openModal(promo)"><span class="material-icons">edit</span></button>
+            <span class="refus-motif">Promotion refusee</span>
           }
+          <button class="btn btn-sm btn-danger" (click)="deletePromo(promo)"><span class="material-icons">delete</span></button>
         </div>
       </div>
     }
@@ -48,8 +50,8 @@
       <div class="empty-state">
         <span class="material-icons">local_offer</span>
         <h3>Aucune promotion</h3>
-        <p>Créez votre première promotion</p>
-        <button class="btn btn-primary" (click)="openModal()"><span class="material-icons">add</span> Créer</button>
+        <p>Creez votre premiere promotion</p>
+        <button class="btn btn-primary" (click)="openModal()"><span class="material-icons">add</span> Creer</button>
       </div>
     }
   </div>
@@ -65,39 +67,91 @@
     <form (ngSubmit)="submitForm()" class="modal-body">
       <div class="form-group">
         <label>Titre *</label>
-        <input type="text" [value]="formData().titre" (input)="updateField('titre', $any($event.target).value)" required>
+        <input type="text" [(ngModel)]="form.titre" name="titre" required>
       </div>
       <div class="form-group">
         <label>Description</label>
-        <textarea rows="3" [value]="formData().description" (input)="updateField('description', $any($event.target).value)"></textarea>
+        <textarea rows="3" [(ngModel)]="form.description" name="description"></textarea>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Type</label>
-          <select [value]="formData().type" (change)="updateField('type', $any($event.target).value)">
-            <option value="pourcentage">Réduction %</option>
-            <option value="montant">Réduction fixe</option>
-            <option value="offre">Offre spéciale</option>
-          </select>
+          <label>Remise (%) *</label>
+          <input type="number" [(ngModel)]="form.remise" name="remise" min="0" max="100" required>
         </div>
         <div class="form-group">
-          <label>Valeur</label>
-          <input type="number" [value]="formData().valeur" (input)="updateField('valeur', +$any($event.target).value)" min="0">
+          <label>Image</label>
+          <input type="file" accept="image/*" (change)="onImageSelected($event)" class="file-input">
+          @if (imagePreview) {
+            <img [src]="imagePreview" class="image-preview" alt="Preview">
+          }
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Date début *</label>
-          <input type="date" [value]="formData().dateDebut" (input)="updateField('dateDebut', $any($event.target).value)" required>
+          <label>Date debut *</label>
+          <input type="date" [(ngModel)]="form.date_debut" name="date_debut" required>
         </div>
         <div class="form-group">
           <label>Date fin *</label>
-          <input type="date" [value]="formData().dateFin" (input)="updateField('dateFin', $any($event.target).value)" required>
+          <input type="date" [(ngModel)]="form.date_fin" name="date_fin" required>
         </div>
       </div>
-      <div class="form-group">
-        <label>Conditions</label>
-        <input type="text" [value]="formData().conditions" (input)="updateField('conditions', $any($event.target).value)" placeholder="Ex: Min. 50 000 Ar d'achat">
+      <div class="form-group article-select-group">
+        <label>Article *</label>
+        <!-- Selected article preview -->
+        @if (selectedArticle()) {
+          <div class="selected-article-preview">
+            @if (getArticleImageUrl(selectedArticle()!)) {
+              <img [src]="getArticleImageUrl(selectedArticle()!)" alt="article" class="article-thumb-selected">
+            }
+            <div class="article-preview-info">
+              <span class="article-preview-name">{{ selectedArticle()!.nom }}</span>
+              <span class="article-preview-price">{{ selectedArticle()!.prix | number }} Ar</span>
+            </div>
+            <button type="button" class="clear-article-btn" (click)="form.id_article = ''; selectedArticleId.set(''); articleSearch.set('')">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+        }
+        <!-- Live search input -->
+        <input
+          type="text"
+          [ngModel]="articleSearch()"
+          (ngModelChange)="articleSearch.set($event)"
+          name="articleSearch"
+          placeholder="Rechercher un article..."
+          class="article-search-input"
+          (focus)="onArticleSearchFocus()"
+          (blur)="onArticleSearchBlur()"
+          autocomplete="off"
+        >
+        <input type="hidden" [(ngModel)]="form.id_article" name="id_article">
+        <input type="hidden" [(ngModel)]="form.id_boutique" name="id_boutique">
+        <!-- Dropdown results -->
+        @if (showArticleDropdown && filteredArticles().length > 0) {
+          <div class="article-dropdown">
+            @for (article of filteredArticles(); track article._id) {
+              <div class="article-option" (mousedown)="selectArticle(article)">
+                @if (getArticleImageUrl(article)) {
+                  <img [src]="getArticleImageUrl(article)" alt="article" class="article-thumb">
+                } @else {
+                  <div class="article-thumb-placeholder">
+                    <span class="material-icons">image</span>
+                  </div>
+                }
+                <div class="article-option-info">
+                  <span class="article-option-name">{{ article.nom }}</span>
+                  <span class="article-option-price">{{ article.prix | number }} Ar</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (showArticleDropdown && filteredArticles().length === 0 && articleSearch()) {
+          <div class="article-dropdown">
+            <div class="article-option-empty">Aucun article trouvé</div>
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>

@@ -1,46 +1,87 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../core/services/admin.service';
-import { User } from '../../core/models/admin.model';
+import { User, UserDB } from '../../core/models/admin.model';
+import { UsersService } from './services/users.service';
+import { RoleService } from '../../core/role_user/services/role.service';
+import { BoutiqueApiService, BoutiqueApi } from '../../core/services/boutique-api.service';
 
 @Component({
   selector: 'app-clients',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TitleCasePipe],
   templateUrl: './clients.component.html',
   styleUrl: './clients.component.scss'
 })
 export class ClientsComponent implements OnInit {
-  users = signal<User[]>([]);
-  filteredUsers = signal<User[]>([]);
+  users = signal<UserDB[]>([]);
+  usersData = signal<User[]>([]);
+  filteredUsers = signal<UserDB[]>([]);
+  roles = signal<any[]>([]);
   searchQuery = signal('');
   roleFilter = signal('all');
   showModal = signal(false);
   editMode = signal(false);
   showDeleteConfirm = signal(false);
-  userToDelete = signal<User | null>(null);
+  userToDelete = signal<UserDB | null>(null);
+  
+  // Link boutique modal
+  showLinkBoutiqueModal = signal(false);
+  unlinkedBoutiques = signal<BoutiqueApi[]>([]);
+  selectedUserForLink = signal<UserDB | null>(null);
+  selectedBoutiqueId = signal<string>('');
 
-  currentUser: Partial<User> = {
-    nom: '',
-    prenom: '',
-    email: '',
-    telephone: '',
-    role: 'client',
-    actif: true
+  currentUser: Partial<UserDB> = {
+      username: '',
+      email: '',
+      id_role: '',
+      nom: '',
+      prenom: ''
   };
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private usersService: UsersService,
+    private roleService: RoleService,
+    private boutiqueApiService: BoutiqueApiService
+  ) {}
 
   ngOnInit() {
     this.loadUsers();
+    this.loadRoles();
+  }
+
+  private loadRoles() {
+    this.roleService.getRoles().subscribe(roles => {
+      this.roles.set(roles);
+      console.log('Fetched roles:', roles);
+    });
   }
 
   private loadUsers() {
-    this.adminService.getUsers().subscribe(users => {
-      this.users.set(users);
+    this.usersService.getUsers().subscribe(users => {
+     
+
+      this.users.set(users.data);
       this.applyFilters();
+      console.log("class user",users);
     });
+    // this.adminService.getUsers().subscribe(users => {
+    //   this.users.set(users);
+    //   this.applyFilters();
+    // });
+  }
+
+  // Helper to get role name from id_role (handles both string and Role object)
+  getRoleName(user: UserDB): string {
+    if (!user.id_role) return 'admin';
+    return typeof user.id_role === 'object' ? user.id_role.role_name : '';
+  }
+
+  isShop(user: UserDB): boolean {
+    if (!user.id_role) return false;
+    return typeof user.id_role === 'object' ? user.id_role.role_name==="boutique": false;
   }
 
   applyFilters() {
@@ -50,15 +91,14 @@ export class ClientsComponent implements OnInit {
     const query = this.searchQuery().toLowerCase();
     if (query) {
       filtered = filtered.filter(u =>
-        u.nom.toLowerCase().includes(query) ||
-        u.prenom.toLowerCase().includes(query) ||
+        u.username.toLowerCase().includes(query) ||
         u.email.toLowerCase().includes(query)
       );
     }
 
     // Role filter
     if (this.roleFilter() !== 'all') {
-      filtered = filtered.filter(u => u.role === this.roleFilter());
+      filtered = filtered.filter(u => this.getRoleName(u) === this.roleFilter());
     }
 
     this.filteredUsers.set(filtered);
@@ -78,19 +118,20 @@ export class ClientsComponent implements OnInit {
   openAddModal() {
     this.editMode.set(false);
     this.currentUser = {
-      nom: '',
-      prenom: '',
+      username: '',
       email: '',
-      telephone: '',
-      role: 'client',
-      actif: true
+      id_role: ''
     };
     this.showModal.set(true);
   }
 
-  openEditModal(user: User) {
+  openEditModal(user: UserDB) {
+    user.nom = user.username?.split(' ')[1] === undefined ? '' : user.username.split(' ')[1];
+    user.prenom = user.username?.split(' ')[0] === undefined ? '' : user.username.split(' ')[0];
     this.editMode.set(true);
-    this.currentUser = { ...user };
+    // Extract role _id if id_role is populated object
+    const roleId = typeof user.id_role === 'object' ? user.id_role._id : user.id_role;
+    this.currentUser = { ...user, id_role: roleId };
     this.showModal.set(true);
   }
 
@@ -99,20 +140,21 @@ export class ClientsComponent implements OnInit {
   }
 
   saveUser() {
-    if (this.editMode() && this.currentUser.id) {
-      this.adminService.updateUser(this.currentUser.id, this.currentUser).subscribe(() => {
+    if (this.editMode() && this.currentUser._id) {
+      this.currentUser.username = `${this.currentUser.prenom} ${this.currentUser.nom}`;
+      this.usersService.updateUser(this.currentUser._id, this.currentUser).subscribe(() => {
         this.loadUsers();
         this.closeModal();
       });
     } else {
-      this.adminService.addUser(this.currentUser as Omit<User, 'id' | 'dateInscription'>).subscribe(() => {
+      this.usersService.addUser(this.currentUser).subscribe(() => {
         this.loadUsers();
         this.closeModal();
       });
     }
   }
 
-  confirmDelete(user: User) {
+  confirmDelete(user: UserDB) {
     this.userToDelete.set(user);
     this.showDeleteConfirm.set(true);
   }
@@ -125,21 +167,24 @@ export class ClientsComponent implements OnInit {
   deleteUser() {
     const user = this.userToDelete();
     if (user) {
-      this.adminService.deleteUser(user.id).subscribe(() => {
+      this.usersService.deleteUser(user._id).subscribe(() => {
         this.loadUsers();
         this.cancelDelete();
       });
     }
   }
 
-  toggleUserStatus(user: User) {
-    this.adminService.updateUser(user.id, { actif: !user.actif }).subscribe(() => {
-      this.loadUsers();
-    });
-  }
+  // toggleUserStatus(user: UserDB) {
+  //   this.adminService.updateUser(user._id, { actif: !user.actif }).subscribe(() => {
+  //     this.loadUsers();
+  //   });
+  // }
 
-  changeUserRole(user: User, newRole: 'admin' | 'boutique' | 'client') {
-    this.adminService.updateUser(user.id, { role: newRole }).subscribe(() => {
+  changeUserRole(user: UserDB, newRole: string) {
+    // this.adminService.updateUser(user._id, { role: newRole }).subscribe(() => {
+    //   this.loadUsers();
+    // });
+    this.usersService.updateUser(user._id, { id_role: newRole }).subscribe(() => {
       this.loadUsers();
     });
   }
@@ -167,12 +212,59 @@ export class ClientsComponent implements OnInit {
 
   getStats() {
     const users = this.users();
+    const getRoleName = (user: UserDB): string => {
+      if (!user.id_role) return '';
+      return typeof user.id_role === 'object' ? user.id_role.role_name : '';
+    };
     return {
       total: users.length,
-      admins: users.filter(u => u.role === 'admin').length,
-      boutiques: users.filter(u => u.role === 'boutique').length,
-      clients: users.filter(u => u.role === 'client').length,
-      actifs: users.filter(u => u.actif).length
+      admins: users.filter(u => getRoleName(u) === '').length,
+      boutiques: users.filter(u => getRoleName(u) === 'boutique').length,
+      clients: users.filter(u => getRoleName(u) === 'user').length,
+      Nouveaux: users.filter(u => {
+        const createdAt = new Date(u.createdAt || '');
+        const now = new Date();
+        const diffInDays = (now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
+        return diffInDays <= 1; // Considérer comme nouveau si inscrit dans les 1 derniers jours
+      }).length
+      // actifs: users.filter(u => u.actif).length
     };
+  }
+
+  // Link Boutique Modal Methods
+  openLinkBoutiqueModal(user: UserDB) {
+    this.selectedUserForLink.set(user);
+    this.selectedBoutiqueId.set('');
+    this.loadUnlinkedBoutiques();
+    this.showLinkBoutiqueModal.set(true);
+  }
+
+  closeLinkBoutiqueModal() {
+    this.showLinkBoutiqueModal.set(false);
+    this.selectedUserForLink.set(null);
+    this.selectedBoutiqueId.set('');
+  }
+
+  private loadUnlinkedBoutiques() {
+    this.boutiqueApiService.getUnlinkedBoutiques().subscribe(boutiques => {
+      this.unlinkedBoutiques.set(boutiques);
+    });
+  }
+
+  linkBoutique() {
+    const user = this.selectedUserForLink();
+    const boutiqueId = this.selectedBoutiqueId();
+    
+    if (user && boutiqueId) {
+      this.boutiqueApiService.linkBoutiqueToUser(boutiqueId, user._id).subscribe({
+        next: () => {
+          this.closeLinkBoutiqueModal();
+          this.loadUsers();
+        },
+        error: (error) => {
+          console.error('Error linking boutique:', error);
+        }
+      });
+    }
   }
 }

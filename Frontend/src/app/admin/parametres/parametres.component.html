@@ -7,16 +7,16 @@
     </div>
     <button class="btn btn-primary" (click)="saveParametres()" [disabled]="isSaving()">
       @if (isSaving()) {
-        ⏳ Enregistrement...
+        <span class="material-icons">hourglass_empty</span> Enregistrement...
       } @else {
-        💾 Enregistrer
+        <span class="material-icons">save</span> Enregistrer
       }
     </button>
   </div>
 
   @if (saveSuccess()) {
     <div class="alert success">
-      ✅ Paramètres enregistrés avec succès !
+      <span class="material-icons" style="vertical-align: middle; margin-right: 6px;">check_circle</span> Paramètres enregistrés avec succès !
     </div>
   }
 
@@ -30,7 +30,7 @@
             [class.active]="activeSection() === section.id"
             (click)="activeSection.set(section.id)"
           >
-            <span class="nav-icon">{{ section.icon }}</span>
+            <span class="nav-icon"><span class="material-icons">{{ section.icon }}</span></span>
             <span class="nav-label">{{ section.label }}</span>
           </button>
         }
@@ -47,7 +47,7 @@
               <label>Nom du centre commercial</label>
               <input
                 type="text"
-                [ngModel]="parametres()!.nomCentre"
+                [ngModel]="parametresCrm()!.nom_centre_commercial"
                 (ngModelChange)="updateParametre('nomCentre', $event)"
               >
             </div>
@@ -56,7 +56,7 @@
               <label>Slogan</label>
               <input
                 type="text"
-                [ngModel]="parametres()!.slogan"
+                [ngModel]="parametresCrm()!.slogan"
                 (ngModelChange)="updateParametre('slogan', $event)"
               >
             </div>
@@ -66,7 +66,7 @@
                 <label>Email de contact</label>
                 <input
                   type="email"
-                  [ngModel]="parametres()!.email"
+                  [ngModel]="parametresCrm()!.email"
                   (ngModelChange)="updateParametre('email', $event)"
                 >
               </div>
@@ -74,7 +74,7 @@
                 <label>Téléphone</label>
                 <input
                   type="tel"
-                  [ngModel]="parametres()!.telephone"
+                  [ngModel]="parametresCrm()!.telephone"
                   (ngModelChange)="updateParametre('telephone', $event)"
                 >
               </div>
@@ -84,7 +84,7 @@
               <label>Adresse</label>
               <textarea
                 rows="2"
-                [ngModel]="parametres()!.adresse"
+                [ngModel]="parametresCrm()!.adresse"
                 (ngModelChange)="updateParametre('adresse', $event)"
               ></textarea>
             </div>
@@ -94,16 +94,16 @@
                 <label>Horaires semaine</label>
                 <input
                   type="text"
-                  [ngModel]="parametres()!.horaires.semaine"
-                  (ngModelChange)="updateNestedParametre('horaires', 'semaine', $event)"
+                  [ngModel]="parametresCrm()!.horaire_ouverture"
+                  (ngModelChange)="updateParametre('horaire_ouverture', $event)"
                 >
               </div>
               <div class="form-group">
                 <label>Horaires weekend</label>
                 <input
                   type="text"
-                  [ngModel]="parametres()!.horaires.weekend"
-                  (ngModelChange)="updateNestedParametre('horaires', 'weekend', $event)"
+                  [ngModel]="parametresCrm()!.horaire_fermeture"
+                  (ngModelChange)="updateParametre('horaire_fermeture', $event)"
                 >
               </div>
             </div>
@@ -225,7 +225,7 @@
                       class="toggle-btn"
                       (click)="toggleSliderImage(img.id)"
                     >
-                      {{ img.active ? '✅ Actif' : '❌ Inactif' }}
+                      <span class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">{{ img.active ? 'check_circle' : 'cancel' }}</span> {{ img.active ? 'Actif' : 'Inactif' }}
                     </button>
                   </div>
                 </div>
@@ -304,7 +304,7 @@
 
             @if (parametres()!.modeMaintenace) {
               <div class="alert warning">
-                ⚠️ Le mode maintenance est activé. Les visiteurs verront une page de maintenance.
+                <span class="material-icons" style="vertical-align: middle; margin-right: 6px;">warning</span> Le mode maintenance est activé. Les visiteurs verront une page de maintenance.
               </div>
             }
 

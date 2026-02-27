@@ -7,13 +7,47 @@
   <div class="hero-content">
     <span class="hero-badge">Offres Exclusives</span>
     <h1>Promotions en Cours</h1>
-    <p>Profitez de nos meilleures offres et réductions exceptionnelles</p>
+    <p>Profitez de nos meilleures offres et reductions exceptionnelles</p>
   </div>
 </section>
 
 <!-- Promotions Section -->
 <section class="promotions-section">
   <div class="container">
+    <!-- Search & Filters -->
+    <div class="promo-filters">
+      <div class="filter-search">
+        <span class="material-icons">search</span>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Rechercher une promotion, boutique..."
+          class="filter-input"
+        >
+      </div>
+      <div class="filter-select-group">
+        <select [ngModel]="selectedBoutique()" (ngModelChange)="selectedBoutique.set($event)" class="filter-select">
+          <option value="">Toutes les boutiques</option>
+          @for (b of boutiques(); track b.id) {
+            <option [value]="b.id">{{ b.nom }}</option>
+          }
+        </select>
+        <select [ngModel]="minRemise()" (ngModelChange)="minRemise.set(+$event)" class="filter-select">
+          <option [ngValue]="0">Toutes les remises</option>
+          <option [ngValue]="10">≥ 10%</option>
+          <option [ngValue]="20">≥ 20%</option>
+          <option [ngValue]="30">≥ 30%</option>
+          <option [ngValue]="50">≥ 50%</option>
+        </select>
+      </div>
+      @if (hasFilters()) {
+        <button class="filter-clear-btn" (click)="clearFilters()">
+          <span class="material-icons">close</span> Effacer
+        </button>
+      }
+    </div>
+
     @if (loading()) {
       <div class="loading-state">
         <div class="loader"></div>
@@ -23,39 +57,33 @@
       <!-- Featured Promo -->
       <div class="featured-promo">
         <div class="featured-image">
-          <img [src]="promotions()[0].image" [alt]="promotions()[0].titre">
+          @if (getImageUrl(promotions()[0])) {
+            <img [src]="getImageUrl(promotions()[0])" [alt]="promotions()[0].titre">
+          }
           <span class="promo-badge large">{{ getReductionText(promotions()[0]) }}</span>
         </div>
         <div class="featured-content">
           <div class="promo-boutique">
-            <img [src]="promotions()[0].boutiqueLogo" [alt]="promotions()[0].boutiqueNom" class="boutique-logo">
-            <span>{{ promotions()[0].boutiqueNom }}</span>
+            @if (getBoutiqueLogo(promotions()[0])) {
+              <img [src]="getBoutiqueLogo(promotions()[0])" [alt]="getBoutiqueName(promotions()[0])" class="boutique-logo">
+            }
+            <span>{{ getBoutiqueName(promotions()[0]) }}</span>
           </div>
           <h2>{{ promotions()[0].titre }}</h2>
           <p class="promo-description">{{ promotions()[0].description }}</p>
           <div class="promo-details">
             <div class="detail">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <span>Du {{ formatDate(promotions()[0].dateDebut) }} au {{ formatDate(promotions()[0].dateFin) }}</span>
+              <span class="material-icons">event</span>
+              <span>Du {{ formatDate(promotions()[0].date_debut) }} au {{ formatDate(promotions()[0].date_fin) }}</span>
             </div>
-            @if (promotions()[0].code) {
-              <div class="promo-code">
-                <span class="code-label">Code promo</span>
-                <span class="code-value">{{ promotions()[0].code }}</span>
-              </div>
-            }
+            <div class="detail">
+              <span class="material-icons">article</span>
+              <span>{{ getArticleName(promotions()[0]) }}</span>
+            </div>
           </div>
-          @if (promotions()[0].conditions) {
-            <p class="promo-conditions">* {{ promotions()[0].conditions }}</p>
-          }
           <div class="promo-actions">
-            <a [routerLink]="['/boutique', promotions()[0].boutiqueId]" class="btn btn-primary">
-              Découvrir l'offre
+            <a [routerLink]="['/boutique', getBoutiqueId(promotions()[0])]" class="btn btn-primary">
+              Decouvrir l'offre
             </a>
             @if (isPromoActive(promotions()[0])) {
               <span class="days-remaining">
@@ -67,71 +95,64 @@
       </div>
 
       <!-- All Promotions Grid -->
-      <div class="section-title">
-        <h2>Toutes les offres</h2>
-      </div>
+      @if (promotions().length > 1) {
+        <div class="section-title">
+          <h2>Toutes les offres</h2>
+        </div>
 
-      <div class="promotions-grid">
-        @for (promo of promotions().slice(1); track promo.id) {
-          <article class="promo-card" [class.expired]="!isPromoActive(promo)">
-            <div class="promo-image">
-              <img [src]="promo.image" [alt]="promo.titre" loading="lazy">
-              <span class="promo-badge">{{ getReductionText(promo) }}</span>
-              @if (!isPromoActive(promo)) {
-                <div class="expired-overlay">
-                  <span>Offre expirée</span>
-                </div>
-              }
-            </div>
-            <div class="promo-content">
-              <div class="promo-header">
-                <div class="promo-boutique">
-                  <img [src]="promo.boutiqueLogo" [alt]="promo.boutiqueNom" class="boutique-logo-sm">
-                  <span>{{ promo.boutiqueNom }}</span>
-                </div>
-                @if (isPromoActive(promo)) {
-                  <span class="status-badge active">En cours</span>
+        <div class="promotions-grid">
+          @for (promo of promotions().slice(1); track promo._id) {
+            <article class="promo-card" [class.expired]="!isPromoActive(promo)">
+              <div class="promo-image">
+                @if (getImageUrl(promo)) {
+                  <img [src]="getImageUrl(promo)" [alt]="promo.titre" loading="lazy">
+                }
+                <span class="promo-badge">{{ getReductionText(promo) }}</span>
+                @if (!isPromoActive(promo)) {
+                  <div class="expired-overlay">
+                    <span>Offre expiree</span>
+                  </div>
                 }
               </div>
-              <h3>{{ promo.titre }}</h3>
-              <p>{{ promo.description }}</p>
-              <div class="promo-dates">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>Jusqu'au {{ formatDate(promo.dateFin) }}</span>
-              </div>
-              @if (promo.code) {
-                <div class="promo-code-small">
-                  Code : <strong>{{ promo.code }}</strong>
+              <div class="promo-content">
+                <div class="promo-header">
+                  <div class="promo-boutique">
+                    @if (getBoutiqueLogo(promo)) {
+                      <img [src]="getBoutiqueLogo(promo)" [alt]="getBoutiqueName(promo)" class="boutique-logo-sm">
+                    }
+                    <span>{{ getBoutiqueName(promo) }}</span>
+                  </div>
+                  @if (isPromoActive(promo)) {
+                    <span class="status-badge active">En cours</span>
+                  }
                 </div>
-              }
-              <a [routerLink]="['/boutique', promo.boutiqueId]" class="btn-link">
-                Voir l'offre
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </a>
-            </div>
-          </article>
-        }
-      </div>
+                <h3>{{ promo.titre }}</h3>
+                <p>{{ promo.description }}</p>
+                <div class="promo-dates">
+                  <span class="material-icons" style="font-size: 14px">event</span>
+                  <span>Jusqu'au {{ formatDate(promo.date_fin) }}</span>
+                </div>
+                <a [routerLink]="['/boutique', getBoutiqueId(promo)]" class="btn-link">
+                  Voir l'offre
+                  <span class="material-icons" style="font-size: 16px">arrow_forward</span>
+                </a>
+              </div>
+            </article>
+          }
+        </div>
+      }
     } @else {
       <div class="no-promos">
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 12 20 22 4 22 4 12"></polyline>
-          <rect x="2" y="7" width="20" height="5"></rect>
-          <line x1="12" y1="22" x2="12" y2="7"></line>
-          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
-          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
-        </svg>
-        <h3>Aucune promotion disponible</h3>
-        <p>Revenez bientôt pour découvrir nos nouvelles offres exclusives !</p>
-        <a routerLink="/boutiques" class="btn btn-primary">Explorer les boutiques</a>
+        <span class="material-icons" style="font-size: 64px; color: #ccc">card_giftcard</span>
+        @if (hasFilters()) {
+          <h3>Aucun résultat</h3>
+          <p>Aucune promotion ne correspond à vos critères.</p>
+          <button class="btn btn-outline" (click)="clearFilters()">Effacer les filtres</button>
+        } @else {
+          <h3>Aucune promotion disponible</h3>
+          <p>Revenez bientot pour decouvrir nos nouvelles offres exclusives !</p>
+          <a routerLink="/boutiques" class="btn btn-primary">Explorer les boutiques</a>
+        }
       </div>
     }
   </div>
@@ -142,7 +163,7 @@
   <div class="container">
     <div class="cta-content">
       <h2>Ne manquez aucune offre</h2>
-      <p>Inscrivez-vous pour recevoir nos promotions exclusives en avant-première</p>
+      <p>Inscrivez-vous pour recevoir nos promotions exclusives en avant-premiere</p>
       <form class="newsletter-form">
         <input type="email" placeholder="Votre adresse email" class="newsletter-input">
         <button type="submit" class="btn btn-primary">S'inscrire</button>

@@ -93,10 +93,10 @@
       <p>Trouvez votre bonheur parmi nos différentes catégories de boutiques</p>
     </div>
     <div class="categories-grid">
-      @for (cat of categories(); track cat.id) {
-        <a [routerLink]="['/boutiques']" [queryParams]="{categorie: cat.id}" class="category-card">
+      @for (cat of categories(); track cat._id) {
+        <a [routerLink]="['/boutiques']" [queryParams]="{categorie: cat._id}" class="category-card">
           <div class="category-icon">
-            <span class="material-icon">{{ cat.icone }}</span>
+            <span class="material-icon">{{ cat.icone || 'store' }}</span>
           </div>
           <h4>{{ cat.nom }}</h4>
           <p>{{ cat.description }}</p>
@@ -117,33 +117,21 @@
       <a routerLink="/boutiques" class="btn btn-secondary">Voir toutes les boutiques</a>
     </div>
     <div class="boutiques-grid">
-      @for (boutique of boutiquesVedettes(); track boutique.id) {
+      @for (boutique of boutiquesVedettes(); track boutique._id) {
         <article class="boutique-card">
           <div class="boutique-image">
-            <img [src]="boutique.image" [alt]="boutique.nom" loading="lazy">
-            @if (boutique.nouveau) {
-              <span class="badge badge-gold">Nouveau</span>
-            }
-            <div class="boutique-rating">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-              <span>{{ boutique.note }}</span>
-            </div>
+            <img [src]="getLogoUrl(boutique)" [alt]="boutique.nom" loading="lazy">
           </div>
           <div class="boutique-content">
             <div class="boutique-meta">
-              <span class="boutique-type">{{ boutique.type === 'restaurant' ? 'Restaurant' : 'Boutique' }}</span>
-              <span class="boutique-floor">Étage {{ boutique.etage }}</span>
+              <span class="boutique-type">{{ boutique.type_boutique === 'restaurant' ? 'Restaurant' : 'Boutique' }}</span>
+              @if (boutique.id_categorie?.nom) {
+                <span class="boutique-floor">{{ boutique.id_categorie.nom }}</span>
+              }
             </div>
             <h3>{{ boutique.nom }}</h3>
             <p>{{ boutique.description }}</p>
-            <div class="boutique-tags">
-              @for (tag of boutique.tags.slice(0, 3); track tag) {
-                <span class="tag">{{ tag }}</span>
-              }
-            </div>
-            <a [routerLink]="['/boutique', boutique.id]" class="btn btn-dark">Explorer</a>
+            <a [routerLink]="['/boutique', boutique._id]" class="btn btn-dark">Explorer</a>
           </div>
         </article>
       }
@@ -163,24 +151,23 @@
         <a routerLink="/promotions" class="btn btn-white">Toutes les promotions</a>
       </div>
       <div class="promotions-grid">
-        @for (promo of promotions(); track promo.id) {
+        @for (promo of promotions(); track promo._id) {
           <article class="promo-card">
             <div class="promo-image">
-              <img [src]="promo.image" [alt]="promo.titre" loading="lazy">
+              @if (getImageUrl(promo)) {
+                <img [src]="getImageUrl(promo)" [alt]="promo.titre" loading="lazy">
+              }
               <span class="promo-badge">{{ getReductionText(promo) }}</span>
             </div>
             <div class="promo-content">
               <div class="promo-boutique">
-                <img [src]="promo.boutiqueLogo" [alt]="promo.boutiqueNom" class="promo-logo">
-                <span>{{ promo.boutiqueNom }}</span>
+                @if (getBoutiqueLogo(promo)) {
+                  <img [src]="getBoutiqueLogo(promo)" [alt]="getBoutiqueName(promo)" class="promo-logo">
+                }
+                <span>{{ getBoutiqueName(promo) }}</span>
               </div>
               <h4>{{ promo.titre }}</h4>
               <p>{{ promo.description }}</p>
-              @if (promo.code) {
-                <div class="promo-code">
-                  Code : <strong>{{ promo.code }}</strong>
-                </div>
-              }
             </div>
           </article>
         }
@@ -198,10 +185,10 @@
         <p>Découvrez les dernières enseignes à avoir rejoint Tana Center</p>
       </div>
       <div class="nouveautes-grid">
-        @for (boutique of nouveautes(); track boutique.id) {
-          <a [routerLink]="['/boutique', boutique.id]" class="nouveaute-card">
+        @for (boutique of nouveautes(); track boutique._id) {
+          <a [routerLink]="['/boutique', boutique._id]" class="nouveaute-card">
             <div class="nouveaute-image">
-              <img [src]="boutique.image" [alt]="boutique.nom" loading="lazy">
+              <img [src]="getLogoUrl(boutique)" [alt]="boutique.nom" loading="lazy">
             </div>
             <div class="nouveaute-content">
               <span class="nouveaute-badge">Nouveau</span>

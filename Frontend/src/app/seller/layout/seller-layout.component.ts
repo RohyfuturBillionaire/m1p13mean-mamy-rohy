@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { SellerService } from '../../core/services/seller.service';
 import { SellerNotification, SellerBoutique } from '../../core/models/seller.model';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-seller-layout',
@@ -24,10 +25,10 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   menuItems = [
     { label: 'Dashboard', icon: 'dashboard', route: '/seller/dashboard' },
     { label: 'Produits', icon: 'inventory_2', route: '/seller/produits' },
+    { label: 'Catégories', icon: 'category', route: '/seller/categories' },
     { label: 'Stocks', icon: 'warehouse', route: '/seller/stocks' },
     { label: 'Commandes', icon: 'shopping_cart', route: '/seller/commandes' },
-    { label: 'Livraisons', icon: 'local_shipping', route: '/seller/livraisons' },
-    { label: 'Promotions', icon: 'local_offer', route: '/seller/promotions' },
+{ label: 'Promotions', icon: 'local_offer', route: '/seller/promotions' },
     { label: 'Ma Boutique', icon: 'storefront', route: '/seller/profil' },
     { label: 'FAQ', icon: 'help_outline', route: '/seller/faq' },
     { label: 'Messages', icon: 'chat', route: '/seller/messages' }
@@ -47,14 +48,15 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
 
   constructor(
     private sellerService: SellerService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit() {
-    if (!this.sellerService.isLoggedIn()) {
-      this.router.navigate(['/connexion']);
-      return;
-    }
+    // if (!this.sellerService.isLoggedIn()) {
+    //   this.router.navigate(['/connexion']);
+    //   return;
+    // }
     this.loadData();
     this.checkScreenSize();
   }
@@ -135,8 +137,9 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    this.sellerService.logout();
-    this.router.navigate(['/connexion']);
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/connexion']);
+    });
   }
 
   getNotificationIcon(type: string): string {

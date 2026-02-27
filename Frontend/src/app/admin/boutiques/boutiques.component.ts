@@ -1,10 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService } from '../../core/services/admin.service';
-import { DataService } from '../../core/services/data.service';
-import { Contrat, User } from '../../core/models/admin.model';
-import { Boutique } from '../../core/models/boutique.model';
+import { Router } from '@angular/router';
+import { ContractService, Contract, ContractType } from '../../core/services/contract.service';
 
 @Component({
   selector: 'app-boutiques-admin',
@@ -14,30 +12,28 @@ import { Boutique } from '../../core/models/boutique.model';
   styleUrl: './boutiques.component.scss'
 })
 export class BoutiquesAdminComponent implements OnInit {
-  contrats = signal<Contrat[]>([]);
-  boutiques = signal<Boutique[]>([]);
-  users = signal<User[]>([]);
+  contrats = signal<Contract[]>([]);
+  contractTypes = signal<ContractType[]>([]);
 
   showContratModal = signal(false);
-  showPdfPreview = signal(false);
+  editingContrat = signal<Contract | null>(null);
 
-  newContrat: Partial<Contrat> = {
-    nomClient: '',
-    nomEntreprise: '',
-    dateDebut: new Date(),
-    dateFin: new Date(),
-    loyerMensuel: 0,
-    surface: 0,
+  newContrat: any = {
+    contract_type: '',
+    nom_client: '',
+    nom_entreprise: '',
+    date_debut: '',
+    date_fin: '',
+    loyer: 3000000,
+    surface: 50,
     etage: 1,
     numero: '',
     statut: 'actif'
   };
 
-  selectedContrat = signal<Contrat | null>(null);
-
   constructor(
-    private adminService: AdminService,
-    private dataService: DataService
+    public contractService: ContractService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -45,170 +41,93 @@ export class BoutiquesAdminComponent implements OnInit {
   }
 
   private loadData() {
-    this.adminService.getContrats().subscribe(c => this.contrats.set(c));
-    this.dataService.getBoutiques().subscribe(b => this.boutiques.set(b));
-    this.adminService.getUsers().subscribe(u => this.users.set(u.filter(user => user.role === 'boutique')));
+    this.contractService.getContracts().subscribe(c => this.contrats.set(c));
+    this.contractService.getContractTypes().subscribe(t => this.contractTypes.set(t));
   }
 
-  openContratModal() {
-    this.newContrat = {
-      nomClient: '',
-      nomEntreprise: '',
-      dateDebut: new Date(),
-      dateFin: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-      loyerMensuel: 3000000,
-      surface: 50,
-      etage: 1,
-      numero: '',
-      statut: 'actif'
-    };
+  openContratModal(contrat?: Contract) {
+    if (contrat) {
+      this.editingContrat.set(contrat);
+      this.newContrat = {
+        contract_type: contrat.contract_type?._id || '',
+        nom_client: contrat.nom_client,
+        nom_entreprise: contrat.nom_entreprise,
+        date_debut: contrat.date_debut ? new Date(contrat.date_debut).toISOString().split('T')[0] : '',
+        date_fin: contrat.date_fin ? new Date(contrat.date_fin).toISOString().split('T')[0] : '',
+        loyer: contrat.loyer,
+        surface: contrat.surface,
+        etage: contrat.etage,
+        numero: contrat.numero,
+        statut: contrat.statut
+      };
+    } else {
+      this.editingContrat.set(null);
+      const now = new Date();
+      const oneYearLater = new Date(now);
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+      this.newContrat = {
+        contract_type: '',
+        nom_client: '',
+        nom_entreprise: '',
+        date_debut: now.toISOString().split('T')[0],
+        date_fin: oneYearLater.toISOString().split('T')[0],
+        loyer: 3000000,
+        surface: 50,
+        etage: 1,
+        numero: '',
+        statut: 'actif'
+      };
+    }
     this.showContratModal.set(true);
   }
 
   closeContratModal() {
     this.showContratModal.set(false);
+    this.editingContrat.set(null);
   }
 
   saveContrat() {
-    this.adminService.addContrat({
-      ...this.newContrat,
-      boutiqueId: 'boutique-' + Date.now(),
-      clientId: 'client-' + Date.now()
-    } as Omit<Contrat, 'id'>).subscribe(() => {
-      this.loadData();
-      this.closeContratModal();
-    });
-  }
-
-  viewContratPdf(contrat: Contrat) {
-    this.selectedContrat.set(contrat);
-    this.showPdfPreview.set(true);
-  }
-
-  closePdfPreview() {
-    this.showPdfPreview.set(false);
-    this.selectedContrat.set(null);
-  }
-
-  downloadPdf() {
-    // Simulation de téléchargement PDF
-    const contrat = this.selectedContrat();
-    if (contrat) {
-      const content = this.generateContratText(contrat);
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Contrat_${contrat.nomEntreprise.replace(/\s/g, '_')}.txt`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+    const editing = this.editingContrat();
+    if (editing) {
+      this.contractService.updateContract(editing._id, this.newContrat).subscribe(() => {
+        this.loadData();
+        this.closeContratModal();
+      });
+    } else {
+      this.contractService.createContract(this.newContrat).subscribe(contract => {
+        this.loadData();
+        this.closeContratModal();
+        this.router.navigate(['/admin/gestion-boutiques'], {
+          queryParams: { contratId: contract._id, loyer: contract.loyer, fromContract: 'true' }
+        });
+      });
     }
   }
 
-  generateContratText(contrat: Contrat): string {
-    return `
-═══════════════════════════════════════════════════════════════
-                    CONTRAT DE LOCATION
-                      TANA CENTER
-═══════════════════════════════════════════════════════════════
+  deleteContrat(contrat: Contract) {
+    if (confirm(`Supprimer le contrat de ${contrat.nom_entreprise} ?`)) {
+      this.contractService.deleteContract(contrat._id).subscribe(() => this.loadData());
+    }
+  }
 
-ENTRE LES SOUSSIGNÉS :
-
-TANA CENTER SARL, société à responsabilité limitée au capital
-de 500.000.000 Ariary, dont le siège social est situé Avenue
-de l'Indépendance, Antananarivo 101, Madagascar, représentée
-par son Directeur Général,
-
-Ci-après dénommée "LE BAILLEUR"
-
-D'UNE PART,
-
-ET :
-
-${contrat.nomEntreprise}
-Représentée par : ${contrat.nomClient}
-
-Ci-après dénommée "LE LOCATAIRE"
-
-D'AUTRE PART,
-
-═══════════════════════════════════════════════════════════════
-                    ARTICLE 1 - OBJET
-═══════════════════════════════════════════════════════════════
-
-Le Bailleur donne en location au Locataire, qui accepte, un
-local commercial situé dans le centre commercial TANA CENTER.
-
-DÉSIGNATION DU LOCAL :
-- Numéro : ${contrat.numero}
-- Étage : ${contrat.etage}${contrat.etage === 1 ? 'er' : 'ème'} étage
-- Surface : ${contrat.surface} m²
-
-═══════════════════════════════════════════════════════════════
-                    ARTICLE 2 - DURÉE
-═══════════════════════════════════════════════════════════════
-
-Le présent contrat est conclu pour une durée de :
-- Date de début : ${this.formatDateFull(contrat.dateDebut)}
-- Date de fin : ${this.formatDateFull(contrat.dateFin)}
-
-═══════════════════════════════════════════════════════════════
-                    ARTICLE 3 - LOYER
-═══════════════════════════════════════════════════════════════
-
-Le loyer mensuel est fixé à : ${this.formatMontant(contrat.loyerMensuel)} Ariary
-(${this.numberToWords(contrat.loyerMensuel)} Ariary)
-
-Ce loyer est payable d'avance, le premier jour de chaque mois.
-
-═══════════════════════════════════════════════════════════════
-                    ARTICLE 4 - CHARGES
-═══════════════════════════════════════════════════════════════
-
-En sus du loyer, le Locataire s'acquittera des charges suivantes :
-- Charges communes : 5% du loyer
-- Électricité : selon consommation
-- Eau : forfait inclus
-
-═══════════════════════════════════════════════════════════════
-                    SIGNATURES
-═══════════════════════════════════════════════════════════════
-
-Fait en deux exemplaires originaux,
-À Antananarivo, le ${this.formatDateFull(new Date())}
-
-
-LE BAILLEUR                          LE LOCATAIRE
-
-
-
-_____________________               _____________________
-TANA CENTER SARL                    ${contrat.nomEntreprise}
-`;
+  viewContratPdf(contrat: Contract) {
+    this.contractService.downloadPdf(contrat._id);
   }
 
   formatMontant(montant: number): string {
-    return montant.toLocaleString('fr-FR');
+    return montant?.toLocaleString('fr-FR') || '0';
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: string): string {
     return new Date(date).toLocaleDateString('fr-FR');
   }
 
-  formatDateFull(date: Date): string {
+  formatDateFull(date: string): string {
     return new Date(date).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
     });
-  }
-
-  numberToWords(num: number): string {
-    // Simplified version
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(0)} million(s)`;
-    }
-    return num.toString();
   }
 
   getStatutClass(statut: string): string {
@@ -218,17 +137,21 @@ TANA CENTER SARL                    ${contrat.nomEntreprise}
   getStatutLabel(statut: string): string {
     const labels: Record<string, string> = {
       'actif': 'Actif',
-      'expire': 'Expiré',
-      'resilie': 'Résilié'
+      'expire': 'Expire',
+      'resilie': 'Resilie'
     };
     return labels[statut] || statut;
   }
 
-  getDaysRemaining(dateFin: Date): number {
+  getDaysRemaining(dateFin: string): number {
     const now = new Date();
     const end = new Date(dateFin);
     const diff = end.getTime() - now.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+
+  getContractTypeName(contrat: Contract): string {
+    return contrat.contract_type?.contract_type_name || 'Non specifie';
   }
 
   getStats() {
@@ -236,8 +159,8 @@ TANA CENTER SARL                    ${contrat.nomEntreprise}
     return {
       total: contrats.length,
       actifs: contrats.filter(c => c.statut === 'actif').length,
-      expirant: contrats.filter(c => this.getDaysRemaining(c.dateFin) <= 90 && this.getDaysRemaining(c.dateFin) > 0).length,
-      totalLoyers: contrats.filter(c => c.statut === 'actif').reduce((sum, c) => sum + c.loyerMensuel, 0)
+      expirant: contrats.filter(c => this.getDaysRemaining(c.date_fin) <= 90 && this.getDaysRemaining(c.date_fin) > 0).length,
+      totalLoyers: contrats.filter(c => c.statut === 'actif').reduce((sum, c) => sum + c.loyer, 0)
     };
   }
 }

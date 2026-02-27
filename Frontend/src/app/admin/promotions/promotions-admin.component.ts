@@ -1,8 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService } from '../../core/services/admin.service';
-import { DemandePromotion } from '../../core/models/admin.model';
+import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
 
 @Component({
   selector: 'app-promotions-admin',
@@ -12,75 +11,90 @@ import { DemandePromotion } from '../../core/models/admin.model';
   styleUrl: './promotions-admin.component.scss'
 })
 export class PromotionsAdminComponent implements OnInit {
-  demandes = signal<DemandePromotion[]>([]);
+  promotions = signal<PromotionApi[]>([]);
   filterStatus = signal('all');
-  selectedDemande = signal<DemandePromotion | null>(null);
+  selectedPromo = signal<PromotionApi | null>(null);
   showDetailModal = signal(false);
 
-  constructor(private adminService: AdminService) {}
+  constructor(private promotionService: PromotionService) {}
 
   ngOnInit() {
-    this.loadDemandes();
+    this.loadPromotions();
   }
 
-  private loadDemandes() {
-    this.adminService.getDemandesPromotion().subscribe(d => {
-      this.demandes.set(d);
-    });
+  private loadPromotions() {
+    this.promotionService.getAll().subscribe(p => this.promotions.set(p));
   }
 
-  getFilteredDemandes() {
-    if (this.filterStatus() === 'all') return this.demandes();
-    return this.demandes().filter(d => d.statut === this.filterStatus());
+  getFilteredPromotions(): PromotionApi[] {
+    if (this.filterStatus() === 'all') return this.promotions();
+    return this.promotions().filter(p => p.status === this.filterStatus());
   }
 
-  openDetail(demande: DemandePromotion) {
-    this.selectedDemande.set(demande);
+  openDetail(promo: PromotionApi) {
+    this.selectedPromo.set(promo);
     this.showDetailModal.set(true);
   }
 
   closeDetail() {
     this.showDetailModal.set(false);
-    this.selectedDemande.set(null);
+    this.selectedPromo.set(null);
   }
 
-  approvePromotion(demande: DemandePromotion) {
-    this.adminService.updateDemandePromotion(demande.id, 'validee').subscribe(() => {
-      this.loadDemandes();
+  approvePromotion(promo: PromotionApi) {
+    this.promotionService.approve(promo._id).subscribe(() => {
+      this.loadPromotions();
       this.closeDetail();
     });
   }
 
-  rejectPromotion(demande: DemandePromotion) {
-    this.adminService.updateDemandePromotion(demande.id, 'refusee').subscribe(() => {
-      this.loadDemandes();
+  rejectPromotion(promo: PromotionApi) {
+    this.promotionService.reject(promo._id).subscribe(() => {
+      this.loadPromotions();
       this.closeDetail();
     });
   }
 
-  getStatusClass(statut: string): string {
-    return `status-${statut}`;
+  getStatusClass(status: string): string {
+    return `status-${status}`;
   }
 
-  getStatusLabel(statut: string): string {
+  getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'en_attente': 'En attente',
-      'validee': 'Validée',
-      'refusee': 'Refusée'
+      'PENDING': 'En attente',
+      'APPROVED': 'Validee',
+      'REJECTED': 'Refusee'
     };
-    return labels[statut] || statut;
+    return labels[status] || status;
   }
 
-  getStatusIcon(statut: string): string {
+  getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
-      'en_attente': '⏳',
-      'validee': '✅',
-      'refusee': '❌'
+      'PENDING': 'hourglass_empty',
+      'APPROVED': 'check_circle',
+      'REJECTED': 'cancel'
     };
-    return icons[statut] || '📋';
+    return icons[status] || '';
   }
 
-  formatDate(date: Date): string {
+  getBoutiqueName(promo: PromotionApi): string {
+    if (typeof promo.id_boutique === 'object') return promo.id_boutique.nom;
+    return '';
+  }
+
+  getArticleName(promo: PromotionApi): string {
+    if (typeof promo.id_article === 'object') return promo.id_article.nom || promo.id_article.title || '';
+    return '';
+  }
+
+  getImageUrl(promo: PromotionApi): string {
+    if (!promo.image) return '';
+    if (promo.image.startsWith('http')) return promo.image;
+    return 'http://localhost:5000' + promo.image;
+  }
+
+  formatDate(date: string): string {
+    if (!date) return '';
     return new Date(date).toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: 'short',
@@ -88,17 +102,13 @@ export class PromotionsAdminComponent implements OnInit {
     });
   }
 
-  formatMontant(montant: number): string {
-    return montant.toLocaleString('fr-FR');
-  }
-
   getStats() {
-    const demandes = this.demandes();
+    const list = this.promotions();
     return {
-      total: demandes.length,
-      enAttente: demandes.filter(d => d.statut === 'en_attente').length,
-      validees: demandes.filter(d => d.statut === 'validee').length,
-      refusees: demandes.filter(d => d.statut === 'refusee').length
+      total: list.length,
+      enAttente: list.filter(p => p.status === 'PENDING').length,
+      validees: list.filter(p => p.status === 'APPROVED').length,
+      refusees: list.filter(p => p.status === 'REJECTED').length
     };
   }
 }

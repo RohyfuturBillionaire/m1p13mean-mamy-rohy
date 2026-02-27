@@ -1,8 +1,24 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SellerService } from '../../core/services/seller.service';
-import { SellerFAQ } from '../../core/models/seller.model';
+import { FaqService } from './services/faq.service';
+import { FaqCategoriesService } from './services/faq-categories.service';
+
+export interface FaqDB {
+  _id: string;
+  question: string;
+  reponse: string;
+  id_boutique: string | { _id: string; nom_boutique: string };
+  id_categorie: string | { _id: string; nom_categorie: string };
+  ordre: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FaqCategoryDB {
+  _id: string;
+  nom_categorie: string;
+}
 
 @Component({
   selector: 'app-faq',
@@ -12,69 +28,177 @@ import { SellerFAQ } from '../../core/models/seller.model';
   styleUrl: './faq.component.scss'
 })
 export class FaqComponent implements OnInit {
-  faqs = signal<SellerFAQ[]>([]);
-  showModal = signal(false);
-  editingFaq = signal<SellerFAQ | null>(null);
-  isSubmitting = signal(false);
+  faqs = signal<FaqDB[]>([]);
+  faqCategories = signal<FaqCategoryDB[]>([]);
   expandedId = signal<string | null>(null);
+  
+  showModal = signal(false);
+  editingFaq = signal<FaqDB | null>(null);
+  isSubmitting = signal(false);
+  isLoading = signal(true);
+  
+  formData = signal<Partial<FaqDB>>({
+    question: '',
+    reponse: '',
+    id_categorie: '',
+    ordre: 1
+  });
 
-  formData = signal({ question: '', reponse: '', categorie: '', ordre: 0 });
+  private boutiqueId: string = '';
 
-  constructor(private sellerService: SellerService) {}
+  constructor(
+    private faqService: FaqService,
+    private faqCategoriesService: FaqCategoriesService
+  ) {}
 
-  ngOnInit() { this.loadFaqs(); }
+  ngOnInit() {
+    this.loadBoutiqueId();
+    this.loadFaqs();
+    this.loadCategories();
+  }
+
+  private loadBoutiqueId() {
+    const boutiqueStr = localStorage.getItem('boutiqueInfo');
+    if (boutiqueStr) {
+      console.log('Boutique info found in localStorage:', boutiqueStr);
+      const boutique = JSON.parse(boutiqueStr);
+      // Récupérer l'ID de la boutique associée à l'utilisateur
+      this.boutiqueId = boutique._id || '';
+    }
+  }
 
   loadFaqs() {
-    this.sellerService.getFAQs().subscribe(f => this.faqs.set(f));
+    console.log('Loading FAQs for boutique ID:', this.boutiqueId);
+    this.isLoading.set(true);
+    this.faqService.getFaqsByBoutiqueId(this.boutiqueId).subscribe({
+      next: (data) => {
+        console.log('FAQs loaded:', data);
+        this.faqs.set(data);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading FAQs:', err);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  loadCategories() {
+    this.faqCategoriesService.getFaqCategories().subscribe({
+      next: (data) => {
+        console.log('FAQ Categories loaded:', data);
+        this.faqCategories.set(data);
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+      }
+    });
   }
 
   toggleExpand(id: string) {
     this.expandedId.set(this.expandedId() === id ? null : id);
   }
 
-  openModal(faq?: SellerFAQ) {
+  getCategoryName(faq: FaqDB): string {
+    if (!faq.id_categorie) return '';
+    if (typeof faq.id_categorie === 'string') {
+      const category = this.faqCategories().find(c => c._id === faq.id_categorie);
+      return category?.nom_categorie || '';
+    }
+    return faq.id_categorie.nom_categorie || '';
+  }
+
+  openModal(faq?: FaqDB) {
     if (faq) {
       this.editingFaq.set(faq);
-      this.formData.set({ question: faq.question, reponse: faq.reponse, categorie: faq.categorie, ordre: faq.ordre });
+      this.formData.set({
+        question: faq.question,
+        reponse: faq.reponse,
+        id_categorie: typeof faq.id_categorie === 'string' ? faq.id_categorie : faq.id_categorie?._id,
+        ordre: faq.ordre
+      });
     } else {
       this.editingFaq.set(null);
-      this.formData.set({ question: '', reponse: '', categorie: '', ordre: this.faqs().length + 1 });
+      this.formData.set({
+        question: '',
+        reponse: '',
+        id_categorie: '',
+        ordre: this.faqs().length + 1
+      });
     }
     this.showModal.set(true);
   }
 
-  closeModal() { this.showModal.set(false); this.editingFaq.set(null); }
+  closeModal() {
+    this.showModal.set(false);
+    this.editingFaq.set(null);
+    this.formData.set({
+      question: '',
+      reponse: '',
+      id_categorie: '',
+      ordre: 1
+    });
+  }
 
   updateField(field: string, value: any) {
-    this.formData.update(d => ({ ...d, [field]: value }));
+    this.formData.update(data => ({ ...data, [field]: value }));
   }
 
   submitForm() {
-    const data = this.formData();
-    if (!data.question || !data.reponse) return;
+    if (!this.formData().question || !this.formData().reponse) {
+      return;
+    }
+
     this.isSubmitting.set(true);
+    const faqData = {
+      ...this.formData(),
+      id_boutique: this.boutiqueId
+    };
 
-    const faqData = { ...data, boutiqueId: 'b1', actif: true };
-    const editing = this.editingFaq();
+    console.log('Submitting FAQ data:', this.formData());
 
-    if (editing) {
-      this.sellerService.updateFAQ(editing.id, faqData).subscribe(() => {
-        this.isSubmitting.set(false); this.closeModal(); this.loadFaqs();
+    if (this.editingFaq()) {
+      // Update
+      this.faqService.updateFaq(this.editingFaq()!._id, faqData).subscribe({
+        next: () => {
+          console.log('FAQ updated');
+          this.loadFaqs();
+          this.closeModal();
+          this.isSubmitting.set(false);
+        },
+        error: (err) => {
+          console.error('Error updating FAQ:', err);
+          this.isSubmitting.set(false);
+        }
       });
     } else {
-      this.sellerService.addFAQ(faqData).subscribe(() => {
-        this.isSubmitting.set(false); this.closeModal(); this.loadFaqs();
+      // Create
+      this.faqService.addFaq(faqData).subscribe({
+        next: () => {
+          console.log('FAQ created');
+          this.loadFaqs();
+          this.closeModal();
+          this.isSubmitting.set(false);
+        },
+        error: (err) => {
+          console.error('Error creating FAQ:', err);
+          this.isSubmitting.set(false);
+        }
       });
     }
   }
 
-  deleteFaq(faq: SellerFAQ) {
-    if (confirm('Supprimer cette FAQ ?')) {
-      this.sellerService.deleteFAQ(faq.id).subscribe(() => this.loadFaqs());
+  deleteFaq(faq: FaqDB) {
+    if (confirm(`Supprimer la FAQ "${faq.question}" ?`)) {
+      this.faqService.deleteFaq(faq._id).subscribe({
+        next: () => {
+          console.log('FAQ deleted');
+          this.loadFaqs();
+        },
+        error: (err) => {
+          console.error('Error deleting FAQ:', err);
+        }
+      });
     }
-  }
-
-  toggleActive(faq: SellerFAQ) {
-    this.sellerService.updateFAQ(faq.id, { actif: !faq.actif }).subscribe(() => this.loadFaqs());
   }
 }

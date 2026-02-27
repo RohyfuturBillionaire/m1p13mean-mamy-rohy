@@ -4,16 +4,6 @@
       <h1>Tableau de Bord</h1>
       <p>Bienvenue dans l'administration de Tana Center</p>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-outline">
-        <span>📅</span>
-        Février 2024
-      </button>
-      <button class="btn btn-primary">
-        <span>📊</span>
-        Exporter
-      </button>
-    </div>
   </div>
 
   <!-- KPI Cards -->
@@ -21,16 +11,16 @@
     @for (kpi of kpis(); track kpi.label) {
       <div class="kpi-card" [style.--accent-color]="kpi.color">
         <div class="kpi-icon">
-          {{ getKPIIcon(kpi.icon) }}
+          <span class="material-icons">{{ getKPIIcon(kpi.icon) }}</span>
         </div>
         <div class="kpi-content">
           <span class="kpi-label">{{ kpi.label }}</span>
           <span class="kpi-value">{{ kpi.value }}</span>
-          @if (kpi.change) {
+          <!-- @if (kpi.change) {
             <span class="kpi-change" [class.positive]="kpi.change > 0" [class.negative]="kpi.change < 0">
               {{ kpi.change > 0 ? '↑' : '↓' }} {{ kpi.change }}%
             </span>
-          }
+          } -->
         </div>
       </div>
     }
@@ -42,7 +32,6 @@
     <div class="chart-card large">
       <div class="card-header">
         <h3>Revenus Mensuels</h3>
-        <span class="period">2024</span>
       </div>
       <div class="chart-container">
         <div class="bar-chart">
@@ -135,16 +124,16 @@
         <span class="badge">{{ recentNotifications().length }}</span>
       </div>
       <div class="notifications-list">
-        @for (notif of recentNotifications(); track notif.id) {
+        <!-- @for (notif of recentNotifications(); track notif.id) {
           <div class="notif-item" [class]="getNotificationClass(notif.type)">
-            <span class="notif-icon">{{ getNotificationIcon(notif.type) }}</span>
+            <span class="notif-icon"><span class="material-icons">{{ getNotificationIcon(notif.type) }}</span></span>
             <div class="notif-content">
               <span class="notif-title">{{ notif.titre }}</span>
               <span class="notif-message">{{ notif.message }}</span>
             </div>
             <span class="notif-time">{{ formatDate(notif.date) }}</span>
           </div>
-        }
+        } -->
       </div>
     </div>
 
@@ -158,8 +147,8 @@
       <!-- Retards de paiement -->
       @if (overduePayments().length > 0) {
         <div class="alert-section">
-          <h4>⚠️ Retards de Paiement</h4>
-          @for (payment of overduePayments(); track payment.id) {
+          <h4><span class="material-icons" style="vertical-align: middle; font-size: 1.1rem; margin-right: 4px;">warning</span> Retards de Paiement</h4>
+          <!-- @for (payment of overduePayments(); track payment.id) {
             <div class="alert-item danger">
               <div class="alert-content">
                 <span class="alert-title">{{ payment.boutiqueNom }}</span>
@@ -167,15 +156,15 @@
               </div>
               <a routerLink="/admin/loyers" class="alert-action">Voir</a>
             </div>
-          }
+          } -->
         </div>
       }
 
       <!-- Demandes en attente -->
       @if (pendingPromotions().length > 0) {
         <div class="alert-section">
-          <h4>📋 Demandes en Attente</h4>
-          @for (promo of pendingPromotions(); track promo.id) {
+          <h4><span class="material-icons" style="vertical-align: middle; font-size: 1.1rem; margin-right: 4px;">assignment</span> Demandes en Attente</h4>
+          <!-- @for (promo of pendingPromotions(); track promo.id) {
             <div class="alert-item warning">
               <div class="alert-content">
                 <span class="alert-title">{{ promo.boutiqueNom }}</span>
@@ -183,13 +172,13 @@
               </div>
               <a routerLink="/admin/promotions" class="alert-action">Traiter</a>
             </div>
-          }
+          } -->
         </div>
       }
 
       @if (overduePayments().length === 0 && pendingPromotions().length === 0) {
         <div class="no-alerts">
-          <span>✅</span>
+          <span class="material-icons" style="font-size: 2rem; color: #10B981;">check_circle</span>
           <p>Aucune alerte en cours</p>
         </div>
       }
@@ -201,19 +190,19 @@
     <h3>Actions Rapides</h3>
     <div class="actions-grid">
       <a routerLink="/admin/clients" class="action-card">
-        <span class="action-icon">👤</span>
+        <span class="action-icon"><span class="material-icons">person_add</span></span>
         <span class="action-label">Nouveau Client</span>
       </a>
       <a routerLink="/admin/boutiques" class="action-card">
-        <span class="action-icon">📝</span>
+        <span class="action-icon"><span class="material-icons">description</span></span>
         <span class="action-label">Nouveau Contrat</span>
       </a>
       <a routerLink="/admin/loyers" class="action-card">
-        <span class="action-icon">🧾</span>
+        <span class="action-icon"><span class="material-icons">receipt_long</span></span>
         <span class="action-label">Générer Facture</span>
       </a>
       <a routerLink="/admin/messages" class="action-card">
-        <span class="action-icon">💬</span>
+        <span class="action-icon"><span class="material-icons">chat</span></span>
         <span class="action-label">Envoyer Message</span>
       </a>
     </div>

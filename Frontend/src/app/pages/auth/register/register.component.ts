@@ -1,7 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../auth/services/auth.service';
+import { RoleService } from '../../../core/role_user/services/role.service';
+import { SellerService } from '../../../core/services/seller.service';
+import { environment } from '../../../../environments/environments';
 
 @Component({
   selector: 'app-register',
@@ -10,17 +14,27 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   nom = '';
   prenom = '';
   email = '';
   password = '';
   confirmPassword = '';
   acceptTerms = false;
+  selectedRole = '';
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   isLoading = signal(false);
   error = signal('');
+  roles: any[] = [];
+
+  user = {
+    username: '',
+    email: '',
+    password: '',
+    id_role: ''
+  };
+
 
   togglePassword() {
     this.showPassword.update(v => !v);
@@ -28,6 +42,26 @@ export class RegisterComponent {
 
   toggleConfirmPassword() {
     this.showConfirmPassword.update(v => !v);
+  }
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private roleService: RoleService,
+    private sellerService: SellerService
+  ) {}
+
+
+  ngOnInit() {
+    this.roleService.getRoles().subscribe({
+      next: (roles: any[]) => {
+        this.roles = roles;
+        console.log('Available roles:', roles);
+      },
+      error: (err: any) => {
+        console.error('Error loading roles:', err);
+      }
+    });
+    console.log('env', environment.apiUrl);
   }
 
   onSubmit() {
@@ -48,16 +82,31 @@ export class RegisterComponent {
       return;
     }
 
-    if (!this.acceptTerms) {
-      this.error.set('Veuillez accepter les conditions d\'utilisation');
-      return;
-    }
-
     this.isLoading.set(true);
-
-    setTimeout(() => {
-      this.isLoading.set(false);
-      alert('Inscription simulée avec succès ! (Template mode)');
-    }, 1500);
+    this.user = {
+      username: this.prenom + ' ' + this.nom,
+      email: this.email,
+      password: this.password,
+      id_role: this.selectedRole
+    };
+    this.authService.register(this.user).subscribe({
+      next: (userConnected: any) => {
+        console.log('Registered user:', userConnected);
+        localStorage.setItem('user', JSON.stringify(userConnected));
+        this.isLoading.set(false);
+        const roleName = (userConnected.user?.role || '').toLowerCase();
+        if (roleName === 'boutique') {
+          this.router.navigate(['/seller/dashboard']);
+        } else if (!roleName) {
+          this.router.navigate(['/admin/dashboard']);
+        } else {
+          this.router.navigate(['/']);
+        }
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        this.error.set(err.error?.message || 'Erreur lors de l\'inscription');
+      }
+    });
   }
 }

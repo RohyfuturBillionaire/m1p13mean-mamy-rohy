@@ -2,11 +2,11 @@
   <!-- Header -->
   <div class="page-header">
     <div class="header-left">
-      <h1>Gestion des Boutiques</h1>
+      <h1>Gestion des Contrats</h1>
       <p>Contrats de location et suivi des locataires</p>
     </div>
     <button class="btn btn-primary" (click)="openContratModal()">
-      <span>📝</span>
+      <span class="material-icons">add</span>
       Nouveau Contrat
     </button>
   </div>
@@ -14,28 +14,28 @@
   <!-- Stats Cards -->
   <div class="stats-row">
     <div class="stat-card">
-      <span class="stat-icon">📋</span>
+      <span class="stat-icon material-icons">description</span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().total }}</span>
         <span class="stat-label">Total Contrats</span>
       </div>
     </div>
     <div class="stat-card">
-      <span class="stat-icon">✅</span>
+      <span class="stat-icon material-icons" style="color: #4CAF50">check_circle</span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().actifs }}</span>
         <span class="stat-label">Actifs</span>
       </div>
     </div>
     <div class="stat-card warning">
-      <span class="stat-icon">⏰</span>
+      <span class="stat-icon material-icons" style="color: #FF9800">schedule</span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().expirant }}</span>
-        <span class="stat-label">Expirent bientôt</span>
+        <span class="stat-label">Expirent bientot</span>
       </div>
     </div>
     <div class="stat-card highlight">
-      <span class="stat-icon">💰</span>
+      <span class="stat-icon material-icons" style="color: #C9A962">payments</span>
       <div class="stat-content">
         <span class="stat-value">{{ formatMontant(getStats().totalLoyers) }} Ar</span>
         <span class="stat-label">Loyers mensuels</span>
@@ -53,40 +53,47 @@
         <tr>
           <th>Boutique</th>
           <th>Locataire</th>
+          <th>Type</th>
           <th>Emplacement</th>
           <th>Surface</th>
           <th>Loyer</th>
-          <th>Période</th>
+          <th>Periode</th>
           <th>Statut</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        @for (contrat of contrats(); track contrat.id) {
+        @for (contrat of contrats(); track contrat._id) {
           <tr>
             <td>
               <div class="boutique-cell">
-                <span class="boutique-name">{{ contrat.nomEntreprise }}</span>
+                <span class="boutique-name">{{ contrat.nom_entreprise }}</span>
               </div>
             </td>
-            <td>{{ contrat.nomClient }}</td>
+            <td>{{ contrat.nom_client }}</td>
+            <td>
+              <span class="type-badge">{{ getContractTypeName(contrat) }}</span>
+            </td>
             <td>
               <span class="location-badge">
-                {{ contrat.etage }}{{ contrat.etage === 1 ? 'er' : 'ème' }} - {{ contrat.numero }}
+                {{ contrat.etage }}{{ contrat.etage === 1 ? 'er' : 'eme' }} - {{ contrat.numero }}
               </span>
             </td>
-            <td>{{ contrat.surface }} m²</td>
+            <td>{{ contrat.surface }} m2</td>
             <td>
-              <span class="amount">{{ formatMontant(contrat.loyerMensuel) }} Ar</span>
+              <span class="amount">{{ formatMontant(contrat.loyer) }} Ar</span>
             </td>
             <td>
               <div class="period">
-                <span>{{ formatDate(contrat.dateDebut) }}</span>
-                <span class="separator">→</span>
-                <span>{{ formatDate(contrat.dateFin) }}</span>
+                <span>{{ formatDate(contrat.date_debut) }}</span>
+                <span class="separator">&#8594;</span>
+                <span>{{ formatDate(contrat.date_fin) }}</span>
               </div>
-              @if (getDaysRemaining(contrat.dateFin) <= 90 && getDaysRemaining(contrat.dateFin) > 0) {
-                <span class="days-warning">⚠️ {{ getDaysRemaining(contrat.dateFin) }} jours restants</span>
+              @if (getDaysRemaining(contrat.date_fin) <= 90 && getDaysRemaining(contrat.date_fin) > 0) {
+                <span class="days-warning">
+                  <span class="material-icons" style="font-size: 14px">warning</span>
+                  {{ getDaysRemaining(contrat.date_fin) }} jours restants
+                </span>
               }
             </td>
             <td>
@@ -97,10 +104,16 @@
             <td>
               <div class="actions">
                 <button class="action-btn" title="Voir le contrat" (click)="viewContratPdf(contrat)">
-                  📄
+                  <span class="material-icons">visibility</span>
                 </button>
-                <button class="action-btn" title="Modifier">
-                  ✏️
+                <button class="action-btn" title="Telecharger PDF" (click)="contractService.downloadPdf(contrat._id)">
+                  <span class="material-icons">picture_as_pdf</span>
+                </button>
+                <button class="action-btn" title="Modifier" (click)="openContratModal(contrat)">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button class="action-btn delete" title="Supprimer" (click)="deleteContrat(contrat)">
+                  <span class="material-icons">delete</span>
                 </button>
               </div>
             </td>
@@ -111,80 +124,98 @@
 
     @if (contrats().length === 0) {
       <div class="empty-state">
-        <span>📋</span>
-        <p>Aucun contrat enregistré</p>
+        <span class="material-icons" style="font-size: 3rem; color: #ccc">description</span>
+        <p>Aucun contrat enregistre</p>
         <button class="btn btn-primary" (click)="openContratModal()">
-          Créer un contrat
+          Creer un contrat
         </button>
       </div>
     }
   </div>
 </div>
 
-<!-- New Contract Modal -->
+<!-- New/Edit Contract Modal -->
 @if (showContratModal()) {
   <div class="modal-overlay" (click)="closeContratModal()">
     <div class="modal modal-large" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Nouveau Contrat de Location</h2>
-        <button class="close-btn" (click)="closeContratModal()">✕</button>
+        <h2>{{ editingContrat() ? 'Modifier le Contrat' : 'Nouveau Contrat de Location' }}</h2>
+        <button class="close-btn" (click)="closeContratModal()">
+          <span class="material-icons">close</span>
+        </button>
       </div>
       <div class="modal-body">
+        <div class="form-section">
+          <h3>Type de contrat</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Type de contrat</label>
+              <select [(ngModel)]="newContrat.contract_type">
+                <option value="">-- Selectionner --</option>
+                @for (type of contractTypes(); track type._id) {
+                  <option [value]="type._id">{{ type.contract_type_name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div class="form-section">
           <h3>Informations du locataire</h3>
           <div class="form-row">
             <div class="form-group">
               <label>Nom du client</label>
-              <input type="text" [(ngModel)]="newContrat.nomClient" placeholder="Nom et prénom">
+              <input type="text" [(ngModel)]="newContrat.nom_client" placeholder="Nom et prenom">
             </div>
             <div class="form-group">
               <label>Nom de l'entreprise</label>
-              <input type="text" [(ngModel)]="newContrat.nomEntreprise" placeholder="Nom de la boutique">
+              <input type="text" [(ngModel)]="newContrat.nom_entreprise" placeholder="Nom de la boutique">
             </div>
           </div>
         </div>
 
         <div class="form-section">
           <h3>Emplacement</h3>
-          <div class="form-row">
+          <div class="form-row form-row-3">
             <div class="form-group">
-              <label>Étage</label>
+              <label>Etage</label>
               <select [(ngModel)]="newContrat.etage">
-                <option [ngValue]="1">1er étage</option>
-                <option [ngValue]="2">2ème étage</option>
+                <option [ngValue]="1">1er etage</option>
+                <option [ngValue]="2">2eme etage</option>
+                <option [ngValue]="3">3eme etage</option>
               </select>
             </div>
             <div class="form-group">
-              <label>Numéro du local</label>
+              <label>Numero du local</label>
               <input type="text" [(ngModel)]="newContrat.numero" placeholder="Ex: A-101">
             </div>
             <div class="form-group">
-              <label>Surface (m²)</label>
+              <label>Surface (m2)</label>
               <input type="number" [(ngModel)]="newContrat.surface" min="10">
             </div>
           </div>
         </div>
 
         <div class="form-section">
-          <h3>Conditions financières</h3>
+          <h3>Conditions financieres</h3>
           <div class="form-row">
             <div class="form-group">
               <label>Loyer mensuel (Ariary)</label>
-              <input type="number" [(ngModel)]="newContrat.loyerMensuel" min="0" step="100000">
+              <input type="number" [(ngModel)]="newContrat.loyer" min="0" step="100000">
             </div>
           </div>
         </div>
 
         <div class="form-section">
-          <h3>Durée du contrat</h3>
+          <h3>Duree du contrat</h3>
           <div class="form-row">
             <div class="form-group">
-              <label>Date de début</label>
-              <input type="date" [ngModel]="newContrat.dateDebut | date:'yyyy-MM-dd'" (ngModelChange)="newContrat.dateDebut = $event">
+              <label>Date de debut</label>
+              <input type="date" [(ngModel)]="newContrat.date_debut">
             </div>
             <div class="form-group">
               <label>Date de fin</label>
-              <input type="date" [ngModel]="newContrat.dateFin | date:'yyyy-MM-dd'" (ngModelChange)="newContrat.dateFin = $event">
+              <input type="date" [(ngModel)]="newContrat.date_fin">
             </div>
           </div>
         </div>
@@ -192,33 +223,11 @@
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="closeContratModal()">Annuler</button>
         <button class="btn btn-primary" (click)="saveContrat()">
-          <span>📄</span>
-          Générer le contrat
+          <span class="material-icons">{{ editingContrat() ? 'save' : 'description' }}</span>
+          {{ editingContrat() ? 'Enregistrer' : 'Generer le contrat' }}
         </button>
       </div>
     </div>
   </div>
 }
 
-<!-- PDF Preview Modal -->
-@if (showPdfPreview() && selectedContrat()) {
-  <div class="modal-overlay" (click)="closePdfPreview()">
-    <div class="modal modal-pdf" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Contrat - {{ selectedContrat()!.nomEntreprise }}</h2>
-        <div class="header-actions">
-          <button class="btn btn-outline" (click)="downloadPdf()">
-            <span>⬇️</span>
-            Télécharger
-          </button>
-          <button class="close-btn" (click)="closePdfPreview()">✕</button>
-        </div>
-      </div>
-      <div class="modal-body pdf-body">
-        <div class="pdf-preview">
-          <pre>{{ generateContratText(selectedContrat()!) }}</pre>
-        </div>
-      </div>
-    </div>
-  </div>
-}

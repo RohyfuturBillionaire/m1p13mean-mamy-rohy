@@ -180,6 +180,16 @@ $danger: #EF5350;
   color: $dark;
 }
 
+.type-badge {
+  display: inline-flex;
+  padding: 0.35rem 0.75rem;
+  background: rgba($primary, 0.12);
+  color: darken($primary, 10%);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
 .location-badge {
   display: inline-flex;
   padding: 0.35rem 0.75rem;
@@ -256,6 +266,11 @@ $danger: #EF5350;
   &:hover {
     transform: scale(1.1);
     background: rgba($primary, 0.15);
+  }
+
+  &.delete:hover {
+    background: rgba($danger, 0.15);
+    color: $danger;
   }
 }
 
@@ -392,6 +407,10 @@ $danger: #EF5350;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
+
+  &.form-row-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 
   @media (max-width: 500px) {
     grid-template-columns: 1fr;

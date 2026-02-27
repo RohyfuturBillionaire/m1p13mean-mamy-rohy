@@ -7,7 +7,7 @@
     <div class="header-actions">
       <button class="btn btn-outline">
         <span class="material-icons">calendar_today</span>
-        Février 2024
+        {{ currentPeriodLabel | titlecase }}
       </button>
       <button class="btn btn-primary">
         <span class="material-icons">download</span>
@@ -43,7 +43,7 @@
     <div class="chart-card large">
       <div class="card-header">
         <h3>Ventes Mensuelles</h3>
-        <span class="period">2024</span>
+        <span class="period">{{ currentYear }}</span>
       </div>
       <div class="chart-container">
         <div class="bar-chart">

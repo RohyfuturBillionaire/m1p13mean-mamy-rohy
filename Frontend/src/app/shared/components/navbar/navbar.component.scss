@@ -402,6 +402,11 @@ $transition-normal: 0.3s ease;
   text-decoration: none;
   border-radius: 10px;
   transition: all $transition-fast;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
 
   svg {
     width: 18px;
@@ -419,6 +424,36 @@ $transition-normal: 0.3s ease;
       color: var(--primary-gold);
     }
   }
+
+  &.logout-item {
+    color: #EF4444;
+
+    &:hover {
+      background: #FEF2F2;
+      color: #DC2626;
+    }
+  }
+}
+
+.user-dropdown-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark-gray);
+  border-bottom: 1px solid var(--light-gray);
+  margin-bottom: 0.25rem;
+}
+
+.mobile-username {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark-gray);
+  text-align: center;
+  padding: 0.5rem 0;
 }
 
 // ============================================

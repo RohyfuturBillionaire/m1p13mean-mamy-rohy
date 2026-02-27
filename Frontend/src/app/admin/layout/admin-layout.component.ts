@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AdminService } from '../../core/services/admin.service';
 import { Notification } from '../../core/models/admin.model';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-admin-layout',
@@ -24,15 +25,20 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   menuItems = [
     { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
     { label: 'Clients', icon: 'people', route: '/admin/clients' },
-    { label: 'Boutiques', icon: 'store', route: '/admin/boutiques' },
+    { label: 'Contrats', icon: 'description', route: '/admin/contrats' },
+    { label: 'Types Contrat', icon: 'category', route: '/admin/types-contrat' },
+    { label: 'Boutiques', icon: 'store', route: '/admin/gestion-boutiques' },
+    { label: 'Plan Centre', icon: 'map', route: '/admin/plan-centre' },
     { label: 'Promotions', icon: 'local_offer', route: '/admin/promotions' },
     { label: 'Loyers & Factures', icon: 'receipt', route: '/admin/loyers' },
+    { label: 'Associations', icon: 'link', route: '/admin/association-boutiques' },
     { label: 'Messages', icon: 'chat', route: '/admin/messages' },
     { label: 'Paramètres', icon: 'settings', route: '/admin/parametres' }
   ];
 
   constructor(
     private adminService: AdminService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -114,8 +120,10 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    this.adminService.logout();
-    this.router.navigate(['/login']);
+    // this.adminService.logout();
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/connexion']);
+    });
   }
 
   getNotificationIcon(type: string): string {

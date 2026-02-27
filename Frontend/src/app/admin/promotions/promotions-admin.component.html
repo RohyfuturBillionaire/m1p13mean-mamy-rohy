@@ -3,125 +3,107 @@
   <div class="page-header">
     <div>
       <h1>Gestion des Promotions</h1>
-      <p>Validez ou refusez les demandes de publicité des boutiques</p>
+      <p>Validez ou refusez les demandes de promotion des boutiques</p>
     </div>
   </div>
 
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card">
-      <span class="stat-icon">📋</span>
+      <span class="stat-icon material-icons">list_alt</span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().total }}</span>
         <span class="stat-label">Total demandes</span>
       </div>
     </div>
     <div class="stat-card warning">
-      <span class="stat-icon">⏳</span>
+      <span class="stat-icon material-icons">hourglass_empty</span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().enAttente }}</span>
         <span class="stat-label">En attente</span>
       </div>
     </div>
     <div class="stat-card success">
-      <span class="stat-icon">✅</span>
+      <span class="stat-icon material-icons">check_circle</span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().validees }}</span>
-        <span class="stat-label">Validées</span>
+        <span class="stat-label">Validees</span>
       </div>
     </div>
     <div class="stat-card danger">
-      <span class="stat-icon">❌</span>
+      <span class="stat-icon material-icons">cancel</span>
       <div class="stat-content">
         <span class="stat-value">{{ getStats().refusees }}</span>
-        <span class="stat-label">Refusées</span>
+        <span class="stat-label">Refusees</span>
       </div>
     </div>
   </div>
 
   <!-- Filter Tabs -->
   <div class="filter-tabs">
-    <button
-      class="filter-tab"
-      [class.active]="filterStatus() === 'all'"
-      (click)="filterStatus.set('all')"
-    >
+    <button class="filter-tab" [class.active]="filterStatus() === 'all'" (click)="filterStatus.set('all')">
       Toutes
     </button>
-    <button
-      class="filter-tab"
-      [class.active]="filterStatus() === 'en_attente'"
-      (click)="filterStatus.set('en_attente')"
-    >
-      ⏳ En attente
+    <button class="filter-tab" [class.active]="filterStatus() === 'PENDING'" (click)="filterStatus.set('PENDING')">
+      En attente
     </button>
-    <button
-      class="filter-tab"
-      [class.active]="filterStatus() === 'validee'"
-      (click)="filterStatus.set('validee')"
-    >
-      ✅ Validées
+    <button class="filter-tab" [class.active]="filterStatus() === 'APPROVED'" (click)="filterStatus.set('APPROVED')">
+      Validees
     </button>
-    <button
-      class="filter-tab"
-      [class.active]="filterStatus() === 'refusee'"
-      (click)="filterStatus.set('refusee')"
-    >
-      ❌ Refusées
+    <button class="filter-tab" [class.active]="filterStatus() === 'REJECTED'" (click)="filterStatus.set('REJECTED')">
+      Refusees
     </button>
   </div>
 
-  <!-- Demandes Grid -->
+  <!-- Promotions Grid -->
   <div class="demandes-grid">
-    @for (demande of getFilteredDemandes(); track demande.id) {
-      <div class="demande-card" [class]="getStatusClass(demande.statut)">
+    @for (promo of getFilteredPromotions(); track promo._id) {
+      <div class="demande-card" [class]="getStatusClass(promo.status)">
         <div class="card-header">
-          <span class="status-badge" [class]="getStatusClass(demande.statut)">
-            {{ getStatusIcon(demande.statut) }} {{ getStatusLabel(demande.statut) }}
+          <span class="status-badge" [class]="getStatusClass(promo.status)">
+            <span class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">{{ getStatusIcon(promo.status) }}</span> {{ getStatusLabel(promo.status) }}
           </span>
-          <span class="date">{{ formatDate(demande.dateDemande) }}</span>
+          <span class="date">{{ formatDate(promo.created_at) }}</span>
         </div>
 
-        @if (demande.image) {
+        @if (getImageUrl(promo)) {
           <div class="card-image">
-            <img [src]="demande.image" [alt]="demande.titre">
+            <img [src]="getImageUrl(promo)" [alt]="promo.titre">
           </div>
         }
 
         <div class="card-body">
-          <span class="boutique-name">{{ demande.boutiqueNom }}</span>
-          <h3>{{ demande.titre }}</h3>
-          <p>{{ demande.description }}</p>
+          <span class="boutique-name">{{ getBoutiqueName(promo) }}</span>
+          <h3>{{ promo.titre }}</h3>
+          <p>{{ promo.description }}</p>
 
           <div class="promo-details">
             <div class="detail">
-              <span class="label">Réduction</span>
-              <span class="value">-{{ demande.reduction }}%</span>
+              <span class="label">Remise</span>
+              <span class="value">-{{ promo.remise }}%</span>
             </div>
             <div class="detail">
-              <span class="label">Période</span>
-              <span class="value">{{ formatDate(demande.dateDebut) }} - {{ formatDate(demande.dateFin) }}</span>
+              <span class="label">Article</span>
+              <span class="value">{{ getArticleName(promo) }}</span>
             </div>
-            @if (demande.montantPub) {
-              <div class="detail">
-                <span class="label">Budget pub</span>
-                <span class="value">{{ formatMontant(demande.montantPub) }} Ar</span>
-              </div>
-            }
+            <div class="detail">
+              <span class="label">Periode</span>
+              <span class="value">{{ formatDate(promo.date_debut) }} - {{ formatDate(promo.date_fin) }}</span>
+            </div>
           </div>
         </div>
 
         <div class="card-actions">
-          @if (demande.statut === 'en_attente') {
-            <button class="btn btn-success" (click)="approvePromotion(demande)">
-              ✅ Valider
+          @if (promo.status === 'PENDING') {
+            <button class="btn btn-success" (click)="approvePromotion(promo)">
+              <span class="material-icons">check</span> Valider
             </button>
-            <button class="btn btn-danger" (click)="rejectPromotion(demande)">
-              ❌ Refuser
+            <button class="btn btn-danger" (click)="rejectPromotion(promo)">
+              <span class="material-icons">close</span> Refuser
             </button>
           } @else {
-            <button class="btn btn-outline" (click)="openDetail(demande)">
-              Voir détails
+            <button class="btn btn-outline" (click)="openDetail(promo)">
+              Voir details
             </button>
           }
         </div>
@@ -129,63 +111,74 @@
     }
   </div>
 
-  @if (getFilteredDemandes().length === 0) {
+  @if (getFilteredPromotions().length === 0) {
     <div class="empty-state">
-      <span>📭</span>
-      <p>Aucune demande {{ filterStatus() !== 'all' ? 'avec ce statut' : '' }}</p>
+      <span class="material-icons" style="font-size: 3rem; color: #ccc">inbox</span>
+      <p>Aucune promotion {{ filterStatus() !== 'all' ? 'avec ce statut' : '' }}</p>
     </div>
   }
 </div>
 
 <!-- Detail Modal -->
-@if (showDetailModal() && selectedDemande()) {
+@if (showDetailModal() && selectedPromo()) {
   <div class="modal-overlay" (click)="closeDetail()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Détails de la promotion</h2>
-        <button class="close-btn" (click)="closeDetail()">✕</button>
+        <h2>Details de la promotion</h2>
+        <button class="close-btn" (click)="closeDetail()"><span class="material-icons">close</span></button>
       </div>
       <div class="modal-body">
+        @if (getImageUrl(selectedPromo()!)) {
+          <img [src]="getImageUrl(selectedPromo()!)" class="detail-image" [alt]="selectedPromo()!.titre">
+        }
         <div class="detail-section">
           <h4>Boutique</h4>
-          <p>{{ selectedDemande()!.boutiqueNom }}</p>
+          <p>{{ getBoutiqueName(selectedPromo()!) }}</p>
         </div>
         <div class="detail-section">
-          <h4>Titre de la promotion</h4>
-          <p>{{ selectedDemande()!.titre }}</p>
+          <h4>Titre</h4>
+          <p>{{ selectedPromo()!.titre }}</p>
         </div>
         <div class="detail-section">
           <h4>Description</h4>
-          <p>{{ selectedDemande()!.description }}</p>
+          <p>{{ selectedPromo()!.description }}</p>
         </div>
         <div class="detail-row">
           <div class="detail-section">
-            <h4>Réduction</h4>
-            <p class="highlight">-{{ selectedDemande()!.reduction }}%</p>
+            <h4>Remise</h4>
+            <p class="highlight">-{{ selectedPromo()!.remise }}%</p>
           </div>
           <div class="detail-section">
-            <h4>Budget publicité</h4>
-            <p>{{ formatMontant(selectedDemande()!.montantPub || 0) }} Ar</p>
+            <h4>Article</h4>
+            <p>{{ getArticleName(selectedPromo()!) }}</p>
           </div>
         </div>
         <div class="detail-row">
           <div class="detail-section">
-            <h4>Date de début</h4>
-            <p>{{ formatDate(selectedDemande()!.dateDebut) }}</p>
+            <h4>Date de debut</h4>
+            <p>{{ formatDate(selectedPromo()!.date_debut) }}</p>
           </div>
           <div class="detail-section">
             <h4>Date de fin</h4>
-            <p>{{ formatDate(selectedDemande()!.dateFin) }}</p>
+            <p>{{ formatDate(selectedPromo()!.date_fin) }}</p>
           </div>
         </div>
         <div class="detail-section">
           <h4>Statut</h4>
-          <span class="status-badge large" [class]="getStatusClass(selectedDemande()!.statut)">
-            {{ getStatusIcon(selectedDemande()!.statut) }} {{ getStatusLabel(selectedDemande()!.statut) }}
+          <span class="status-badge large" [class]="getStatusClass(selectedPromo()!.status)">
+            <span class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">{{ getStatusIcon(selectedPromo()!.status) }}</span> {{ getStatusLabel(selectedPromo()!.status) }}
           </span>
         </div>
       </div>
       <div class="modal-footer">
+        @if (selectedPromo()!.status === 'PENDING') {
+          <button class="btn btn-success" (click)="approvePromotion(selectedPromo()!)">
+            <span class="material-icons">check</span> Valider
+          </button>
+          <button class="btn btn-danger" (click)="rejectPromotion(selectedPromo()!)">
+            <span class="material-icons">close</span> Refuser
+          </button>
+        }
         <button class="btn btn-outline" (click)="closeDetail()">Fermer</button>
       </div>
     </div>
