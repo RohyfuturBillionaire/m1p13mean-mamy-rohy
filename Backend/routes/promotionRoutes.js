@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Promotion = require('../models/Promotion');
+const Boutique = require('../models/Boutique');
+const Notification = require('../models/Notification');
 const upload = require('../config/multer');
 
 // GET /active — promotions approuvees et date valide (public)
@@ -77,6 +79,16 @@ router.post('/', upload.single('image'), async (req, res) => {
     const populated = await Promotion.findById(promotion._id)
       .populate('id_article')
       .populate('id_boutique', 'nom logo email');
+
+    // Notifier l'admin d'une nouvelle demande de promotion
+    await Notification.create({
+      titre: 'Nouvelle demande de promotion',
+      message: `"${populated.id_boutique?.nom || 'Une boutique'}" a soumis une promotion "${populated.titre}" (${populated.remise}% de remise) — en attente de validation`,
+      type: 'promotion',
+      lien: '/admin/promotions',
+      destinataire_role: 'admin'
+    });
+
     res.status(201).json(populated);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -122,6 +134,19 @@ router.patch('/:id/approve', async (req, res) => {
       .populate('id_article')
       .populate('id_boutique', 'nom logo email');
     if (!promotion) return res.status(404).json({ message: 'Promotion non trouvee' });
+
+    // Notifier le propriétaire de la boutique
+    const boutique = await Boutique.findById(promotion.id_boutique).select('user_proprietaire');
+    if (boutique?.user_proprietaire) {
+      await Notification.create({
+        titre: 'Promotion approuvée',
+        message: `Votre promotion "${promotion.titre}" (${promotion.remise}% de remise) a été approuvée`,
+        type: 'promotion',
+        lien: '/seller/promotions',
+        destinataire_user: boutique.user_proprietaire
+      });
+    }
+
     res.json(promotion);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -139,6 +164,19 @@ router.patch('/:id/reject', async (req, res) => {
       .populate('id_article')
       .populate('id_boutique', 'nom logo email');
     if (!promotion) return res.status(404).json({ message: 'Promotion non trouvee' });
+
+    // Notifier le propriétaire de la boutique
+    const boutique = await Boutique.findById(promotion.id_boutique).select('user_proprietaire');
+    if (boutique?.user_proprietaire) {
+      await Notification.create({
+        titre: 'Promotion refusée',
+        message: `Votre promotion "${promotion.titre}" (${promotion.remise}% de remise) a été refusée`,
+        type: 'promotion',
+        lien: '/seller/promotions',
+        destinataire_user: boutique.user_proprietaire
+      });
+    }
+
     res.json(promotion);
   } catch (error) {
     res.status(500).json({ message: error.message });

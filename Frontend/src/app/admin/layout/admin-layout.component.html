@@ -74,7 +74,11 @@
             <div class="dropdown notification-dropdown">
               <div class="dropdown-header">
                 <h3>Notifications</h3>
-                <span class="unread-count">{{ unreadCount() }} non lues</span>
+                @if (unreadCount() > 0) {
+                  <button class="mark-all-btn" (click)="markAllAsRead()">Tout marquer lu</button>
+                } @else {
+                  <span class="unread-count">{{ unreadCount() }} non lues</span>
+                }
               </div>
               <div class="dropdown-body">
                 @if (notifications().length === 0) {
@@ -83,7 +87,7 @@
                     <p>Aucune notification</p>
                   </div>
                 } @else {
-                  @for (notif of notifications(); track notif.id) {
+                  @for (notif of notifications(); track notif._id) {
                     <button
                       class="notification-item"
                       [class.unread]="!notif.lu"
@@ -98,16 +102,11 @@
                       <div class="notif-content">
                         <span class="notif-title">{{ notif.titre }}</span>
                         <span class="notif-message">{{ notif.message }}</span>
-                        <span class="notif-time">{{ formatDate(notif.date) }}</span>
+                        <span class="notif-time">{{ formatDate(notif.createdAt) }}</span>
                       </div>
                     </button>
                   }
                 }
-              </div>
-              <div class="dropdown-footer">
-                <a routerLink="/admin/notifications" (click)="showNotifications.set(false)">
-                  Voir toutes les notifications
-                </a>
               </div>
             </div>
           }
@@ -119,20 +118,12 @@
             <div class="user-avatar">
               <span class="material-icons">person</span>
             </div>
-            <span class="user-name">Admin</span>
+            <span class="user-name">{{ currentUserName() }}</span>
             <span class="material-icons arrow">{{ showUserMenu() ? 'expand_less' : 'expand_more' }}</span>
           </button>
 
           @if (showUserMenu()) {
             <div class="dropdown user-dropdown">
-              <a routerLink="/admin/profil" class="dropdown-item" (click)="showUserMenu.set(false)">
-                <span class="material-icons">account_circle</span>
-                Mon Profil
-              </a>
-              <a routerLink="/admin/parametres" class="dropdown-item" (click)="showUserMenu.set(false)">
-                <span class="material-icons">settings</span>
-                Paramètres
-              </a>
               <div class="dropdown-divider"></div>
               <button class="dropdown-item logout" (click)="logout()">
                 <span class="material-icons">logout</span>

@@ -9,6 +9,8 @@ const MouvementStock = require('../models/MouvementStock');
 const Livraison = require('../models/Livraison');
 const authenticateToken = require('../middleware/authMiddleware');
 const requireBoutique = require('../middleware/requireBoutique');
+const Boutique = require('../models/Boutique');
+const Notification = require('../models/Notification');
 
 // Helper: compute current stock for an article
 async function getCurrentStock(articleId, session) {
@@ -124,9 +126,37 @@ router.post('/checkout', authenticateToken, async (req, res) => {
       }
 
       createdCommandes.push(commande);
+
+      // 8. Notify boutique owner + check stock alerts
+      const boutiqueDoc = await Boutique.findById(boutiqueId).select('user_proprietaire nom');
+      if (boutiqueDoc?.user_proprietaire) {
+        await Notification.create({
+          titre: 'Nouvelle commande',
+          message: `Commande ${commande.numero_commande} — ${commandeArticles.length} article(s), total ${total.toLocaleString('fr-FR')} Ar`,
+          type: 'commande',
+          lien: '/seller/commandes',
+          destinataire_user: boutiqueDoc.user_proprietaire
+        });
+
+        for (const item of items) {
+          const stock = await getCurrentStock(item.id_article, null);
+          const lastMouvement = await MouvementStock.findOne({ id_article: item.id_article }).sort({ createdAt: -1 });
+          const seuil = lastMouvement?.seuil_alerte ?? 5;
+          if (stock <= seuil) {
+            const article = articleMap[item.id_article.toString()];
+            await Notification.create({
+              titre: 'Stock faible',
+              message: `Stock de "${article?.nom || 'article'}" est bas (${stock} unité${stock > 1 ? 's' : ''} restante${stock > 1 ? 's' : ''})`,
+              type: 'stock',
+              lien: '/seller/stocks',
+              destinataire_user: boutiqueDoc.user_proprietaire
+            });
+          }
+        }
+      }
     }
 
-    // 8. Clear bucket
+    // 9. Clear bucket
     bucket.items = [];
     bucket.total = 0;
     await bucket.save();

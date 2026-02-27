@@ -51,10 +51,6 @@ export const ADMIN_ROUTES: Routes = [
         path: 'association-boutiques',
         loadComponent: () => import('./association-boutiques/association-boutiques.component').then(m => m.AssociationBoutiquesComponent)
       },
-      {
-        path: 'parametres',
-        loadComponent: () => import('./parametres/parametres.component').then(m => m.ParametresComponent)
-      }
     ]
   }
 ];

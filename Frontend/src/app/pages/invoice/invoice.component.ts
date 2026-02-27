@@ -13,7 +13,6 @@ import { Commande, Facture, CommandeApi, ClientInfo } from '../../core/models/ca
 })
 export class InvoiceComponent implements OnInit {
   facture = signal<Facture | null>(null);
-  isPrinting = signal(false);
 
   constructor(
     private cartService: CartService,
@@ -131,10 +130,4 @@ export class InvoiceComponent implements OnInit {
     return this.getItemPrice(item) * item.quantite;
   }
 
-  async downloadPDF(): Promise<void> {
-    this.isPrinting.set(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    window.print();
-    this.isPrinting.set(false);
-  }
 }
