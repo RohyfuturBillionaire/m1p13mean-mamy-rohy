@@ -61,6 +61,7 @@ app.use('/api/bucket', require('./routes/bucketRoutes'));
 app.use('/api/commandes', require('./routes/commandeRoutes'));
 app.use('/api/favorites', require('./routes/favoriteRoutes'));
 app.use('/api/avis', require('./routes/avisRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 // Cron jobs
 const cron = require('node-cron');

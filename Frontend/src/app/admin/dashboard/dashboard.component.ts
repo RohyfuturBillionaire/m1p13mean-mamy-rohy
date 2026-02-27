@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../core/services/admin.service';
-import { KPI, Notification, DemandePromotion, Paiement } from '../../core/models/admin.model';
+import { KPI, DemandePromotion, Paiement } from '../../core/models/admin.model';
 import { DashboardService, DashboardData } from './services/dashbaord.service';
 
 @Component({

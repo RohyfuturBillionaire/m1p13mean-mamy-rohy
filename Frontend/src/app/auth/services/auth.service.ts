@@ -52,6 +52,7 @@ export class AuthService {
   logout(): Observable<any> {
     this.accessToken = null;
     this.userSignal.set(null);
+    localStorage.removeItem('user');
     return this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true });
   }
 

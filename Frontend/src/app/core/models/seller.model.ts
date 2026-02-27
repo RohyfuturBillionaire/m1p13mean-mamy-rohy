@@ -179,17 +179,6 @@ export interface SellerConversation {
   nonLus: number;
 }
 
-export interface SellerNotification {
-  id: string;
-  boutiqueId: string;
-  type: 'commande' | 'stock' | 'promotion' | 'message' | 'paiement' | 'info';
-  titre: string;
-  message: string;
-  date: Date;
-  lu: boolean;
-  lien?: string;
-}
-
 export interface SellerKPI {
   id: string;
   label: string;

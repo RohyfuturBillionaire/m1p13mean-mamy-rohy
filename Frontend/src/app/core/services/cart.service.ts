@@ -104,7 +104,10 @@ export class CartService {
   async syncOnLogin(): Promise<void> {
     const localItems = this.loadFromStorage();
     if (localItems.length > 0) {
-      // Push local items to API
+      // Afficher les articles locaux immédiatement pour éviter un panier vide
+      this.cartItems.set(localItems);
+
+      // Envoyer chaque article vers l'API (best-effort)
       for (const item of localItems) {
         try {
           await firstValueFrom(this.http.post(`${this.API_URL}/add`, {
@@ -113,12 +116,30 @@ export class CartService {
             quantite: item.quantite
           }));
         } catch {
-          // Skip items that fail (e.g., out of stock)
+          // Ignorer les articles qui échouent (rupture de stock, etc.)
         }
       }
-      localStorage.removeItem(this.CART_KEY);
+
+      // Recharger le panier fusionné depuis l'API
+      try {
+        const response = await firstValueFrom(this.http.get<any>(this.API_URL));
+        const apiItems: CartItem[] = (response.items || [])
+          .filter((item: any) => item.id_article)
+          .map((item: any) => this.mapApiItemToCartItem(item));
+
+        if (apiItems.length > 0) {
+          // L'API a renvoyé le panier fusionné → l'utiliser et nettoyer localStorage
+          this.cartItems.set(apiItems);
+          localStorage.removeItem(this.CART_KEY);
+        }
+        // Sinon : garder les articles locaux déjà affichés, conserver localStorage
+      } catch {
+        // Échec API → garder les articles locaux déjà affichés
+      }
+    } else {
+      // Pas d'articles locaux, charger simplement depuis l'API
+      await this.loadCartFromApi();
     }
-    await this.loadCartFromApi();
   }
 
   private mapApiItemToCartItem(apiItem: any): CartItem {

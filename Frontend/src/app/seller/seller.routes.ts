@@ -34,6 +34,10 @@ export const SELLER_ROUTES: Routes = [
         loadComponent: () => import('./commandes/commandes.component').then(m => m.CommandesComponent)
       },
       {
+        path: 'ventes',
+        loadComponent: () => import('./ventes/ventes.component').then(m => m.VentesComponent)
+      },
+      {
         path: 'promotions',
         loadComponent: () => import('./promotions/seller-promotions.component').then(m => m.SellerPromotionsComponent)
       },
