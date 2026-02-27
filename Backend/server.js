@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: ['http://localhost:4200','https://m1p13mean-mamy-rohy-g7pl.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
