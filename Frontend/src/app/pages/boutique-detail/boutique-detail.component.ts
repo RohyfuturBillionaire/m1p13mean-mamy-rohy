@@ -4,6 +4,7 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BoutiqueApiService, BoutiqueApi, ArticleApi } from '../../core/services/boutique-api.service';
 import { CartService } from '../../core/services/cart.service';
+import { environment } from '../../../environments/environments';
 import { FavoriteApiService } from '../../core/services/favorite-api.service';
 import { RatingApiService } from '../../core/services/rating-api.service';
 import { AuthService } from '../../auth/services/auth.service';
@@ -188,14 +189,14 @@ export class BoutiqueDetailComponent implements OnInit {
   getLogoUrl(boutique: BoutiqueApi): string {
     if (!boutique.logo) return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800';
     if (boutique.logo.startsWith('http')) return boutique.logo;
-    return 'http://localhost:5000' + boutique.logo;
+    return environment.apiUrl + boutique.logo;
   }
 
   getArticleImage(article: ArticleApi): string {
     if (article.images && article.images.length > 0) {
       const img = article.images[0];
       if (img.startsWith('http')) return img;
-      return 'http://localhost:5000' + img;
+      return environment.apiUrl + img;
     }
     return 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400';
   }

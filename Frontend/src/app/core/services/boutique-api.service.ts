@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { environment } from '../../../environments/environments';
 
 export interface BoutiqueApi {
   _id: string;
@@ -40,8 +41,8 @@ export interface CategoryApi {
 
 @Injectable({ providedIn: 'root' })
 export class BoutiqueApiService {
-  private apiUrl = 'http://localhost:5000/api/boutiques';
-  private categoriesUrl = 'http://localhost:5000/api/categories';
+  private apiUrl = `${environment.apiUrl}/api/boutiques`;
+  private categoriesUrl = `${environment.apiUrl}/api/categories`;
 
   constructor(private http: HttpClient) {}
 

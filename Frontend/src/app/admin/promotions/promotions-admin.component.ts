@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
+import { environment } from '../../../environments/environments';
 
 @Component({
   selector: 'app-promotions-admin',
@@ -90,7 +91,7 @@ export class PromotionsAdminComponent implements OnInit {
   getImageUrl(promo: PromotionApi): string {
     if (!promo.image) return '';
     if (promo.image.startsWith('http')) return promo.image;
-    return 'http://localhost:5000' + promo.image;
+    return environment.apiUrl + promo.image;
   }
 
   formatDate(date: string): string {

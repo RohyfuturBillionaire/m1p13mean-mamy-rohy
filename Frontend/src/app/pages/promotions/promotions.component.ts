@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PromotionService, PromotionApi } from '../../core/services/promotion.service';
+import { environment } from '../../../environments/environments';
 
 @Component({
   selector: 'app-promotions',
@@ -90,7 +91,7 @@ export class PromotionsComponent implements OnInit {
     if (typeof promo.id_boutique === 'object' && promo.id_boutique.logo) {
       const logo = promo.id_boutique.logo;
       if (logo.startsWith('http')) return logo;
-      return 'http://localhost:5000' + logo;
+      return environment.apiUrl + logo;
     }
     return '';
   }
@@ -108,7 +109,7 @@ export class PromotionsComponent implements OnInit {
   getImageUrl(promo: PromotionApi): string {
     if (!promo.image) return '';
     if (promo.image.startsWith('http')) return promo.image;
-    return 'http://localhost:5000' + promo.image;
+    return environment.apiUrl + promo.image;
   }
 
   isPromoActive(promo: PromotionApi): boolean {
