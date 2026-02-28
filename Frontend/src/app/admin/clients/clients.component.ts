@@ -6,6 +6,7 @@ import { User, UserDB } from '../../core/models/admin.model';
 import { UsersService } from './services/users.service';
 import { RoleService } from '../../core/role_user/services/role.service';
 import { BoutiqueApiService, BoutiqueApi } from '../../core/services/boutique-api.service';
+import { environment } from '../../../environments/environments';
 
 @Component({
   selector: 'app-clients',
@@ -266,5 +267,11 @@ export class ClientsComponent implements OnInit {
         }
       });
     }
+  }
+
+  getLogoUrl(logo: string | undefined): string {
+    if (!logo) return '';
+    if (logo.startsWith('http')) return logo;
+    return environment.apiUrl + logo;
   }
 }

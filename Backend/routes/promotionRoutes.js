@@ -4,6 +4,7 @@ const Promotion = require('../models/Promotion');
 const Boutique = require('../models/Boutique');
 const Notification = require('../models/Notification');
 const upload = require('../config/multer');
+const { uploadFile, deleteFile } = require('../config/blob');
 
 // GET /active — promotions approuvees et date valide (public)
 router.get('/active', async (req, res) => {
@@ -71,7 +72,7 @@ router.post('/', upload.single('image'), async (req, res) => {
   try {
     const data = { ...req.body };
     if (req.file) {
-      data.image = '/uploads/' + req.file.filename;
+      data.image = await uploadFile(req.file, 'promotions');
     }
     data.status = 'PENDING';
     const promotion = new Promotion(data);
@@ -100,7 +101,9 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     const data = { ...req.body };
     if (req.file) {
-      data.image = '/uploads/' + req.file.filename;
+      const current = await Promotion.findById(req.params.id).select('image');
+      await deleteFile(current?.image);
+      data.image = await uploadFile(req.file, 'promotions');
     }
     const promotion = await Promotion.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true })
       .populate('id_article')

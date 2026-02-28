@@ -285,7 +285,7 @@
               >
                 <div class="boutique-logo">
                   @if (boutique.logo) {
-                    <img [src]="'http://localhost:5000' + boutique.logo" [alt]="boutique.nom">
+                    <img [src]="getLogoUrl(boutique.logo)" [alt]="boutique.nom">
                   } @else {
                     <span class="logo-placeholder">🏪</span>
                   }

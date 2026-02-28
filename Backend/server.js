@@ -18,7 +18,7 @@ app.use(cors({
 app.use(express.json());
 app.use(require('cookie-parser')());
 
-// Serve uploaded files
+// Serve uploaded files — local dev only (production uses Vercel Blob URLs)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connexion à MongoDB

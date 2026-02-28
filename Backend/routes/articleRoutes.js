@@ -5,6 +5,7 @@ const CategorieArticle = require('../models/CategorieArticle');
 const MouvementStock = require('../models/MouvementStock');
 const ImgArticle = require('../models/ImgArticle');
 const upload = require('../config/multer');
+const { uploadFile, deleteFile } = require('../config/blob');
 
 // ========== ARTICLES ==========
 
@@ -25,9 +26,12 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       });
     }
 
-    // Save uploaded image files
+    // Upload images to Vercel Blob and save URLs
     if (req.files && req.files.length > 0) {
-      const imgDocs = req.files.map(f => ({ url_img: `/uploads/${f.filename}`, id_article: article._id }));
+      const imgDocs = await Promise.all(req.files.map(async (f) => ({
+        url_img: await uploadFile(f, 'articles'),
+        id_article: article._id
+      })));
       await ImgArticle.insertMany(imgDocs);
     }
 
@@ -64,7 +68,6 @@ router.get('/', async (req, res) => {
       let seuil_alerte = 5;
       if (mouvements.length > 0) {
         seuil_alerte = mouvements[0].seuil_alerte || 5;
-        // Calculate stock: sum entries - sum exits
         for (const m of mouvements) {
           if (m.type_mouvement === 1) stock += m.quantity;
           else if (m.type_mouvement === 2) stock -= m.quantity;
@@ -118,7 +121,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Update article (multipart — new images uploaded as files)
+// Update article (multipart — new images replace existing ones)
 router.put('/:id', upload.array('images', 10), async (req, res) => {
   try {
     const { nom, description, id_categorie_article, prix, stock, seuil_alerte } = req.body;
@@ -157,10 +160,16 @@ router.put('/:id', upload.array('images', 10), async (req, res) => {
       }
     }
 
-    // Replace images if new files uploaded
+    // Replace images: delete old blobs then upload new ones
     if (req.files && req.files.length > 0) {
+      const oldImgs = await ImgArticle.find({ id_article: article._id });
+      await Promise.all(oldImgs.map(img => deleteFile(img.url_img)));
       await ImgArticle.deleteMany({ id_article: article._id });
-      const imgDocs = req.files.map(f => ({ url_img: `/uploads/${f.filename}`, id_article: article._id }));
+
+      const imgDocs = await Promise.all(req.files.map(async (f) => ({
+        url_img: await uploadFile(f, 'articles'),
+        id_article: article._id
+      })));
       await ImgArticle.insertMany(imgDocs);
     }
 
@@ -194,6 +203,10 @@ router.delete('/:id', async (req, res) => {
   try {
     const article = await Article.findByIdAndDelete(req.params.id);
     if (!article) return res.status(404).json({ message: 'Article non trouvé' });
+
+    // Delete images from Blob storage
+    const imgs = await ImgArticle.find({ id_article: req.params.id });
+    await Promise.all(imgs.map(img => deleteFile(img.url_img)));
 
     await MouvementStock.deleteMany({ id_article: req.params.id });
     await ImgArticle.deleteMany({ id_article: req.params.id });
@@ -243,7 +256,6 @@ router.delete('/categories/:id', async (req, res) => {
   try {
     const cat = await CategorieArticle.findByIdAndDelete(req.params.id);
     if (!cat) return res.status(404).json({ message: 'Catégorie non trouvée' });
-    // Remove category reference from articles
     await Article.updateMany({ id_categorie_article: req.params.id }, { $unset: { id_categorie_article: '' } });
     res.json({ message: 'Catégorie supprimée' });
   } catch (error) {
