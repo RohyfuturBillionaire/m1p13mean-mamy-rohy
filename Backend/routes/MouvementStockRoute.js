@@ -113,7 +113,11 @@ router.get('/current-stocks', async (req, res) => {
       stock_entree: item.stock_entree,
       stock_sortie: item.stock_sortie,
       stock_restant: item.stock_entree - item.stock_sortie,
-      img_url: item.img_url ? (process.env.URL + item.img_url.url_img) : null
+      img_url: item.img_url ? (
+        item.img_url.url_img?.startsWith('http')
+          ? item.img_url.url_img
+          : (process.env.URL + item.img_url.url_img)
+      ) : null
     }));
 
     res.json(stockData);
