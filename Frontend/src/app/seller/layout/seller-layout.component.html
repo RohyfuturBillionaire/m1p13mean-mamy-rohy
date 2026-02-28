@@ -91,7 +91,11 @@
             <div class="dropdown notification-dropdown">
               <div class="dropdown-header">
                 <h3>Notifications</h3>
-                <span class="unread-count">{{ unreadCount() }} non lues</span>
+                @if (unreadCount() > 0) {
+                  <button class="mark-all-btn" (click)="markAllAsRead()">Tout marquer lu</button>
+                } @else {
+                  <span class="unread-count">{{ unreadCount() }} non lues</span>
+                }
               </div>
               <div class="dropdown-body">
                 @if (notifications().length === 0) {
@@ -100,24 +104,31 @@
                     <p>Aucune notification</p>
                   </div>
                 } @else {
-                  @for (notif of notifications(); track notif._id) {
-                    <button
-                      class="notification-item"
-                      [class.unread]="!notif.lu"
-                      (click)="markAsRead(notif)"
-                    >
-                      <span
-                        class="notif-icon material-icons"
-                        [style.color]="getNotificationColor(notif.type)"
-                      >
-                        {{ getNotificationIcon(notif.type) }}
-                      </span>
-                      <div class="notif-content">
-                        <span class="notif-title">{{ notif.titre }}</span>
-                        <span class="notif-message">{{ notif.message }}</span>
-                        <span class="notif-time">{{ formatDate(notif.createdAt) }}</span>
-                      </div>
-                    </button>
+                  @for (notif of unreadNotifications(); track notif._id) {
+                    <div class="notification-item unread">
+                      <button class="notif-body" (click)="navigateNotif(notif)">
+                        <span
+                          class="notif-icon material-icons"
+                          [style.color]="getNotificationColor(notif.type)"
+                        >
+                          {{ getNotificationIcon(notif.type) }}
+                        </span>
+                        <div class="notif-content">
+                          <span class="notif-title">{{ notif.titre }}</span>
+                          <span class="notif-message">{{ notif.message }}</span>
+                          <span class="notif-time">{{ formatDate(notif.createdAt) }}</span>
+                        </div>
+                      </button>
+                      <button class="notif-read-btn" (click)="markAsRead(notif)" title="Marquer comme lu">
+                        <span class="material-icons">check_circle</span>
+                      </button>
+                    </div>
+                  }
+                  @if (unreadNotifications().length === 0) {
+                    <div class="empty-notifications">
+                      <span class="material-icons">done_all</span>
+                      <p>Tout est lu</p>
+                    </div>
                   }
                 }
               </div>

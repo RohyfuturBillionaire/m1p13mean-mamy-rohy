@@ -27,6 +27,21 @@ export class LoyersComponent implements OnInit {
   selectedPayment = signal<Payment | null>(null);
   emailAction = signal<'confirmation' | 'rappel' | 'facture'>('confirmation');
 
+  // Confirm modal (replaces confirm())
+  showConfirmModal = signal(false);
+  confirmTitle = signal('');
+  confirmMessage = signal('');
+  private confirmCallback: (() => void) | null = null;
+
+  // Toast (replaces alert())
+  showToast = signal(false);
+  toastMessage = signal('');
+  toastIsError = signal(false);
+  private toastTimer: any = null;
+
+  // Action loader (prevents double-click)
+  isSubmitting = signal(false);
+
   constructor(private paymentService: PaymentService) {
     const now = new Date();
     this.selectedMonth = now.getMonth() + 1;
@@ -80,34 +95,57 @@ export class LoyersComponent implements OnInit {
   // === ACTIONS ===
 
   generateCurrentMonth() {
+    if (this.isSubmitting()) return;
+    this.isSubmitting.set(true);
     this.paymentService.generateCurrentMonth().subscribe({
       next: result => {
-        alert(`Generation terminee : ${result.created} paiement(s) cree(s), ${result.skipped} ignore(s)`);
+        this.isSubmitting.set(false);
+        this.showToastMsg(`Generation terminee : ${result.created} paiement(s) cree(s), ${result.skipped} ignore(s)`, false);
         this.loadData();
       },
-      error: err => alert(err.error?.message || 'Erreur lors de la generation')
+      error: err => {
+        this.isSubmitting.set(false);
+        this.showToastMsg(err.error?.message || 'Erreur lors de la generation', true);
+      }
     });
   }
 
   checkOverdue() {
+    if (this.isSubmitting()) return;
+    this.isSubmitting.set(true);
     this.paymentService.checkOverdue().subscribe({
       next: result => {
-        alert(`Verification terminee : ${result.updated} paiement(s) marque(s) en retard`);
+        this.isSubmitting.set(false);
+        this.showToastMsg(`Verification terminee : ${result.updated} paiement(s) marque(s) en retard`, false);
         this.loadData();
       },
-      error: err => alert(err.error?.message || 'Erreur')
+      error: err => {
+        this.isSubmitting.set(false);
+        this.showToastMsg(err.error?.message || 'Erreur', true);
+      }
     });
   }
 
   markAsPaid(payment: Payment) {
-    if (!confirm(`Confirmer le paiement de ${this.formatMontant(payment.montant)} Ar pour ${this.getBoutiqueName(payment)} ?`)) return;
-    this.paymentService.markAsPaid(payment._id).subscribe({
-      next: () => {
-        alert('Paiement enregistre avec succes !');
-        this.loadData();
-      },
-      error: err => alert(err.error?.message || 'Erreur')
-    });
+    this.openConfirmModal(
+      'Confirmer le paiement',
+      `Confirmer le paiement de ${this.formatMontant(payment.montant)} Ar pour ${this.getBoutiqueName(payment)} ?`,
+      () => {
+        if (this.isSubmitting()) return;
+        this.isSubmitting.set(true);
+        this.paymentService.markAsPaid(payment._id).subscribe({
+          next: () => {
+            this.isSubmitting.set(false);
+            this.showToastMsg('Paiement enregistre avec succes !', false);
+            this.loadData();
+          },
+          error: err => {
+            this.isSubmitting.set(false);
+            this.showToastMsg(err.error?.message || 'Erreur', true);
+          }
+        });
+      }
+    );
   }
 
   // Invoice preview modal
@@ -140,8 +178,9 @@ export class LoyersComponent implements OnInit {
 
   sendEmail() {
     const payment = this.selectedPayment();
-    if (!payment) return;
+    if (!payment || this.isSubmitting()) return;
 
+    this.isSubmitting.set(true);
     const action = this.emailAction();
     let obs;
 
@@ -153,27 +192,67 @@ export class LoyersComponent implements OnInit {
 
     obs.subscribe({
       next: (result: any) => {
+        this.isSubmitting.set(false);
         if (result.success) {
-          alert('Email envoye avec succes !');
+          this.showToastMsg('Email envoye avec succes !', false);
         } else {
-          alert('Erreur : ' + (result.error || 'Echec de l\'envoi'));
+          this.showToastMsg('Erreur : ' + (result.error || 'Echec de l\'envoi'), true);
         }
         this.closeEmailConfirm();
         this.loadData();
       },
       error: err => {
-        alert(err.error?.message || 'Erreur d\'envoi');
+        this.isSubmitting.set(false);
+        this.showToastMsg(err.error?.message || 'Erreur d\'envoi', true);
         this.closeEmailConfirm();
       }
     });
   }
 
   deletePayment(payment: Payment) {
-    if (!confirm(`Supprimer le paiement ${payment.facture_numero} ?`)) return;
-    this.paymentService.deletePayment(payment._id).subscribe({
-      next: () => this.loadData(),
-      error: err => alert(err.error?.message || 'Erreur')
-    });
+    this.openConfirmModal(
+      'Supprimer le paiement',
+      `Supprimer le paiement ${payment.facture_numero} ? Cette action est irreversible.`,
+      () => {
+        this.paymentService.deletePayment(payment._id).subscribe({
+          next: () => this.loadData(),
+          error: err => this.showToastMsg(err.error?.message || 'Erreur', true)
+        });
+      }
+    );
+  }
+
+  // === MODAL & TOAST HELPERS ===
+
+  openConfirmModal(title: string, message: string, callback: () => void) {
+    this.confirmTitle.set(title);
+    this.confirmMessage.set(message);
+    this.confirmCallback = callback;
+    this.showConfirmModal.set(true);
+  }
+
+  closeConfirmModal() {
+    this.showConfirmModal.set(false);
+    this.confirmCallback = null;
+  }
+
+  doConfirm() {
+    const cb = this.confirmCallback;
+    this.closeConfirmModal();
+    if (cb) cb();
+  }
+
+  showToastMsg(msg: string, isError: boolean) {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toastMessage.set(msg);
+    this.toastIsError.set(isError);
+    this.showToast.set(true);
+    this.toastTimer = setTimeout(() => this.showToast.set(false), 4000);
+  }
+
+  closeToast() {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.showToast.set(false);
   }
 
   // === HELPERS ===

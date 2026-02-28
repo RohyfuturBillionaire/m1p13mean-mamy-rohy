@@ -6,8 +6,12 @@
       <p>Suivi des paiements et generation de factures</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-outline" (click)="checkOverdue()">
-        <span class="material-icons">update</span>
+      <button class="btn btn-outline" (click)="checkOverdue()" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <span class="spinner"></span>
+        } @else {
+          <span class="material-icons">update</span>
+        }
         Verifier retards
       </button>
     </div>
@@ -248,6 +252,46 @@
   </div>
 }
 
+<!-- Confirm Modal -->
+@if (showConfirmModal()) {
+  <div class="modal-overlay" (click)="closeConfirmModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ confirmTitle() }}</h2>
+        <button class="close-btn" (click)="closeConfirmModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-content">
+          <span class="material-icons confirm-icon">help_outline</span>
+          <p>{{ confirmMessage() }}</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeConfirmModal()">Annuler</button>
+        <button class="btn btn-primary" (click)="doConfirm()" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span class="spinner"></span>
+          }
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Toast Notification -->
+@if (showToast()) {
+  <div class="toast-container" [class.toast-error]="toastIsError()" [class.toast-success]="!toastIsError()">
+    <span class="material-icons">{{ toastIsError() ? 'error' : 'check_circle' }}</span>
+    <span class="toast-msg">{{ toastMessage() }}</span>
+    <button class="toast-close" (click)="closeToast()">
+      <span class="material-icons">close</span>
+    </button>
+  </div>
+}
+
 <!-- Email Confirmation Modal -->
 @if (showEmailConfirmModal() && selectedPayment()) {
   <div class="modal-overlay" (click)="closeEmailConfirm()">
@@ -286,8 +330,12 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" (click)="closeEmailConfirm()">Annuler</button>
-        <button class="btn btn-primary" (click)="sendEmail()">
-          <span class="material-icons">send</span>
+        <button class="btn btn-primary" (click)="sendEmail()" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span class="spinner"></span>
+          } @else {
+            <span class="material-icons">send</span>
+          }
           Envoyer
         </button>
       </div>

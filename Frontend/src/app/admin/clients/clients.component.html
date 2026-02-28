@@ -81,12 +81,8 @@
         <tr>
           <th>Utilisateur</th>
           <th>Email</th>
-          <!-- <th>Téléphone</th> -->
-          <th>Rôle</th>
           <th>Inscription</th>
-          <!-- <th>Statut</th> -->
           <th>Actions</th>
-          <th>liaison</th>
         </tr>
       </thead>
       <tbody>
@@ -110,20 +106,6 @@
               </div>
             </td>
             <td>{{ user.email }}</td>
-            <!-- <td>{{ user.telephone }}</td> -->
-            <td>
-              <select
-                class="role-select"
-                [class]="getRoleClass(getRoleName(user))"
-                [ngModel]="getRoleName(user)"
-                (ngModelChange)="changeUserRole(user, $event)"
-              >
-              <option [ngValue]="'admin'">Admin</option>
-                @for (role of roles(); track role._id) {
-                  <option [ngValue]="role.role_name">{{ role.role_name | titlecase }}</option>
-                }
-              </select>
-            </td>
             <td>{{ formatDate(user.createdAt!) }}</td>
             <!-- <td>
               <button
@@ -146,11 +128,6 @@
                   <span class="material-icons">delete</span>
                 </button>
               </div>
-            </td>
-            <td>
-              <button class="action-btn link" *ngIf="isShop(user)" (click)="openLinkBoutiqueModal(user)" title="Lier à une boutique">
-                🔗
-              </button>
             </td>
           </tr>
         }

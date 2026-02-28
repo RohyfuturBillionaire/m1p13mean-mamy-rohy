@@ -640,6 +640,23 @@ $transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
+.mark-all-btn {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $admin-primary;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  transition: background 0.2s;
+  font-family: inherit;
+
+  &:hover {
+    background: rgba($admin-primary, 0.1);
+  }
+}
+
 .dropdown-body {
   flex: 1;
   overflow-y: auto;
@@ -667,17 +684,12 @@ $transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 .notification-item {
   display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-  padding: 1rem 1.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.75rem 1.5rem;
   width: 100%;
-  border: none;
-  background: none;
-  text-align: left;
-  cursor: pointer;
   transition: background $transition-fast;
   border-bottom: 1px solid #f5f5f5;
-  font-family: inherit;
 
   &:last-child {
     border-bottom: none;
@@ -693,6 +705,44 @@ $transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     .notif-title {
       font-weight: 600;
     }
+  }
+}
+
+.notif-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  flex: 1;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  min-width: 0;
+}
+
+.notif-read-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #ccc;
+  border-radius: 50%;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($admin-primary, 0.1);
+    color: $admin-primary;
+  }
+
+  .material-icons {
+    font-size: 1.125rem;
   }
 }
 
