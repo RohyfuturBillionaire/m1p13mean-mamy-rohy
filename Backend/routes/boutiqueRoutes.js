@@ -5,6 +5,7 @@ const Local = require('../models/Local');
 const Article = require('../models/Article');
 const ImgArticle = require('../models/ImgArticle');
 const upload = require('../config/multer');
+const { uploadFile, deleteFile } = require('../config/blob');
 const authenticateToken = require('../middleware/authMiddleware');
 const requireBoutique = require('../middleware/requireBoutique');
 
@@ -145,7 +146,7 @@ router.post('/', upload.single('logo'), async (req, res) => {
   try {
     const data = { ...req.body };
     if (req.file) {
-      data.logo = '/uploads/' + req.file.filename;
+      data.logo = await uploadFile(req.file, 'boutiques');
     }
     const boutique = new Boutique(data);
     await boutique.save();
@@ -169,29 +170,26 @@ router.post('/', upload.single('logo'), async (req, res) => {
 router.put('/:id', upload.single('logo'), async (req, res) => {
   try {
     const data = { ...req.body };
-    if (req.file) {
-      data.logo = '/uploads/' + req.file.filename;
-    }
-    
+
     // Get current boutique to check if local is changing
     const currentBoutique = await Boutique.findById(req.params.id);
     if (!currentBoutique) return res.status(404).json({ message: 'Boutique non trouvée' });
-    
+
+    // Upload new logo and delete old one if a new file is provided
+    if (req.file) {
+      await deleteFile(currentBoutique.logo);
+      data.logo = await uploadFile(req.file, 'boutiques');
+    }
+
     // If local is changing, update statuses
     const oldLocalId = currentBoutique.local_boutique?.toString();
     const newLocalId = data.local_boutique;
-    
+
     if (oldLocalId !== newLocalId) {
-      // Set old local as available (if exists)
-      if (oldLocalId) {
-        await Local.findByIdAndUpdate(oldLocalId, { status: true });
-      }
-      // Set new local as occupied (if exists)
-      if (newLocalId) {
-        await Local.findByIdAndUpdate(newLocalId, { status: false });
-      }
+      if (oldLocalId) await Local.findByIdAndUpdate(oldLocalId, { status: true });
+      if (newLocalId) await Local.findByIdAndUpdate(newLocalId, { status: false });
     }
-    
+
     const boutique = await Boutique.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true })
       .populate('id_categorie')
       .populate('local_boutique')

@@ -229,7 +229,7 @@
             <p>Aucune notification</p>
           </div>
         } @else {
-          @for (notif of recentNotifications(); track notif.id) {
+          @for (notif of recentNotifications(); track notif._id) {
             <div class="notif-item" [class.unread]="!notif.lu">
               <span class="notif-icon material-icons" [style.color]="getNotificationColor(notif.type)">
                 {{ getNotificationIcon(notif.type) }}
@@ -238,7 +238,7 @@
                 <span class="notif-title">{{ notif.titre }}</span>
                 <span class="notif-message">{{ notif.message }}</span>
               </div>
-              <span class="notif-time">{{ formatDate(notif.date) }}</span>
+              <span class="notif-time">{{ formatDate(notif.createdAt) }}</span>
             </div>
           }
         }

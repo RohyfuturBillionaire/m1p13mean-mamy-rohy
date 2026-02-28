@@ -2,13 +2,12 @@ import { Injectable, signal } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
 import {
   User, Contrat, Paiement, Facture, DemandePromotion,
-  Conversation, Message, Notification, ParametresSite, KPI
+  Conversation, Message, KPI
 } from '../models/admin.model';
 import {
   MOCK_USERS, MOCK_CONTRATS, MOCK_PAIEMENTS, MOCK_FACTURES,
   MOCK_DEMANDES_PROMOTION, MOCK_CONVERSATIONS, MOCK_MESSAGES,
-  MOCK_NOTIFICATIONS, DEFAULT_PARAMETRES, REVENUS_MENSUELS,
-  LOYERS_PAR_BOUTIQUE, STATS_PROMOTIONS, VISITEURS_MENSUELS, EMAIL_TEMPLATES
+  REVENUS_MENSUELS, LOYERS_PAR_BOUTIQUE, STATS_PROMOTIONS, VISITEURS_MENSUELS
 } from '../data/admin-mock-data';
 
 @Injectable({
@@ -22,9 +21,6 @@ export class AdminService {
   private demandesPromotion = signal<DemandePromotion[]>([...MOCK_DEMANDES_PROMOTION]);
   private conversations = signal<Conversation[]>([...MOCK_CONVERSATIONS]);
   private messages = signal<Message[]>([...MOCK_MESSAGES]);
-  private notifications = signal<Notification[]>([...MOCK_NOTIFICATIONS]);
-  private parametres = signal<ParametresSite>({ ...DEFAULT_PARAMETRES });
-
   private isAuthenticated = signal(false);
   private currentUser = signal<User | null>(null);
 
@@ -248,38 +244,6 @@ export class AdminService {
     return of(newMessage);
   }
 
-  // ===== Notifications =====
-  getNotifications(): Observable<Notification[]> {
-    return of(this.notifications());
-  }
-
-  markNotificationAsRead(id: string): Observable<boolean> {
-    const index = this.notifications().findIndex(n => n.id === id);
-    if (index !== -1) {
-      this.notifications.update(notifs => {
-        const newNotifs = [...notifs];
-        newNotifs[index] = { ...newNotifs[index], lu: true };
-        return newNotifs;
-      });
-      return of(true);
-    }
-    return of(false);
-  }
-
-  getUnreadNotificationsCount(): number {
-    return this.notifications().filter(n => !n.lu).length;
-  }
-
-  // ===== Paramètres =====
-  getParametres(): Observable<ParametresSite> {
-    return of(this.parametres());
-  }
-
-  updateParametres(updates: Partial<ParametresSite>): Observable<ParametresSite> {
-    this.parametres.update(p => ({ ...p, ...updates }));
-    return of(this.parametres());
-  }
-
   // ===== Charts Data =====
   getRevenueData() {
     return of(REVENUS_MENSUELS);
@@ -295,17 +259,6 @@ export class AdminService {
 
   getVisiteursData() {
     return of(VISITEURS_MENSUELS);
-  }
-
-  // ===== Email Templates =====
-  getEmailTemplates() {
-    return of(EMAIL_TEMPLATES);
-  }
-
-  sendEmail(template: string, destinataire: string, variables: Record<string, string>): Observable<boolean> {
-    // Simulation d'envoi d'email
-    console.log('Email envoyé:', { template, destinataire, variables });
-    return of(true).pipe(delay(1000));
   }
 
   // ===== Helpers =====

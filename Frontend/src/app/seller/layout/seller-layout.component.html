@@ -100,7 +100,7 @@
                     <p>Aucune notification</p>
                   </div>
                 } @else {
-                  @for (notif of notifications(); track notif.id) {
+                  @for (notif of notifications(); track notif._id) {
                     <button
                       class="notification-item"
                       [class.unread]="!notif.lu"
@@ -115,7 +115,7 @@
                       <div class="notif-content">
                         <span class="notif-title">{{ notif.titre }}</span>
                         <span class="notif-message">{{ notif.message }}</span>
-                        <span class="notif-time">{{ formatDate(notif.date) }}</span>
+                        <span class="notif-time">{{ formatDate(notif.createdAt) }}</span>
                       </div>
                     </button>
                   }
@@ -157,7 +157,7 @@
                   <span class="profile-type">{{ boutique()?.type | titlecase }}</span>
                 </div>
               </div>
-              <div class="dropdown-divider"></div>
+              <!-- <div class="dropdown-divider"></div>
               <a routerLink="/seller/profil" class="dropdown-item" (click)="showUserMenu.set(false)">
                 <span class="material-icons">storefront</span>
                 Ma Boutique
@@ -166,7 +166,7 @@
                 <span class="material-icons">bar_chart</span>
                 Statistiques
               </a>
-              <div class="dropdown-divider"></div>
+              <div class="dropdown-divider"></div> -->
               <button class="dropdown-item logout" (click)="logout()">
                 <span class="material-icons">logout</span>
                 Déconnexion

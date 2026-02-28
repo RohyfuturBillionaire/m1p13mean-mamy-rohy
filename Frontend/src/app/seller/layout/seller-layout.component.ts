@@ -1,9 +1,12 @@
-import { Component, signal, OnInit, OnDestroy, HostListener, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, HostListener, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { SellerService } from '../../core/services/seller.service';
-import { SellerNotification, SellerBoutique } from '../../core/models/seller.model';
+import { SellerBoutique } from '../../core/models/seller.model';
 import { AuthService } from '../../auth/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { Notification } from '../../core/models/notification.model';
 
 @Component({
   selector: 'app-seller-layout',
@@ -13,14 +16,22 @@ import { AuthService } from '../../auth/services/auth.service';
   styleUrl: './seller-layout.component.scss'
 })
 export class SellerLayoutComponent implements OnInit, OnDestroy {
+  private sellerService = inject(SellerService);
+  private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
+  private router = inject(Router);
+
   sidebarCollapsed = signal(false);
   sidebarMobileOpen = signal(false);
   showNotifications = signal(false);
   showUserMenu = signal(false);
-  notifications = signal<SellerNotification[]>([]);
   boutique = signal<SellerBoutique | null>(null);
 
+  notifications = this.notificationService.notifications;
+  unreadCount = this.notificationService.unreadCount;
+
   private readonly MOBILE_BREAKPOINT = 1024;
+  private pollingSub?: Subscription;
 
   menuItems = [
     { label: 'Dashboard', icon: 'dashboard', route: '/seller/dashboard' },
@@ -28,40 +39,26 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
     { label: 'Catégories', icon: 'category', route: '/seller/categories' },
     { label: 'Stocks', icon: 'warehouse', route: '/seller/stocks' },
     { label: 'Commandes', icon: 'shopping_cart', route: '/seller/commandes' },
-{ label: 'Promotions', icon: 'local_offer', route: '/seller/promotions' },
+    { label: 'Ventes', icon: 'trending_up', route: '/seller/ventes' },
+    { label: 'Promotions', icon: 'local_offer', route: '/seller/promotions' },
     { label: 'Ma Boutique', icon: 'storefront', route: '/seller/profil' },
     { label: 'FAQ', icon: 'help_outline', route: '/seller/faq' },
     { label: 'Messages', icon: 'chat', route: '/seller/messages' }
   ];
 
-  unreadCount = computed(() => {
-    return this.notifications().filter(n => !n.lu).length;
-  });
+  unreadMessages = computed(() => this.sellerService.getUnreadMessagesCount());
+  stockAlerts = computed(() => this.sellerService.getStockAlertsArray().length);
 
-  unreadMessages = computed(() => {
-    return this.sellerService.getUnreadMessagesCount();
-  });
-
-  stockAlerts = computed(() => {
-    return this.sellerService.getStockAlertsArray().length;
-  });
-
-  constructor(
-    private sellerService: SellerService,
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor() {}
 
   ngOnInit() {
-    // if (!this.sellerService.isLoggedIn()) {
-    //   this.router.navigate(['/connexion']);
-    //   return;
-    // }
-    this.loadData();
+    this.pollingSub = this.notificationService.startPolling(30000).subscribe();
+    this.loadBoutique();
     this.checkScreenSize();
   }
 
   ngOnDestroy() {
+    this.pollingSub?.unsubscribe();
     document.body.style.overflow = '';
   }
 
@@ -77,11 +74,7 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadData() {
-    this.sellerService.getNotifications().subscribe(notifs => {
-      this.notifications.set(notifs);
-    });
-
+  private loadBoutique() {
     this.sellerService.getBoutique().subscribe(boutique => {
       this.boutique.set(boutique);
     });
@@ -93,11 +86,7 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
 
   toggleMobileSidebar() {
     this.sidebarMobileOpen.update(v => !v);
-    if (this.sidebarMobileOpen()) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = this.sidebarMobileOpen() ? 'hidden' : '';
   }
 
   closeMobileSidebar() {
@@ -126,9 +115,8 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
     this.showUserMenu.set(false);
   }
 
-  markAsRead(notif: SellerNotification) {
-    this.sellerService.markNotificationAsRead(notif.id).subscribe(() => {
-      this.loadData();
+  markAsRead(notif: Notification) {
+    this.notificationService.markAsRead(notif._id).subscribe(() => {
       if (notif.lien) {
         this.router.navigate([notif.lien]);
       }
@@ -136,9 +124,14 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
     this.showNotifications.set(false);
   }
 
+  markAllAsRead() {
+    this.notificationService.markAllAsRead().subscribe();
+  }
+
   logout() {
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/connexion']);
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/connexion']),
+      error: () => this.router.navigate(['/connexion'])
     });
   }
 
@@ -148,6 +141,9 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
       case 'stock': return 'inventory';
       case 'promotion': return 'local_offer';
       case 'message': return 'chat';
+      case 'paiement': return 'payments';
+      case 'alerte': return 'warning';
+      case 'demande': return 'assignment';
       default: return 'info';
     }
   }
@@ -158,6 +154,8 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
       case 'stock': return '#FF9800';
       case 'promotion': return '#2196F3';
       case 'message': return '#9C27B0';
+      case 'paiement': return '#4CAF50';
+      case 'alerte': return '#FF9800';
       default: return '#9E9E9E';
     }
   }
@@ -166,7 +164,6 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
     const now = new Date();
     const diff = now.getTime() - new Date(date).getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
-
     if (hours < 1) return 'À l\'instant';
     if (hours < 24) return `Il y a ${hours}h`;
     const days = Math.floor(hours / 24);

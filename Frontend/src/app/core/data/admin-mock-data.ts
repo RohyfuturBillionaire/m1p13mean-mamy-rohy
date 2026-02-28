@@ -1,4 +1,4 @@
-import { User, Contrat, Paiement, Facture, DemandePromotion, Conversation, Message, Notification, ParametresSite } from '../models/admin.model';
+import { User, Contrat, Paiement, Facture, DemandePromotion, Conversation, Message } from '../models/admin.model';
 
 // Users Mock Data
 export const MOCK_USERS: User[] = [
@@ -365,77 +365,6 @@ export const MOCK_MESSAGES: Message[] = [
   }
 ];
 
-// Notifications Mock Data
-export const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: 'notif-1',
-    type: 'paiement',
-    titre: 'Paiement reçu',
-    message: 'Élégance Paris a effectué le paiement du loyer de février.',
-    date: new Date('2024-02-03T09:00:00'),
-    lu: false,
-    lien: '/admin/loyers'
-  },
-  {
-    id: 'notif-2',
-    type: 'demande',
-    titre: 'Nouvelle demande de promotion',
-    message: 'Élégance Paris souhaite publier une promotion "Soldes d\'Hiver".',
-    date: new Date('2024-02-01T14:00:00'),
-    lu: false,
-    lien: '/admin/promotions'
-  },
-  {
-    id: 'notif-3',
-    type: 'alerte',
-    titre: 'Retard de paiement',
-    message: 'Beauté Divine a un retard de paiement de 5 jours.',
-    date: new Date('2024-02-06T08:00:00'),
-    lu: true,
-    lien: '/admin/loyers'
-  },
-  {
-    id: 'notif-4',
-    type: 'alerte',
-    titre: 'Contrat expirant',
-    message: 'Le contrat de Café Impérial expire dans 60 jours.',
-    date: new Date('2024-02-01T10:00:00'),
-    lu: true,
-    lien: '/admin/boutiques'
-  },
-  {
-    id: 'notif-5',
-    type: 'info',
-    titre: 'Nouveau client inscrit',
-    message: 'Thomas Razafy vient de créer un compte client.',
-    date: new Date('2024-01-28T16:30:00'),
-    lu: true
-  }
-];
-
-// Paramètres du site par défaut
-export const DEFAULT_PARAMETRES: ParametresSite = {
-  nomCentre: 'Tana Center',
-  slogan: 'Votre destination shopping de luxe à Antananarivo',
-  couleurPrimaire: '#C9A962',
-  couleurSecondaire: '#1a1a1a',
-  email: 'contact@tanacenter.mg',
-  telephone: '+261 20 22 123 45',
-  adresse: 'Avenue de l\'Indépendance, Antananarivo 101, Madagascar',
-  horaires: {
-    semaine: '09:00 - 21:00',
-    weekend: '10:00 - 22:00'
-  },
-  sectionsActives: {
-    promotions: true,
-    map: true,
-    boutiques: true,
-    evenements: true
-  },
-  modeMaintenace: false,
-  inscriptionOuverte: true
-};
-
 // Données pour les graphiques
 export const REVENUS_MENSUELS = {
   labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
@@ -457,48 +386,3 @@ export const VISITEURS_MENSUELS = {
   data: [45000, 52000, 48000, 61000, 55000, 67000]
 };
 
-// Templates d'emails
-export const EMAIL_TEMPLATES = {
-  retardPaiement: {
-    sujet: 'Rappel - Paiement de loyer en retard',
-    corps: `Cher(e) {{nom}},
-
-Nous vous informons que le paiement de votre loyer pour le mois de {{mois}} n'a pas encore été reçu.
-
-Montant dû : {{montant}} Ar
-Date d'échéance : {{dateEcheance}}
-Jours de retard : {{joursRetard}}
-
-Nous vous prions de bien vouloir régulariser cette situation dans les plus brefs délais.
-
-Cordialement,
-L'équipe Tana Center`
-  },
-  promotionValidee: {
-    sujet: 'Votre promotion a été validée',
-    corps: `Cher(e) {{nom}},
-
-Nous avons le plaisir de vous informer que votre demande de promotion "{{titrePromo}}" a été validée.
-
-Détails de la promotion :
-- Réduction : {{reduction}}%
-- Date de début : {{dateDebut}}
-- Date de fin : {{dateFin}}
-
-Votre promotion sera visible sur notre site et dans le centre commercial.
-
-Cordialement,
-L'équipe Tana Center`
-  },
-  notificationGenerale: {
-    sujet: 'Information importante - Tana Center',
-    corps: `Cher(e) {{nom}},
-
-{{message}}
-
-Pour toute question, n'hésitez pas à nous contacter.
-
-Cordialement,
-L'équipe Tana Center`
-  }
-};

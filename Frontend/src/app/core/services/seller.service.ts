@@ -11,7 +11,6 @@ import {
   SellerFAQ,
   SellerConversation,
   SellerMessage,
-  SellerNotification,
   SellerKPI,
   SellerChartData
 } from '../models/seller.model';
@@ -25,7 +24,6 @@ import {
   MOCK_SELLER_FAQ,
   MOCK_SELLER_CONVERSATIONS,
   MOCK_SELLER_MESSAGES,
-  MOCK_SELLER_NOTIFICATIONS,
   MOCK_COMMANDES_VS_LIVRAISONS,
   MOCK_STOCK_STATUS
 } from '../data/seller-mock-data';
@@ -54,15 +52,10 @@ export class SellerService {
   private faqs = signal<SellerFAQ[]>([]);
   private conversations = signal<SellerConversation[]>([]);
   private messages = signal<SellerMessage[]>([]);
-  private notifications = signal<SellerNotification[]>([]);
 
   // =============================================
   // COMPUTED
   // =============================================
-  unreadNotificationsCount = computed(() =>
-    this.notifications().filter(n => !n.lu).length
-  );
-
   unreadMessagesCount = computed(() =>
     this.conversations().reduce((acc, conv) => acc + conv.nonLus, 0)
   );
@@ -95,7 +88,6 @@ export class SellerService {
     this.faqs.set([...MOCK_SELLER_FAQ]);
     this.conversations.set([...MOCK_SELLER_CONVERSATIONS]);
     this.messages.set([...MOCK_SELLER_MESSAGES]);
-    this.notifications.set([...MOCK_SELLER_NOTIFICATIONS]);
   }
 
   // =============================================
@@ -313,10 +305,35 @@ export class SellerService {
   }
 
   getStockAlerts(): Observable<{ lowStock: SellerProduit[], outOfStock: SellerProduit[] }> {
-    return of({
-      lowStock: this.lowStockProducts(),
-      outOfStock: this.outOfStockProducts()
-    });
+    const boutiqueId = this.getBoutiqueId();
+    const url = boutiqueId
+      ? `${environment.apiUrl}/mouvementstock/current-stocks?boutique_id=${boutiqueId}`
+      : `${environment.apiUrl}/mouvementstock/current-stocks`;
+    return this.http.get<any[]>(url).pipe(
+      map(items => {
+        const produits: SellerProduit[] = items.map(item => ({
+          id: item.id,
+          boutiqueId: '',
+          nom: item.nom,
+          description: '',
+          prix: 0,
+          categorie: '',
+          image: item.img_url || '',
+          stock: item.stock_restant,
+          stockAlerte: item.seuil_alerte ?? 5,
+          statut: item.stock_restant <= 0 ? 'rupture' : 'actif',
+          nouveau: false,
+          dateCreation: new Date(),
+          dateModification: new Date(),
+          vendu: 0
+        }));
+        return {
+          outOfStock: produits.filter(p => p.stock <= 0),
+          lowStock: produits.filter(p => p.stock > 0 && p.stock <= p.stockAlerte)
+        };
+      }),
+      catchError(() => of({ lowStock: this.lowStockProducts(), outOfStock: this.outOfStockProducts() }))
+    );
   }
 
   // =============================================
@@ -575,25 +592,6 @@ export class SellerService {
   // =============================================
   // NOTIFICATIONS
   // =============================================
-  getNotifications(): Observable<SellerNotification[]> {
-    return of(this.notifications().sort((a, b) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    ));
-  }
-
-  markNotificationAsRead(id: string): Observable<boolean> {
-    this.notifications.update(notifications =>
-      notifications.map(n => n.id === id ? { ...n, lu: true } : n)
-    );
-    return of(true);
-  }
-
-  markAllNotificationsAsRead(): void {
-    this.notifications.update(notifications =>
-      notifications.map(n => ({ ...n, lu: true }))
-    );
-  }
-
   getUnreadMessagesCount(): number {
     return this.unreadMessagesCount();
   }

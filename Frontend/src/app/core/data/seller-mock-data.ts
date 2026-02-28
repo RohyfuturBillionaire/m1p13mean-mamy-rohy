@@ -9,7 +9,6 @@ import {
   SellerFAQ,
   SellerConversation,
   SellerMessage,
-  SellerNotification,
   SellerKPI,
   SellerChartData
 } from '../models/seller.model';
@@ -655,72 +654,6 @@ export const MOCK_SELLER_MESSAGES: SellerMessage[] = [
     contenu: 'Pouvez-vous confirmer la livraison express ?',
     date: new Date('2024-01-25T18:20:00'),
     lu: false
-  }
-];
-
-// =============================================
-// SELLER NOTIFICATIONS
-// =============================================
-export const MOCK_SELLER_NOTIFICATIONS: SellerNotification[] = [
-  {
-    id: 'notif1',
-    boutiqueId: 'b1',
-    type: 'commande',
-    titre: 'Nouvelle commande',
-    message: 'Vous avez reçu une nouvelle commande #TC240125-0005',
-    date: new Date('2024-01-26T09:15:00'),
-    lu: false,
-    lien: '/seller/commandes'
-  },
-  {
-    id: 'notif2',
-    boutiqueId: 'b1',
-    type: 'stock',
-    titre: 'Alerte stock faible',
-    message: 'Le produit "Sac à Main Cuir" est en stock faible (2 unités)',
-    date: new Date('2024-01-25T16:00:00'),
-    lu: false,
-    lien: '/seller/stocks'
-  },
-  {
-    id: 'notif3',
-    boutiqueId: 'b1',
-    type: 'stock',
-    titre: 'Rupture de stock',
-    message: 'Le produit "Montre Classic Gold" est en rupture de stock',
-    date: new Date('2024-01-22T14:30:00'),
-    lu: true,
-    lien: '/seller/stocks'
-  },
-  {
-    id: 'notif4',
-    boutiqueId: 'b1',
-    type: 'promotion',
-    titre: 'Promotion en attente',
-    message: 'Votre promotion "Saint-Valentin" est en attente de validation',
-    date: new Date('2024-01-25T10:30:00'),
-    lu: true,
-    lien: '/seller/promotions'
-  },
-  {
-    id: 'notif5',
-    boutiqueId: 'b1',
-    type: 'message',
-    titre: 'Nouveau message',
-    message: 'Vous avez 2 nouveaux messages de Hery Nomena',
-    date: new Date('2024-01-25T18:25:00'),
-    lu: false,
-    lien: '/seller/messages'
-  },
-  {
-    id: 'notif6',
-    boutiqueId: 'b1',
-    type: 'paiement',
-    titre: 'Paiement reçu',
-    message: 'Paiement de 836 000 Ar reçu pour la commande #TC240125-0004',
-    date: new Date('2024-01-25T12:00:00'),
-    lu: true,
-    lien: '/seller/commandes'
   }
 ];
 

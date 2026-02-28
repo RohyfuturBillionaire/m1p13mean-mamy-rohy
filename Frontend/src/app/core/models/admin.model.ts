@@ -122,49 +122,6 @@ export interface Conversation {
   nonLus: number;
 }
 
-export interface Notification {
-  id: string;
-  type: 'paiement' | 'demande' | 'alerte' | 'info';
-  titre: string;
-  message: string;
-  date: Date;
-  lu: boolean;
-  lien?: string;
-}
-
-export interface ParametresSite {
-  nomCentre: string;
-  slogan: string;
-  logo?: string;
-  couleurPrimaire: string;
-  couleurSecondaire: string;
-  email: string;
-  telephone: string;
-  adresse: string;
-  horaires: {
-    semaine: string;
-    weekend: string;
-  };
-  sectionsActives: {
-    promotions: boolean;
-    map: boolean;
-    boutiques: boolean;
-    evenements: boolean;
-  };
-  modeMaintenace: boolean;
-  inscriptionOuverte: boolean;
-}
-
-export interface ParametresCrm {
-    nom_centre_commercial:string,
-    slogan:string,
-    email:string,
-    telephone:string,
-    adresse:string,
-    horaire_ouverture:string,
-    horaire_fermeture:string 
-}
-
 export interface KPI {
   label: string;
   value: number | string;

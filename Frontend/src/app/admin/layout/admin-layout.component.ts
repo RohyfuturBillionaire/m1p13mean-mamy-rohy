@@ -1,9 +1,10 @@
-import { Component, signal, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { AdminService } from '../../core/services/admin.service';
-import { Notification } from '../../core/models/admin.model';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../auth/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { Notification } from '../../core/models/notification.model';
 
 @Component({
   selector: 'app-admin-layout',
@@ -13,14 +14,21 @@ import { AuthService } from '../../auth/services/auth.service';
   styleUrl: './admin-layout.component.scss'
 })
 export class AdminLayoutComponent implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
+  private router = inject(Router);
+
   sidebarCollapsed = signal(false);
   sidebarMobileOpen = signal(false);
   showNotifications = signal(false);
   showUserMenu = signal(false);
-  notifications = signal<Notification[]>([]);
-  unreadCount = signal(0);
+
+  currentUserName = computed(() => this.authService.currentUser()?.username || 'Admin');
+  notifications = this.notificationService.notifications;
+  unreadCount = this.notificationService.unreadCount;
 
   private readonly MOBILE_BREAKPOINT = 1024;
+  private pollingSub?: Subscription;
 
   menuItems = [
     { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
@@ -32,22 +40,18 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     { label: 'Promotions', icon: 'local_offer', route: '/admin/promotions' },
     { label: 'Loyers & Factures', icon: 'receipt', route: '/admin/loyers' },
     { label: 'Associations', icon: 'link', route: '/admin/association-boutiques' },
-    { label: 'Messages', icon: 'chat', route: '/admin/messages' },
-    { label: 'Paramètres', icon: 'settings', route: '/admin/parametres' }
+    { label: 'Messages', icon: 'chat', route: '/admin/messages' }
   ];
 
-  constructor(
-    private adminService: AdminService,
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor() {}
 
   ngOnInit() {
-    this.loadNotifications();
+    this.pollingSub = this.notificationService.startPolling(30000).subscribe();
     this.checkScreenSize();
   }
 
   ngOnDestroy() {
+    this.pollingSub?.unsubscribe();
     document.body.style.overflow = '';
   }
 
@@ -63,24 +67,13 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadNotifications() {
-    this.adminService.getNotifications().subscribe(notifs => {
-      this.notifications.set(notifs);
-      this.unreadCount.set(this.adminService.getUnreadNotificationsCount());
-    });
-  }
-
   toggleSidebar() {
     this.sidebarCollapsed.update(v => !v);
   }
 
   toggleMobileSidebar() {
     this.sidebarMobileOpen.update(v => !v);
-    if (this.sidebarMobileOpen()) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = this.sidebarMobileOpen() ? 'hidden' : '';
   }
 
   closeMobileSidebar() {
@@ -110,8 +103,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   markAsRead(notif: Notification) {
-    this.adminService.markNotificationAsRead(notif.id).subscribe(() => {
-      this.loadNotifications();
+    this.notificationService.markAsRead(notif._id).subscribe(() => {
       if (notif.lien) {
         this.router.navigate([notif.lien]);
       }
@@ -119,10 +111,14 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     this.showNotifications.set(false);
   }
 
+  markAllAsRead() {
+    this.notificationService.markAllAsRead().subscribe();
+  }
+
   logout() {
-    // this.adminService.logout();
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/connexion']);
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/connexion']),
+      error: () => this.router.navigate(['/connexion'])
     });
   }
 
@@ -131,6 +127,10 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       case 'paiement': return 'payments';
       case 'demande': return 'assignment';
       case 'alerte': return 'warning';
+      case 'commande': return 'shopping_cart';
+      case 'stock': return 'inventory';
+      case 'promotion': return 'local_offer';
+      case 'message': return 'chat';
       default: return 'info';
     }
   }
@@ -140,6 +140,10 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       case 'paiement': return '#4CAF50';
       case 'demande': return '#2196F3';
       case 'alerte': return '#FF9800';
+      case 'commande': return '#4CAF50';
+      case 'stock': return '#FF9800';
+      case 'promotion': return '#2196F3';
+      case 'message': return '#9C27B0';
       default: return '#9E9E9E';
     }
   }
@@ -148,7 +152,6 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     const now = new Date();
     const diff = now.getTime() - new Date(date).getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
-
     if (hours < 1) return 'À l\'instant';
     if (hours < 24) return `Il y a ${hours}h`;
     const days = Math.floor(hours / 24);

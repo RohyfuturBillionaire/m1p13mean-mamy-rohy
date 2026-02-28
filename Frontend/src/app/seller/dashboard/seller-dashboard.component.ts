@@ -1,14 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SellerService } from '../../core/services/seller.service';
-import {
-  SellerKPI,
-  SellerChartData,
-  SellerNotification,
-  SellerCommande,
-  SellerProduit
-} from '../../core/models/seller.model';
+import { SellerKPI, SellerChartData, SellerCommande, SellerProduit } from '../../core/models/seller.model';
+import { NotificationService } from '../../core/services/notification.service';
+import { Notification } from '../../core/models/notification.model';
 
 @Component({
   selector: 'app-seller-dashboard',
@@ -18,11 +14,14 @@ import {
   styleUrl: './seller-dashboard.component.scss'
 })
 export class SellerDashboardComponent implements OnInit {
+  private sellerService = inject(SellerService);
+  private notificationService = inject(NotificationService);
+
   kpis = signal<SellerKPI[]>([]);
   ventesMensuelles = signal<SellerChartData>({ labels: [], datasets: [] });
   bestSellers = signal<SellerChartData>({ labels: [], datasets: [] });
   stockStatus = signal<SellerChartData>({ labels: [], datasets: [] });
-  recentNotifications = signal<SellerNotification[]>([]);
+  recentNotifications = signal<Notification[]>([]);
   pendingOrders = signal<SellerCommande[]>([]);
   stockAlerts = signal<{ lowStock: SellerProduit[], outOfStock: SellerProduit[] }>({ lowStock: [], outOfStock: [] });
 
@@ -32,7 +31,7 @@ export class SellerDashboardComponent implements OnInit {
   currentPeriodLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
   currentYear = new Date().getFullYear();
 
-  constructor(private sellerService: SellerService) {}
+  constructor() {}
 
   ngOnInit() {
     this.loadDashboardData();
@@ -44,7 +43,7 @@ export class SellerDashboardComponent implements OnInit {
     this.sellerService.getBestSellers().subscribe(data => this.bestSellers.set(data));
     this.sellerService.getStockStatus().subscribe(data => this.stockStatus.set(data));
 
-    this.sellerService.getNotifications().subscribe(notifs => {
+    this.notificationService.loadNotifications().subscribe(notifs => {
       this.recentNotifications.set(notifs.slice(0, 5));
     });
 

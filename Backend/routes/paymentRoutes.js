@@ -5,6 +5,9 @@ const Contract = require('../models/Contract');
 const { generateCurrentMonthPayments, checkOverduePayments } = require('../utils/paymentGenerator');
 const { sendPaymentConfirmation, sendOverdueReminder, sendInvoiceByEmail } = require('../utils/emailService');
 const { generateInvoicePDF } = require('../utils/pdfInvoiceGenerator');
+const Notification = require('../models/Notification');
+
+const MOIS_NOMS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
 // GET all payments (with populate)
 router.get('/', async (req, res) => {
@@ -171,9 +174,10 @@ router.put('/:id/mark-paid', async (req, res) => {
       .populate('id_boutique');
     if (!payment) return res.status(404).json({ message: 'Paiement non trouve' });
 
-    // Envoyer email de confirmation
     const boutique = payment.id_boutique;
     const user = payment.id_contract?.id_client;
+
+    // Envoyer email de confirmation
     if (boutique || user) {
       const emailResult = await sendPaymentConfirmation(payment, boutique, user);
       if (emailResult.success) {
@@ -182,6 +186,16 @@ router.put('/:id/mark-paid', async (req, res) => {
         await payment.save();
       }
     }
+
+    // Notifier l'admin du paiement reçu
+    const nomMois = MOIS_NOMS[(payment.mois || 1) - 1] || payment.mois;
+    await Notification.create({
+      titre: 'Loyer payé',
+      message: `${boutique?.nom || 'Une boutique'} a réglé son loyer de ${nomMois} ${payment.annee} (${payment.montant?.toLocaleString('fr-FR')} Ar)`,
+      type: 'paiement',
+      lien: '/admin/loyers',
+      destinataire_role: 'admin'
+    });
 
     res.json(payment);
   } catch (error) {
