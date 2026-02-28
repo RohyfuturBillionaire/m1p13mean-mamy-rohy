@@ -86,4 +86,32 @@ router.post('/', authenticateToken, async (req, res) => {
   } 
 });
 
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { username, email, id_role } = req.body;
+    const updates = {};
+    if (username !== undefined) updates.username = username;
+    if (email !== undefined) updates.email = email;
+    if (id_role !== undefined) updates.id_role = id_role;
+
+    const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true })
+      .select('-password')
+      .populate('id_role');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

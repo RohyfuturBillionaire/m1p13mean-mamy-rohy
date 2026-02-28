@@ -7,6 +7,7 @@ import { SellerBoutique } from '../../core/models/seller.model';
 import { AuthService } from '../../auth/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { Notification } from '../../core/models/notification.model';
+import { MouvementStockService } from '../stocks/services/mouvement-stock.service';
 
 @Component({
   selector: 'app-seller-layout',
@@ -19,6 +20,7 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   private sellerService = inject(SellerService);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
+  private mouvementService = inject(MouvementStockService);
   private router = inject(Router);
 
   sidebarCollapsed = signal(false);
@@ -29,6 +31,7 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
 
   notifications = this.notificationService.notifications;
   unreadCount = this.notificationService.unreadCount;
+  unreadNotifications = computed(() => this.notificationService.notifications().filter(n => !n.lu));
 
   private readonly MOBILE_BREAKPOINT = 1024;
   private pollingSub?: Subscription;
@@ -46,14 +49,18 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
     { label: 'Messages', icon: 'chat', route: '/seller/messages' }
   ];
 
+  private stocksData = signal<any[]>([]);
   unreadMessages = computed(() => this.sellerService.getUnreadMessagesCount());
-  stockAlerts = computed(() => this.sellerService.getStockAlertsArray().length);
+  stockAlerts = computed(() =>
+    this.stocksData().filter(s => s.stock_restant <= 0 || s.stock_restant <= s.seuil_alerte).length
+  );
 
   constructor() {}
 
   ngOnInit() {
     this.pollingSub = this.notificationService.startPolling(30000).subscribe();
     this.loadBoutique();
+    this.loadStockAlerts();
     this.checkScreenSize();
   }
 
@@ -77,6 +84,13 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   private loadBoutique() {
     this.sellerService.getBoutique().subscribe(boutique => {
       this.boutique.set(boutique);
+    });
+  }
+
+  private loadStockAlerts() {
+    this.mouvementService.getCurrentStocks().subscribe({
+      next: (data) => this.stocksData.set(data),
+      error: () => {}
     });
   }
 
@@ -116,12 +130,15 @@ export class SellerLayoutComponent implements OnInit, OnDestroy {
   }
 
   markAsRead(notif: Notification) {
-    this.notificationService.markAsRead(notif._id).subscribe(() => {
-      if (notif.lien) {
-        this.router.navigate([notif.lien]);
-      }
-    });
-    this.showNotifications.set(false);
+    this.notificationService.markAsRead(notif._id).subscribe();
+  }
+
+  navigateNotif(notif: Notification) {
+    this.notificationService.markAsRead(notif._id).subscribe();
+    if (notif.lien) {
+      this.router.navigate([notif.lien]);
+      this.showNotifications.set(false);
+    }
   }
 
   markAllAsRead() {

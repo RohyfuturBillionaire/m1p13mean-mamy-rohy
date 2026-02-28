@@ -352,6 +352,9 @@ $danger: #EF5350;
   border-radius: 16px;
   width: 100%;
   max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
   animation: modalSlide 0.3s ease;
 }
 
@@ -397,6 +400,8 @@ $danger: #EF5350;
 
 .modal-body {
   padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .detail-section {

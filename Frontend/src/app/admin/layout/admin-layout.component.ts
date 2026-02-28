@@ -26,6 +26,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   currentUserName = computed(() => this.authService.currentUser()?.username || 'Admin');
   notifications = this.notificationService.notifications;
   unreadCount = this.notificationService.unreadCount;
+  unreadNotifications = computed(() => this.notificationService.notifications().filter(n => !n.lu));
 
   private readonly MOBILE_BREAKPOINT = 1024;
   private pollingSub?: Subscription;
@@ -103,12 +104,15 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   markAsRead(notif: Notification) {
-    this.notificationService.markAsRead(notif._id).subscribe(() => {
-      if (notif.lien) {
-        this.router.navigate([notif.lien]);
-      }
-    });
-    this.showNotifications.set(false);
+    this.notificationService.markAsRead(notif._id).subscribe();
+  }
+
+  navigateNotif(notif: Notification) {
+    this.notificationService.markAsRead(notif._id).subscribe();
+    if (notif.lien) {
+      this.router.navigate([notif.lien]);
+      this.showNotifications.set(false);
+    }
   }
 
   markAllAsRead() {
