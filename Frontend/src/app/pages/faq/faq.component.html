@@ -1,0 +1,99 @@
+<!-- Hero Banner -->
+<section class="page-hero">
+  <div class="hero-background">
+    <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600" alt="FAQ Tana Center">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-badge">Aide & Support</span>
+    <h1>Foire Aux Questions</h1>
+    <p>Trouvez rapidement les réponses à vos questions</p>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq-section">
+  <div class="container">
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="loader"></div>
+        <p>Chargement des questions...</p>
+      </div>
+    } @else if (faqs().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons">help_outline</span>
+        <h3>Aucune question disponible</h3>
+        <p>Notre équipe prépare les réponses. Revenez bientôt !</p>
+        <a routerLink="/boutiques" class="btn btn-primary">Explorer les boutiques</a>
+      </div>
+    } @else {
+
+      <!-- Category Tabs -->
+      @if (usedCategories().length > 0) {
+        <div class="category-tabs">
+          <button
+            class="category-tab"
+            [class.active]="selectedCategory() === 'all'"
+            (click)="selectCategory('all')">
+            <span class="material-icons">apps</span>
+            Toutes les questions
+          </button>
+          @for (cat of usedCategories(); track cat._id) {
+            <button
+              class="category-tab"
+              [class.active]="selectedCategory() === cat._id"
+              (click)="selectCategory(cat._id)">
+              <span class="material-icons">label</span>
+              {{ cat.nom_categorie }}
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Count info -->
+      <p class="faq-count">
+        {{ filteredFaqs().length }} question{{ filteredFaqs().length > 1 ? 's' : '' }}
+        @if (selectedCategory() !== 'all') {
+          dans « {{ getCategoryName(selectedCategory()) }} »
+        }
+      </p>
+
+      <!-- Accordion -->
+      <div class="accordion">
+        @for (faq of filteredFaqs(); track faq._id; let i = $index) {
+          <div class="accordion-item" [class.open]="isOpen(faq._id)">
+            <button class="accordion-trigger" (click)="toggle(faq._id)" [attr.aria-expanded]="isOpen(faq._id)">
+              <span class="accordion-index">{{ i + 1 < 10 ? '0' + (i + 1) : i + 1 }}</span>
+              <span class="accordion-question">{{ faq.question }}</span>
+              <span class="accordion-icon material-icons">
+                {{ isOpen(faq._id) ? 'remove' : 'add' }}
+              </span>
+            </button>
+            <div class="accordion-body" [style.maxHeight]="isOpen(faq._id) ? '600px' : '0'">
+              <div class="accordion-content">
+                <p>{{ faq.reponse }}</p>
+                @if (getCategoryName(faq.id_categorie)) {
+                  <span class="faq-category-badge">{{ getCategoryName(faq.id_categorie) }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Contact CTA -->
+    <div class="contact-cta">
+      <div class="cta-icon">
+        <span class="material-icons">support_agent</span>
+      </div>
+      <div class="cta-text">
+        <h3>Vous n'avez pas trouvé votre réponse ?</h3>
+        <p>Notre équipe est disponible pour vous aider du lundi au samedi, de 9h à 21h.</p>
+      </div>
+      <a href="mailto:contact@tanacenter.mg" class="btn btn-primary">Nous contacter</a>
+    </div>
+
+  </div>
+</section>

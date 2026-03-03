@@ -25,6 +25,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/promotions/promotions.component').then(m => m.PromotionsComponent)
   },
   {
+    path: 'faq',
+    loadComponent: () => import('./pages/faq/faq.component').then(m => m.FaqComponent)
+  },
+  {
+    path: 'horaires',
+    loadComponent: () => import('./pages/horaires/horaires.component').then(m => m.HorairesComponent)
+  },
+  {
     path: 'connexion',
     loadComponent: () => import('./pages/auth/login/login.component').then(m => m.LoginComponent)
   },

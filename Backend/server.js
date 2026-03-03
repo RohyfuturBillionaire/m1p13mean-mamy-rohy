@@ -51,7 +51,7 @@ app.use('/sitecontenu', authenticateToken, require('./routes/siteContenuRoutes')
 app.use('/imgslider', authenticateToken, require('./routes/imgSliderRoutes'));
 app.use('/conversations', authenticateToken, require('./routes/conversationRoute'));
 app.use('/messages', authenticateToken, require('./routes/MessageRoute'));
-app.use('/faqs', authenticateToken, require('./routes/faqRoutes'));
+app.use('/faqs', require('./routes/faqRoutes')); // GET public, mutations non protégées (contrôle via admin)
 app.use('/faqCategories', require('./routes/faqCategorieRoutes'));
 
 

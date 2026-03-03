@@ -1,0 +1,121 @@
+<!-- Hero Banner -->
+<section class="page-hero">
+  <div class="hero-background">
+    <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600" alt="Horaires Tana Center">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-badge">Organisation</span>
+    <h1>Horaires Spéciaux</h1>
+    <p>Consultez les horaires exceptionnels de vos boutiques préférées</p>
+  </div>
+</section>
+
+<!-- Horaires Section -->
+<section class="horaires-section">
+  <div class="container">
+
+    <!-- Standard hours reminder -->
+    <div class="standard-hours">
+      <span class="material-icons">schedule</span>
+      <div>
+        <strong>Horaires habituels du centre</strong>
+        <span>Lun–Ven&nbsp;: 10h00–21h00 &nbsp;|&nbsp; Sam&nbsp;: 09h00–21h00 &nbsp;|&nbsp; Dim&nbsp;: 10h00–18h00</span>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="loader"></div>
+        <p>Chargement des horaires...</p>
+      </div>
+    } @else if (boutiqueGroups().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons">event_available</span>
+        <h3>Aucun horaire spécial annoncé</h3>
+        <p>Les boutiques affichent ici leurs horaires exceptionnels (jours fériés, événements, etc.).</p>
+        <a routerLink="/boutiques" class="btn btn-primary">Voir toutes les boutiques</a>
+      </div>
+    } @else {
+
+      <!-- Search -->
+      <div class="search-bar">
+        <span class="material-icons">search</span>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Rechercher une boutique ou un événement..."
+          class="search-input"
+        >
+        @if (searchQuery()) {
+          <button class="clear-search" (click)="searchQuery.set('')" aria-label="Effacer">
+            <span class="material-icons">close</span>
+          </button>
+        }
+      </div>
+
+      <!-- Results count -->
+      <p class="results-info">
+        {{ filteredGroups().length }} boutique{{ filteredGroups().length > 1 ? 's' : '' }} avec des horaires spéciaux
+      </p>
+
+      <!-- Cards Grid -->
+      @if (filteredGroups().length > 0) {
+        <div class="boutiques-grid">
+          @for (group of filteredGroups(); track group.boutique._id) {
+            <article class="boutique-card">
+              <div class="card-header">
+                <div class="boutique-identity">
+                  @if (group.boutique.logo) {
+                    <img [src]="group.boutique.logo" [alt]="group.boutique.nom" class="boutique-logo" loading="lazy">
+                  } @else {
+                    <div class="boutique-logo-placeholder">
+                      <span class="material-icons">store</span>
+                    </div>
+                  }
+                  <div>
+                    <h3 class="boutique-name">{{ group.boutique.nom }}</h3>
+                    @if (group.boutique.id_categorie?.nom) {
+                      <span class="boutique-category">{{ group.boutique.id_categorie.nom }}</span>
+                    }
+                  </div>
+                </div>
+                <span class="horaires-count">
+                  {{ group.horaires.length }} horaire{{ group.horaires.length > 1 ? 's' : '' }}
+                </span>
+              </div>
+
+              <ul class="horaires-list">
+                @for (h of group.horaires; track h._id) {
+                  <li class="horaire-item">
+                    <div class="horaire-label">
+                      <span class="material-icons">event_note</span>
+                      {{ h.label }}
+                    </div>
+                    <div class="horaire-time">
+                      <span class="material-icons">access_time</span>
+                      {{ formatTime(h.horaire_ouverture) }} – {{ formatTime(h.horaire_fermeture) }}
+                    </div>
+                  </li>
+                }
+              </ul>
+
+              <a [routerLink]="['/boutique', group.boutique._id]" class="card-link">
+                Voir la boutique
+                <span class="material-icons">arrow_forward</span>
+              </a>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="no-results">
+          <span class="material-icons">search_off</span>
+          <p>Aucun résultat pour « {{ searchQuery() }} »</p>
+          <button class="btn btn-outline" (click)="searchQuery.set('')">Effacer la recherche</button>
+        </div>
+      }
+    }
+
+  </div>
+</section>
