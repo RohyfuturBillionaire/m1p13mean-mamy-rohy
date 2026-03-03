@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 require('dotenv').config();
 
 const authenticateToken = require('./middleware/authMiddleware');
@@ -17,6 +19,11 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(require('cookie-parser')());
+
+// Swagger UI — disponible sur http://localhost:5000/api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Tana Center — API Docs',
+}));
 
 // Serve uploaded files — local dev only (production uses Vercel Blob URLs)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
