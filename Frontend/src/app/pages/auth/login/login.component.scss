@@ -360,6 +360,55 @@
   }
 }
 
+// Test bar
+.test-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.test-bar-label {
+  font-size: 0.7rem;
+  color: var(--medium-gray);
+  white-space: nowrap;
+}
+
+.test-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  border: 1px solid;
+  background: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+
+  .material-icons { font-size: 0.85rem; }
+
+  &.admin {
+    border-color: rgba(201, 169, 98, 0.5);
+    color: #9A7B3A;
+    &:hover { background: rgba(201, 169, 98, 0.12); }
+  }
+
+  &.boutique {
+    border-color: rgba(99, 102, 241, 0.45);
+    color: #4F46E5;
+    &:hover { background: rgba(99, 102, 241, 0.1); }
+  }
+
+  &.client {
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #065F46;
+    &:hover { background: rgba(16, 185, 129, 0.1); }
+  }
+}
+
 // Image Section
 .auth-image-section {
   position: relative;
