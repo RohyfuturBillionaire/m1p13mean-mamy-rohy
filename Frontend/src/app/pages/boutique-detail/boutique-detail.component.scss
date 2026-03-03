@@ -742,3 +742,160 @@
     margin-bottom: 2rem;
   }
 }
+
+// ── Horaires Spéciaux Tab ──────────────────────────────────────────────────────
+.horaires-spec-section {
+  max-width: 700px;
+}
+
+.section-intro {
+  color: var(--medium-gray);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.horaire-spec-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.horaire-spec-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--primary-gold);
+
+  .horaire-label {
+    font-weight: 600;
+    color: var(--dark-gray);
+    font-size: 0.95rem;
+  }
+
+  .horaire-time {
+    font-size: 0.9rem;
+    color: var(--primary-gold-dark);
+    font-weight: 500;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}
+
+// ── FAQ Tab ────────────────────────────────────────────────────────────────────
+.faq-detail-section {
+  max-width: 700px;
+}
+
+.faq-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.faq-item {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    border-color: rgba(201, 169, 98, 0.3);
+  }
+
+  &.open {
+    border-color: var(--primary-gold);
+    box-shadow: var(--shadow-gold);
+  }
+}
+
+.faq-trigger {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.25rem 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(201, 169, 98, 0.04);
+  }
+}
+
+.faq-num {
+  flex-shrink: 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-gold);
+  width: 28px;
+}
+
+.faq-question {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--dark-gray);
+  line-height: 1.4;
+}
+
+.faq-icon {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  color: var(--primary-gold);
+  transition: transform 0.2s;
+}
+
+.faq-body {
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.faq-answer {
+  padding: 0 1.5rem 1.25rem 3.5rem;
+
+  p {
+    color: var(--medium-gray);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin: 0;
+  }
+}
+
+// ── Empty state for new tabs ───────────────────────────────────────────────────
+.empty-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+  text-align: center;
+  color: var(--medium-gray);
+
+  .material-icons {
+    font-size: 3rem;
+    color: var(--primary-gold);
+    opacity: 0.4;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+}

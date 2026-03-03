@@ -11,6 +11,8 @@ import { AuthService } from '../../auth/services/auth.service';
 import { PromotionService } from '../../core/services/promotion.service';
 import { StarRatingComponent } from '../../shared/components/star-rating/star-rating.component';
 import { Produit } from '../../core/models/boutique.model';
+import { FaqService, Faq } from '../../core/services/faq.service';
+import { HoraireService, HoraireBoutique } from '../../core/services/horaire.service';
 
 @Component({
   selector: 'app-boutique-detail',
@@ -25,8 +27,11 @@ export class BoutiqueDetailComponent implements OnInit {
   loading = signal(true);
   selectedCategorie = signal<string>('all');
   articleSearch = signal('');
-  activeTab = signal<'produits' | 'infos'>('produits');
+  activeTab = signal<'produits' | 'infos' | 'horaires' | 'faq'>('produits');
   addedToCart = signal<string | null>(null);
+  faqs = signal<Faq[]>([]);
+  horaires = signal<HoraireBoutique[]>([]);
+  openFaqId = signal<string | null>(null);
   favoriteIds = signal<Set<string>>(new Set());
   articleRatings = signal<Map<string, { moyenne: number; count: number; userNote: number | null }>>(new Map());
 
@@ -37,6 +42,8 @@ export class BoutiqueDetailComponent implements OnInit {
   private ratingApi = inject(RatingApiService);
   private authService = inject(AuthService);
   private promotionService = inject(PromotionService);
+  private faqService = inject(FaqService);
+  private horaireService = inject(HoraireService);
   private router = inject(Router);
 
   filteredArticles = computed(() => {
@@ -61,6 +68,8 @@ export class BoutiqueDetailComponent implements OnInit {
       if (id) {
         this.loadBoutique(id);
         this.loadBoutiquePromos(id);
+        this.loadFaqs(id);
+        this.loadHoraires(id);
       }
     });
     this.loadFavorites();
@@ -210,8 +219,34 @@ export class BoutiqueDetailComponent implements OnInit {
     this.selectedCategorie.set(categorie);
   }
 
-  setTab(tab: 'produits' | 'infos') {
+  setTab(tab: 'produits' | 'infos' | 'horaires' | 'faq') {
     this.activeTab.set(tab);
+  }
+
+  toggleFaq(id: string): void {
+    this.openFaqId.set(this.openFaqId() === id ? null : id);
+  }
+
+  isFaqOpen(id: string): boolean {
+    return this.openFaqId() === id;
+  }
+
+  formatHoraire(time: string): string {
+    return time.replace(':', 'h');
+  }
+
+  private loadFaqs(boutiqueId: string): void {
+    this.faqService.getByBoutique(boutiqueId).subscribe({
+      next: (faqs) => this.faqs.set(faqs.sort((a, b) => a.ordre - b.ordre)),
+      error: () => {}
+    });
+  }
+
+  private loadHoraires(boutiqueId: string): void {
+    this.horaireService.getByBoutique(boutiqueId).subscribe({
+      next: (h) => this.horaires.set(h),
+      error: () => {}
+    });
   }
 
   formatPrix(prix: number): string {

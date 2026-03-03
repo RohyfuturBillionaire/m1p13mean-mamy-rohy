@@ -70,6 +70,26 @@
         >
           Informations
         </button>
+        <button
+          class="tab"
+          [class.active]="activeTab() === 'horaires'"
+          (click)="setTab('horaires')"
+        >
+          Horaires spéciaux
+          @if (horaires().length > 0) {
+            <span class="count">{{ horaires().length }}</span>
+          }
+        </button>
+        <button
+          class="tab"
+          [class.active]="activeTab() === 'faq'"
+          (click)="setTab('faq')"
+        >
+          FAQ
+          @if (faqs().length > 0) {
+            <span class="count">{{ faqs().length }}</span>
+          }
+        </button>
       </div>
 
       <!-- Tab Content -->
@@ -189,6 +209,59 @@
             @if (articles().length === 0) {
               <div class="no-results">
                 <p>Aucun article disponible pour cette boutique.</p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Horaires spéciaux Tab -->
+        @if (activeTab() === 'horaires') {
+          <div class="horaires-spec-section">
+            @if (horaires().length === 0) {
+              <div class="empty-section">
+                <span class="material-icons">schedule</span>
+                <p>Aucun horaire spécial pour cette boutique.</p>
+              </div>
+            } @else {
+              <p class="section-intro">Horaires exceptionnels en vigueur pour cette boutique.</p>
+              <ul class="horaire-spec-list">
+                @for (h of horaires(); track h._id) {
+                  <li class="horaire-spec-item">
+                    <span class="horaire-label">{{ h.label }}</span>
+                    <span class="horaire-time">
+                      {{ formatHoraire(h.horaire_ouverture) }} – {{ formatHoraire(h.horaire_fermeture) }}
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+
+        <!-- FAQ Tab -->
+        @if (activeTab() === 'faq') {
+          <div class="faq-detail-section">
+            @if (faqs().length === 0) {
+              <div class="empty-section">
+                <span class="material-icons">help_outline</span>
+                <p>Aucune question fréquente pour cette boutique.</p>
+              </div>
+            } @else {
+              <div class="faq-accordion">
+                @for (faq of faqs(); track faq._id; let i = $index) {
+                  <div class="faq-item" [class.open]="isFaqOpen(faq._id)">
+                    <button class="faq-trigger" (click)="toggleFaq(faq._id)" [attr.aria-expanded]="isFaqOpen(faq._id)">
+                      <span class="faq-num">{{ i + 1 < 10 ? '0' + (i + 1) : i + 1 }}</span>
+                      <span class="faq-question">{{ faq.question }}</span>
+                      <span class="material-icons faq-icon">{{ isFaqOpen(faq._id) ? 'remove' : 'add' }}</span>
+                    </button>
+                    <div class="faq-body" [style.maxHeight]="isFaqOpen(faq._id) ? '600px' : '0'">
+                      <div class="faq-answer">
+                        <p>{{ faq.reponse }}</p>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             }
           </div>

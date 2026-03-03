@@ -23,6 +23,11 @@ app.use(require('cookie-parser')());
 // Swagger UI — disponible sur http://localhost:5000/api-docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'Tana Center — API Docs',
+  customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+  customJs: [
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js',
+  ],
 }));
 
 // Serve uploaded files — local dev only (production uses Vercel Blob URLs)
@@ -51,7 +56,7 @@ app.use('/sitecontenu', authenticateToken, require('./routes/siteContenuRoutes')
 app.use('/imgslider', authenticateToken, require('./routes/imgSliderRoutes'));
 app.use('/conversations', authenticateToken, require('./routes/conversationRoute'));
 app.use('/messages', authenticateToken, require('./routes/MessageRoute'));
-app.use('/faqs', authenticateToken, require('./routes/faqRoutes'));
+app.use('/faqs', require('./routes/faqRoutes')); // GET public, mutations non protégées (contrôle via admin)
 app.use('/faqCategories', require('./routes/faqCategorieRoutes'));
 
 
