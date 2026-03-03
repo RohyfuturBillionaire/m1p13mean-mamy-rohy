@@ -16,6 +16,26 @@
           <p>Bienvenue ! Connectez-vous à votre compte</p>
         </div>
 
+        <!-- Comptes de test -->
+        <div class="test-bar">
+          <span class="test-bar-label">Veuillez cliquer pour tester en tant que :</span>
+          <button type="button" class="test-chip admin"
+                  title="admin@example.com / admin"
+                  (click)="fillCredentials('admin@example.com', 'admin')">
+            <span class="material-icons">shield</span> Admin
+          </button>
+          <button type="button" class="test-chip boutique"
+                  title="chaussure@example.com / 12345678"
+                  (click)="fillCredentials('chaussure@example.com', '12345678')">
+            <span class="material-icons">store</span> Boutique
+          </button>
+          <button type="button" class="test-chip client"
+                  title="client@example.com / 12345678"
+                  (click)="fillCredentials('client@example.com', '12345678')">
+            <span class="material-icons">person</span> Client
+          </button>
+        </div>
+
 @if (error()) {
           <div class="alert alert-error">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

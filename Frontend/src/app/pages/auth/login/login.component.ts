@@ -30,6 +30,11 @@ export class LoginComponent {
     private sellerService: SellerService
   ) {}
 
+  fillCredentials(email: string, password: string) {
+    this.email = email;
+    this.password = password;
+  }
+
   togglePassword() {
     this.showPassword.update(v => !v);
   }
