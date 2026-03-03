@@ -9,7 +9,7 @@ const options = {
       description: 'Documentation de toutes les routes API du backend Tana Center',
     },
     servers: [
-      { url: 'http://localhost:5000', description: 'Développement local' },
+      { url: process.env.URL || 'http://localhost:5000', description: 'Url de l\'API' },
     ],
     components: {
       securitySchemes: {
